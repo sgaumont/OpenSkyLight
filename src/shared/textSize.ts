@@ -33,6 +33,11 @@ export function tileZoom(sizes: TextSizeSettings, tilePct: number | undefined): 
   return (tabZoom(sizes, 'home') * (tilePct ?? 100)) / 100
 }
 
+/** CSS zoom for the Week view's meal strips, on top of the Week tab's own zoom. */
+export function weekMealsZoom(sizes: TextSizeSettings): number {
+  return (sizes.weekMeals ?? 100) / 100
+}
+
 /** Sets (or clears, when it would just follow `global`) one tab's override. */
 export function withTabTextSize(sizes: TextSizeSettings, view: CalendarViewKind, pct: number): TextSizeSettings {
   const tabs = { ...sizes.tabs }

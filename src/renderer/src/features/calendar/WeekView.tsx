@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { DateTime } from 'luxon'
 import { eachDay } from '@shared/dates'
+import { DEFAULT_SETTINGS } from '@shared/types'
+import { weekMealsZoom } from '@shared/textSize'
 import { useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { occurrenceColor } from '../../lib/colors'
@@ -17,6 +19,7 @@ export function WeekView() {
   const openCreate = useUi((s) => s.openCreate)
   const openEdit = useUi((s) => s.openEdit)
   const timeFormat = settings?.timeFormat ?? '12h'
+  const mealsZoom = weekMealsZoom(settings?.textSize ?? DEFAULT_SETTINGS.textSize)
   const days = eachDay(range, ZONE)
   const mealsByDay = useMealsForRange(range)
   const [mealDate, setMealDate] = useState<string | null>(null)
@@ -74,7 +77,7 @@ export function WeekView() {
                 <div className="flex-1" onClick={() => openCreate(key)} />
               )}
             </div>
-            <div className="mt-2">
+            <div className="mt-2" style={mealsZoom !== 1 ? { zoom: mealsZoom } : undefined}>
               <MealStrip date={key} meals={mealsByDay.get(key) ?? []} onOpen={setMealDate} />
             </div>
           </div>

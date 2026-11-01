@@ -150,7 +150,9 @@ export const settingsPatchSchema = z.object({
       defaultView: viewKind.optional(),
       homeLayout: z.array(homeTileSchema).max(24).optional(),
       timeFormat: z.enum(['12h', '24h']).optional(),
-      textSize: z.object({ global: textSizePct, tabs: z.record(viewKind, textSizePct) }).optional(),
+      textSize: z
+        .object({ global: textSizePct, tabs: z.record(viewKind, textSizePct), weekMeals: textSizePct.optional() })
+        .optional(),
       temperatureUnit: z.enum(['f', 'c']).optional(),
       theme: z.enum(['light', 'dark', 'auto']).optional(),
       weather: z.object({ lat: z.number(), lon: z.number(), label: z.string() }).nullable().optional(),

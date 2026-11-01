@@ -294,6 +294,8 @@ export interface TextSizeSettings {
   global: number
   /** absolute per-tab overrides; a missing tab follows `global` */
   tabs: Partial<Record<CalendarViewKind, number>>
+  /** meal strips under each Week day, as a percent of the Week tab size (absent = 100) */
+  weekMeals?: number
 }
 
 export interface AppSettings {

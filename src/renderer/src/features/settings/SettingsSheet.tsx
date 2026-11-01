@@ -1233,6 +1233,26 @@ function TextSizeSection() {
           )
         })}
       </div>
+      <div className="mt-2 flex items-center gap-3 rounded-2xl bg-paper-deep/50 p-4">
+        <span className="flex-1 text-base font-semibold text-ink-soft">
+          Week meals
+          <span className="ml-2 text-sm text-ink-faint">meals under each day, relative to Week</span>
+        </span>
+        {(sizes.weekMeals ?? 100) !== 100 && (
+          <button
+            type="button"
+            onClick={() => mutation.mutate({ textSize: { ...sizes, weekMeals: undefined } })}
+            className="pressable rounded-xl px-3 py-2 text-sm font-bold text-ink-faint"
+          >
+            Reset
+          </button>
+        )}
+        <TextSizeStepper
+          label="Week meals"
+          value={sizes.weekMeals ?? 100}
+          onChange={(pct) => mutation.mutate({ textSize: { ...sizes, weekMeals: pct === 100 ? undefined : pct } })}
+        />
+      </div>
       <p className="mt-2 text-sm font-semibold text-ink-faint">
         Home tiles can be sized one by one too: tap the pencil on Home, then A− / A+ on a tile.
       </p>

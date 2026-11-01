@@ -135,6 +135,13 @@ Add unit tests where sensible.
   input (`powerMonitor.getSystemIdleTime`), or the window ends; the display hold
   is re-taken while awake.
 
+## v0.8.7 — Week meals text size (same branch; 0.8.6 not released separately)
+
+- `settings.textSize.weekMeals` (percent of the Week tab size, absent = 100):
+  CSS zoom on the meal strip wrapper in `WeekView.tsx` (`weekMealsZoom`).
+  Settings → General → Text size → "Week meals" (A−/A+, Reset). Day view's meal
+  strip is not affected.
+
 ## Wishlist (not started)
 
 - (empty)

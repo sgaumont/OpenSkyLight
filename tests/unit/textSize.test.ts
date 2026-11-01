@@ -7,6 +7,7 @@ import {
   TEXT_SIZE_MAX,
   TEXT_SIZE_MIN,
   tileZoom,
+  weekMealsZoom,
   withTabTextSize
 } from '../../src/shared/textSize'
 import { sanitizeLayout } from '../../src/shared/home'
@@ -44,6 +45,10 @@ describe('tab and tile zoom', () => {
     expect(tileZoom(sizes(100, { home: 120 }), undefined)).toBeCloseTo(1.2)
     expect(tileZoom(sizes(100, { home: 120 }), 150)).toBeCloseTo(1.8)
   })
+  it('week meals size multiplies on top of the Week tab (default 100%)', () => {
+    expect(weekMealsZoom(sizes(100))).toBe(1)
+    expect(weekMealsZoom({ ...sizes(100), weekMeals: 150 })).toBe(1.5)
+  })
   it('setting a tab to the overall size removes the override', () => {
     const s = withTabTextSize(sizes(100, { week: 130 }), 'week', 100)
     expect(s.tabs).toEqual({})
@@ -71,6 +76,11 @@ describe('tile textSize in layouts', () => {
 describe('settings patch validation', () => {
   it('accepts text sizes and per-tab overrides', () => {
     expect(settingsPatchSchema.safeParse({ patch: { textSize: { global: 120, tabs: { week: 150 } } } }).success).toBe(true)
+  })
+  it('accepts a week meals size and rejects an out-of-range one', () => {
+    const patch = (weekMeals: number) => ({ patch: { textSize: { global: 100, tabs: {}, weekMeals } } })
+    expect(settingsPatchSchema.safeParse(patch(140)).success).toBe(true)
+    expect(settingsPatchSchema.safeParse(patch(20)).success).toBe(false)
   })
   it('rejects out-of-range sizes and unknown tabs', () => {
     expect(settingsPatchSchema.safeParse({ patch: { textSize: { global: 500, tabs: {} } } }).success).toBe(false)
