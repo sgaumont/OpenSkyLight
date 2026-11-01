@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { TEXT_SIZE_MAX, TEXT_SIZE_MIN } from '../textSize'
+import { HOME_COLS, HOME_ROWS } from '../home'
 
 const isoInstant = z.string().refine((s) => !Number.isNaN(Date.parse(s)), 'invalid ISO datetime')
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'invalid ISO date')
@@ -103,10 +104,10 @@ const homeTileSchema = z.object({
     'birdnet',
     'timer'
   ]),
-  x: z.number().int().min(0).max(11),
-  y: z.number().int().min(0).max(5),
-  w: z.number().int().min(1).max(12),
-  h: z.number().int().min(1).max(6),
+  x: z.number().int().min(0).max(HOME_COLS - 1),
+  y: z.number().int().min(0).max(HOME_ROWS - 1),
+  w: z.number().int().min(1).max(HOME_COLS),
+  h: z.number().int().min(1).max(HOME_ROWS),
   // value bounds must be >= what sanitizeLayout keeps (1..200), or a renderable
   // layout could be unsaveable
   config: z

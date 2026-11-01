@@ -1,35 +1,92 @@
 import { describe, expect, it } from 'vitest'
 import {
   canPlace,
+  cells,
   DEFAULT_HOME_LAYOUT,
   findFreeSpot,
   HOME_COLS,
+  HOME_GRID_SCALE,
   HOME_ROWS,
   inBounds,
   rectsOverlap,
   sanitizeLayout,
+  scaleLayout,
   TILE_SPECS
 } from '../../src/shared/home'
+import { migrateHomeGrid, type SettingsService } from '../../src/main/services/settingsService'
 import type { HomeTile } from '../../src/shared/types'
+
+// sizes below are in original 12×6 cells via cells(n); the grid is HOME_GRID_SCALE× finer
+
+describe('fine grid', () => {
+  it('is the original 12×6 grid split 3 ways per side', () => {
+    expect(HOME_GRID_SCALE).toBe(3)
+    expect([HOME_COLS, HOME_ROWS]).toEqual([36, 18])
+  })
+  it('scaleLayout multiplies position and size, keeping everything else', () => {
+    const [t] = scaleLayout([{ id: 'l', type: 'list', x: 1, y: 2, w: 3, h: 4, config: { listId: 'a', textSize: 120 } }]) as HomeTile[]
+    expect(t).toEqual({ id: 'l', type: 'list', x: 3, y: 6, w: 9, h: 12, config: { listId: 'a', textSize: 120 } })
+  })
+  it('an old-grid layout converts to a valid fine-grid layout, unchanged by sanitizing', () => {
+    const old = [
+      { id: 't', type: 'todayEvents', x: 0, y: 0, w: 4, h: 6 },
+      { id: 'w', type: 'weekAgenda', x: 4, y: 0, w: 5, h: 1 },
+      { id: 'x', type: 'weather', x: 9, y: 0, w: 3, h: 2 }
+    ]
+    const converted = scaleLayout(old) as HomeTile[]
+    expect(sanitizeLayout(converted)).toEqual(converted)
+  })
+})
+
+describe('migrateHomeGrid (one-time conversion at boot)', () => {
+  function fakeSettings(raw: Record<string, string>): SettingsService {
+    return {
+      getRaw: (k: string) => raw[k] ?? null,
+      setRaw: (k: string, v: string) => {
+        raw[k] = v
+      },
+      set: (patch: Record<string, unknown>) => {
+        for (const [k, v] of Object.entries(patch)) raw[k] = JSON.stringify(v)
+        return {} as never
+      }
+    } as unknown as SettingsService
+  }
+
+  it('scales a saved old layout once, then leaves it alone', () => {
+    const raw: Record<string, string> = { homeLayout: JSON.stringify([{ id: 'a', type: 'meals', x: 9, y: 0, w: 3, h: 2 }]) }
+    migrateHomeGrid(fakeSettings(raw))
+    expect(JSON.parse(raw.homeLayout)).toEqual([{ id: 'a', type: 'meals', x: 27, y: 0, w: 9, h: 6 }])
+    migrateHomeGrid(fakeSettings(raw)) // second boot: no double scaling
+    expect(JSON.parse(raw.homeLayout)).toEqual([{ id: 'a', type: 'meals', x: 27, y: 0, w: 9, h: 6 }])
+  })
+  it('a fresh install (no saved layout) just records the scale', () => {
+    const raw: Record<string, string> = {}
+    migrateHomeGrid(fakeSettings(raw))
+    expect(raw.homeLayout).toBeUndefined()
+    expect(raw.homeGridScale).toBe('3')
+  })
+})
 
 describe('minimum tile heights', () => {
   it('scrolling text tiles can shrink to one row; Today keeps two for its meal strip', () => {
     for (const type of ['weekAgenda', 'list', 'choresProgress', 'starBalances', 'meals', 'news', 'birdnet'] as const) {
-      expect(TILE_SPECS[type].minH).toBe(1)
+      expect(TILE_SPECS[type].minH).toBe(cells(1))
     }
-    expect(TILE_SPECS.todayEvents.minH).toBe(2)
+    expect(TILE_SPECS.todayEvents.minH).toBe(cells(2))
   })
   it('weather has a 1-row layout', () => {
-    expect(TILE_SPECS.weather.minH).toBe(1)
+    expect(TILE_SPECS.weather.minH).toBe(cells(1))
   })
   it('non-scrolling tiles keep two rows', () => {
     for (const type of ['clock', 'photo', 'camera', 'timer'] as const) {
-      expect(TILE_SPECS[type].minH).toBe(2)
+      expect(TILE_SPECS[type].minH).toBe(cells(2))
     }
   })
   it('a stored one-row list tile is kept at one row', () => {
-    const [tile] = sanitizeLayout([{ id: 'l', type: 'list', x: 0, y: 5, w: 3, h: 1, config: { listId: 'x' } }])
-    expect(tile).toMatchObject({ y: 5, h: 1 })
+    const [tile] = sanitizeLayout([
+      { id: 'l', type: 'list', x: 0, y: cells(5), w: cells(3), h: cells(1), config: { listId: 'x' } }
+    ])
+    expect(tile).toMatchObject({ y: cells(5), h: cells(1) })
   })
 })
 
@@ -43,7 +100,7 @@ describe('rectsOverlap / inBounds', () => {
   })
   it('bounds check', () => {
     expect(inBounds({ x: 0, y: 0, w: HOME_COLS, h: HOME_ROWS })).toBe(true)
-    expect(inBounds({ x: 11, y: 0, w: 2, h: 1 })).toBe(false)
+    expect(inBounds({ x: HOME_COLS - 1, y: 0, w: 2, h: 1 })).toBe(false)
     expect(inBounds({ x: -1, y: 0, w: 2, h: 1 })).toBe(false)
     expect(inBounds({ x: 0, y: 0, w: 0, h: 1 })).toBe(false)
   })
@@ -70,7 +127,7 @@ describe('findFreeSpot', () => {
   })
   it('finds the hole left by a removed tile', () => {
     const layout = DEFAULT_HOME_LAYOUT.filter((t) => t.type !== 'meals')
-    expect(findFreeSpot(layout, 2, 2)).toEqual({ x: 9, y: 0 })
+    expect(findFreeSpot(layout, cells(2), cells(2))).toEqual({ x: cells(9), y: 0 })
   })
 })
 
@@ -89,8 +146,8 @@ describe('sanitizeLayout', () => {
     expect(result).toEqual([])
   })
   it('clamps fractional and out-of-range coords', () => {
-    const [tile] = sanitizeLayout([{ id: 'c', type: 'clock', x: 11.7, y: -3, w: 2.2, h: 99 }])
-    expect(tile).toMatchObject({ x: 10, y: 0, w: 2, h: 6 })
+    const [tile] = sanitizeLayout([{ id: 'c', type: 'clock', x: HOME_COLS - 0.3, y: -3, w: cells(2) + 0.2, h: 99 }])
+    expect(tile).toMatchObject({ x: HOME_COLS - cells(2), y: 0, w: cells(2), h: HOME_ROWS })
     expect(inBounds(tile)).toBe(true)
   })
   it('enforces per-type minimum sizes', () => {
@@ -100,12 +157,12 @@ describe('sanitizeLayout', () => {
   })
   it('relocates overlapping tiles deterministically', () => {
     const result = sanitizeLayout([
-      { id: 'a', type: 'clock', x: 0, y: 0, w: 2, h: 2 },
-      { id: 'b', type: 'weather', x: 0, y: 0, w: 2, h: 2 }
+      { id: 'a', type: 'clock', x: 0, y: 0, w: cells(2), h: cells(2) },
+      { id: 'b', type: 'weather', x: 0, y: 0, w: cells(2), h: cells(2) }
     ])
     expect(result).toHaveLength(2)
     expect(canPlace(result.slice(0, 1), result[1], result[1].id)).toBe(true)
-    expect(result[1]).toMatchObject({ x: 2, y: 0 })
+    expect(result[1]).toMatchObject({ x: cells(2), y: 0 })
   })
   it('preserves tile config (listId and feedId) through sanitization', () => {
     const result = sanitizeLayout([
@@ -170,7 +227,7 @@ describe('DEFAULT_HOME_LAYOUT invariants', () => {
       }
     }
   })
-  it('covers the grid completely (72 cells)', () => {
+  it('covers the grid completely', () => {
     const area = DEFAULT_HOME_LAYOUT.reduce((acc, t) => acc + t.w * t.h, 0)
     expect(area).toBe(HOME_COLS * HOME_ROWS)
   })

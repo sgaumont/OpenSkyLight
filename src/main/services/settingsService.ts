@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm'
 import type { AppDb } from '../db/client'
 import { settings } from '../db/schema'
-import { DEFAULT_SETTINGS, type AppSettings } from '@shared/types'
+import { DEFAULT_SETTINGS, type AppSettings, type HomeTile } from '@shared/types'
+import { HOME_GRID_SCALE, scaleLayout } from '@shared/home'
 
 export function createSettingsService(db: AppDb) {
   function getAll(): AppSettings {
@@ -56,3 +57,24 @@ export function createSettingsService(db: AppDb) {
 }
 
 export type SettingsService = ReturnType<typeof createSettingsService>
+
+/** internal marker: the Home layout is stored in fine-grid units at this scale */
+const KEY_HOME_GRID_SCALE = 'homeGridScale'
+
+/**
+ * One-time: a Home layout saved on the original 12×6 grid is scaled up to the
+ * fine grid, so it looks identical. Runs at boot, before the renderer loads.
+ */
+export function migrateHomeGrid(settings: SettingsService): void {
+  if (settings.getRaw(KEY_HOME_GRID_SCALE) === String(HOME_GRID_SCALE)) return
+  const stored = settings.getRaw('homeLayout')
+  if (stored !== null) {
+    try {
+      const layout = JSON.parse(stored)
+      if (Array.isArray(layout)) settings.set({ homeLayout: scaleLayout(layout) as HomeTile[] })
+    } catch {
+      // corrupt value: leave it; sanitizeLayout falls back to the default layout
+    }
+  }
+  settings.setRaw(KEY_HOME_GRID_SCALE, String(HOME_GRID_SCALE))
+}

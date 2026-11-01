@@ -186,6 +186,20 @@ Add unit tests where sensible.
   (low under high in squarish/narrow tiles; a 1-row 2-wide tile shows highs only).
   The rain line is always reserved so columns line up.
 
+## v0.8.14 — finer Home grid, 36×18 (same branch)
+
+- `HOME_GRID_SCALE = 3` in `src/shared/home.ts`: the original 12×6 cells split 3 ways
+  (`HOME_COLS`/`HOME_ROWS` = 36/18). Sizes are written as `cells(n)` (n original
+  cells), so `TILE_SPECS` and `DEFAULT_HOME_LAYOUT` read as before. With the fixed
+  12px gap, 3 fine cells span exactly 1 old cell, so converted layouts are
+  pixel-identical. Snap step ≈ 37×39px on a 1368×912 window (was ≈111×118).
+- One-time conversion at boot: `migrateHomeGrid()` (settingsService) scales a saved
+  layout ×3 and sets internal key `homeGridScale = 3`. **An older exe would misread a
+  converted layout** (tiles oversized/shoved) — only the Home arrangement; re-arrange to fix.
+- Anything that reasons in cells must use `cells()`/`HOME_GRID_SCALE` (weather tile
+  thresholds, `e2e-home.mjs` coordinates, `homeLayout.test.ts`). Pixel checks use
+  `grid.spanW/spanH` (gaps included), not `w * cellW`.
+
 ## Wishlist (not started)
 
 - Header weather (top-left bar, `WeatherButton` in `features/weather/WeatherHeader.tsx`):

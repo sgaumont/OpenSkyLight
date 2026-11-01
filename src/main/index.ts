@@ -2,7 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { DateTime } from 'luxon'
 import { openDatabase } from './db/client'
-import { createSettingsService } from './services/settingsService'
+import { createSettingsService, migrateHomeGrid } from './services/settingsService'
 import { createPeopleService } from './services/peopleService'
 import { createCalendarService } from './services/calendarService'
 import { createEventService } from './services/eventService'
@@ -56,6 +56,7 @@ if (!gotLock) {
     const deviceTz = (): string => DateTime.local().zoneName ?? 'UTC'
 
     const settings = createSettingsService(db)
+    migrateHomeGrid(settings)
     const kiosk = createKiosk({ settings, broadcast })
     const updater = createUpdater({ broadcast })
     const cameraService = createCameraService(settings)

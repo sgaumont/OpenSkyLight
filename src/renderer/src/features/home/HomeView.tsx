@@ -110,7 +110,7 @@ export function HomeView() {
           effective.map((tile) => {
           const zoom = NO_TEXT_SIZE.has(tile.type) ? 1 : tileZoom(textSizes, tile.config?.textSize)
           // bigger text makes the tile effectively smaller
-          const compact = tile.w * grid.cellW < 260 * zoom || tile.h * grid.cellH < 170 * zoom
+          const compact = grid.spanW(tile.w) < 260 * zoom || grid.spanH(tile.h) < 170 * zoom
           const isActive = grid.activeTileId === tile.id
           if (!editing) {
             const navTarget = TILE_REGISTRY[tile.type].navTarget

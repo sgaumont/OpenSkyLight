@@ -7,6 +7,7 @@ import type { HomeTile } from '@shared/types'
 import { presetById } from '@shared/rss'
 import { agendaRange, dayRange, eachDay } from '@shared/dates'
 import { withoutEnded } from '@shared/occurrences'
+import { HOME_GRID_SCALE } from '@shared/home'
 import { ipcInvoke } from '../../api/client'
 import {
   useBalances,
@@ -230,12 +231,16 @@ export function WeatherTile({ tile, compact }: TileProps) {
   if (!weather) return <Placeholder>Loading forecast…</Placeholder>
   // the header already shows the current temperature; this tile is the 5-day outlook:
   // stacked rows in a tall tile, one line per day in a wide 1-row tile, columns otherwise
-  const narrow = tile.w <= 2
-  const layout = tile.h > tile.w ? 'stacked' : tile.h === 1 && !narrow ? 'short' : 'columns'
+  // in original grid cells (the fine grid allows fractions)
+  const cols = tile.w / HOME_GRID_SCALE
+  const rows = tile.h / HOME_GRID_SCALE
+  const narrow = cols < 2.5
+  const oneRow = rows < 1.5
+  const layout = tile.h > tile.w ? 'stacked' : oneRow && !narrow ? 'short' : 'columns'
   // columns are width-bound, so in squarish (or narrow) tiles the low goes under the
   // high, letting everything grow taller; a 1-row column has room for the high only
   const tempsStacked = compact || tile.h / tile.w >= 0.6
-  const highOnly = tile.h === 1
+  const highOnly = oneRow
   return (
     <div className="h-full overflow-hidden" style={{ containerType: 'size' }}>
       <div className={`flex h-full ${layout === 'stacked' ? 'flex-col' : ''}`}>

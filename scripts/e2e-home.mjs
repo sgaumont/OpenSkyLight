@@ -12,8 +12,9 @@ const userData = mkdtempSync(join(tmpdir(), 'osl-home-'))
 mkdirSync('shots', { recursive: true })
 
 const GAP = 12
-const COLS = 12
-const ROWS = 6
+// the fine Home grid: the original 12x6 cells split 3 ways per side
+const COLS = 36
+const ROWS = 18
 
 async function launch() {
   const app = await electron.launch({
@@ -61,24 +62,24 @@ async function dragTo(page, fromX, fromY, toX, toY) {
     await page.getByLabel('Remove Chores progress').click()
     await page.waitForSelector('[data-tile-type="meals"]', { state: 'detached', timeout: 5000 })
 
-    // drag the stars tile (3x2 at 9,4) into the hole at (9,0)
+    // drag the stars tile (9x6 at 27,12) into the hole at (27,0)
     const { cellCenter, cellH } = await cellMath(page)
-    const from = cellCenter(9, 4, 3, 2)
-    const to = cellCenter(9, 0, 3, 2)
+    const from = cellCenter(27, 12, 9, 6)
+    const to = cellCenter(27, 0, 9, 6)
     await dragTo(page, from.x, from.y, to.x, to.y)
     const movedBox = await page.locator('[data-tile-id="default-starBalances"]').boundingBox()
-    const expected = cellCenter(9, 0, 3, 2)
+    const expected = cellCenter(27, 0, 9, 6)
     if (Math.abs(movedBox.y + movedBox.height / 2 - expected.y) > cellH / 2) {
       throw new Error(`drag failed: tile center ${movedBox.y + movedBox.height / 2} vs expected ${expected.y}`)
     }
 
-    // resize it one cell taller via the corner grip (it sits at the right
+    // resize it one original row (3 fine rows) taller via the corner grip (it sits at the right
     // edge, so growing wider would be out of bounds)
     const heightBefore = movedBox.height
     const grip = await page.locator('[data-tile-id="default-starBalances"] [data-resize-handle]').boundingBox()
-    await dragTo(page, grip.x + grip.width / 2, grip.y + grip.height / 2, grip.x + grip.width / 2, grip.y + grip.height / 2 + cellH + GAP)
+    await dragTo(page, grip.x + grip.width / 2, grip.y + grip.height / 2, grip.x + grip.width / 2, grip.y + grip.height / 2 + 3 * (cellH + GAP))
     const heightAfter = (await page.locator('[data-tile-id="default-starBalances"]').boundingBox()).height
-    if (heightAfter - heightBefore < cellH * 0.6) {
+    if (heightAfter - heightBefore < 3 * cellH) {
       throw new Error(`resize failed: height ${heightBefore} -> ${heightAfter}`)
     }
 
@@ -107,7 +108,7 @@ async function dragTo(page, fromX, fromY, toX, toY) {
       return res.data.homeLayout
     })
     const stars = layout.find((t) => t.id === 'default-starBalances')
-    if (!stars || stars.x !== 9 || stars.y !== 0 || stars.w !== 3 || stars.h !== 3) {
+    if (!stars || stars.x !== 27 || stars.y !== 0 || stars.w !== 9 || stars.h !== 9) {
       throw new Error(`persisted stars tile wrong: ${JSON.stringify(stars)}`)
     }
     if (layout.some((t) => t.type === 'meals')) throw new Error('removed meals tile came back')

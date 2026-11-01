@@ -6,8 +6,31 @@ import { clampTextSize } from './textSize'
  * (drag/resize validation) and the tests; no DOM, no Electron.
  */
 
-export const HOME_COLS = 12
-export const HOME_ROWS = 6
+/**
+ * Each original 12×6 grid cell is split into HOME_GRID_SCALE steps per side, so
+ * tiles snap 3× more finely. Sizes below are written in original cells × scale;
+ * with the fixed 12px gap, 3 fine cells span exactly one original cell.
+ */
+export const HOME_GRID_SCALE = 3
+/** original cells → fine grid units */
+export const cells = (n: number): number => n * HOME_GRID_SCALE
+
+export const HOME_COLS = cells(12)
+export const HOME_ROWS = cells(6)
+
+/** Layouts saved on the original 12×6 grid, converted to the fine grid (one-time). */
+export function scaleLayout(raw: unknown, factor: number = HOME_GRID_SCALE): unknown {
+  if (!Array.isArray(raw)) return raw
+  return raw.map((t) => {
+    if (typeof t !== 'object' || t === null) return t
+    const tile = t as Record<string, unknown>
+    const scaled = { ...tile }
+    for (const k of ['x', 'y', 'w', 'h']) {
+      if (typeof tile[k] === 'number') scaled[k] = (tile[k] as number) * factor
+    }
+    return scaled
+  })
+}
 
 export interface TileSpec {
   minW: number
@@ -22,34 +45,39 @@ export interface TileSpec {
   configKeys: (keyof HomeTileConfig)[]
 }
 
+/** min/default sizes in original cells, scaled to the fine grid */
+function spec(minW: number, minH: number, defaultW: number, defaultH: number, rest: Pick<TileSpec, 'allowMultiple' | 'configKeys'>): TileSpec {
+  return { minW: cells(minW), minH: cells(minH), defaultW: cells(defaultW), defaultH: cells(defaultH), ...rest }
+}
+
 export const TILE_SPECS: Record<HomeTileType, TileSpec> = {
   // text tiles scroll (TileScroll), so their minimum heights are low; Today keeps
   // 2 rows for its meal strip. Weather has a 1-row layout and scales to its box.
   // Clock/photo/camera/timer don't scroll.
-  todayEvents: { minW: 3, minH: 2, defaultW: 4, defaultH: 6, allowMultiple: false, configKeys: [] },
-  weekAgenda: { minW: 4, minH: 1, defaultW: 5, defaultH: 4, allowMultiple: false, configKeys: [] },
-  weather: { minW: 2, minH: 1, defaultW: 3, defaultH: 2, allowMultiple: false, configKeys: [] },
-  choresProgress: { minW: 3, minH: 1, defaultW: 3, defaultH: 2, allowMultiple: false, configKeys: [] },
-  starBalances: { minW: 2, minH: 1, defaultW: 2, defaultH: 2, allowMultiple: false, configKeys: [] },
-  list: { minW: 2, minH: 1, defaultW: 3, defaultH: 4, allowMultiple: true, configKeys: ['listId'] },
-  meals: { minW: 2, minH: 1, defaultW: 3, defaultH: 2, allowMultiple: false, configKeys: [] },
-  clock: { minW: 2, minH: 2, defaultW: 2, defaultH: 2, allowMultiple: false, configKeys: [] },
-  photo: { minW: 2, minH: 2, defaultW: 3, defaultH: 4, allowMultiple: true, configKeys: [] },
-  news: { minW: 3, minH: 1, defaultW: 4, defaultH: 3, allowMultiple: true, configKeys: ['feedId'] },
-  camera: { minW: 3, minH: 2, defaultW: 4, defaultH: 3, allowMultiple: true, configKeys: ['cameraId'] },
-  birdnet: { minW: 3, minH: 1, defaultW: 4, defaultH: 4, allowMultiple: true, configKeys: ['birdnetUrl'] },
-  timer: { minW: 3, minH: 2, defaultW: 4, defaultH: 3, allowMultiple: false, configKeys: [] }
+  todayEvents: spec(3, 2, 4, 6, { allowMultiple: false, configKeys: [] }),
+  weekAgenda: spec(4, 1, 5, 4, { allowMultiple: false, configKeys: [] }),
+  weather: spec(2, 1, 3, 2, { allowMultiple: false, configKeys: [] }),
+  choresProgress: spec(3, 1, 3, 2, { allowMultiple: false, configKeys: [] }),
+  starBalances: spec(2, 1, 2, 2, { allowMultiple: false, configKeys: [] }),
+  list: spec(2, 1, 3, 4, { allowMultiple: true, configKeys: ['listId'] }),
+  meals: spec(2, 1, 3, 2, { allowMultiple: false, configKeys: [] }),
+  clock: spec(2, 2, 2, 2, { allowMultiple: false, configKeys: [] }),
+  photo: spec(2, 2, 3, 4, { allowMultiple: true, configKeys: [] }),
+  news: spec(3, 1, 4, 3, { allowMultiple: true, configKeys: ['feedId'] }),
+  camera: spec(3, 2, 4, 3, { allowMultiple: true, configKeys: ['cameraId'] }),
+  birdnet: spec(3, 1, 4, 4, { allowMultiple: true, configKeys: ['birdnetUrl'] }),
+  timer: spec(3, 2, 4, 3, { allowMultiple: false, configKeys: [] })
 }
 
-/** Tiles the full 12x6 grid with no gaps. Clock/weather tiles are NOT placed by
- * default — the header already shows both — but stay in the Add Tile sheet. */
-export const DEFAULT_HOME_LAYOUT: HomeTile[] = [
+/** Tiles the full grid with no gaps (written in original cells). Clock/weather tiles
+ * are NOT placed by default — the header already shows both — but stay in the Add Tile sheet. */
+export const DEFAULT_HOME_LAYOUT: HomeTile[] = scaleLayout([
   { id: 'default-todayEvents', type: 'todayEvents', x: 0, y: 0, w: 4, h: 6 },
   { id: 'default-weekAgenda', type: 'weekAgenda', x: 4, y: 0, w: 5, h: 6 },
   { id: 'default-meals', type: 'meals', x: 9, y: 0, w: 3, h: 2 },
   { id: 'default-choresProgress', type: 'choresProgress', x: 9, y: 2, w: 3, h: 2 },
   { id: 'default-starBalances', type: 'starBalances', x: 9, y: 4, w: 3, h: 2 }
-]
+]) as HomeTile[]
 
 export interface Rect {
   x: number

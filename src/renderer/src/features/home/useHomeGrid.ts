@@ -178,6 +178,9 @@ export function useHomeGrid(opts: {
     ready: cellW > 0,
     cellW,
     cellH,
+    /** pixel size of a span of grid units, gaps included */
+    spanW,
+    spanH,
     ghost,
     activeTileId: gesture?.started ? gesture.tileId : null,
     tileHandlers,
