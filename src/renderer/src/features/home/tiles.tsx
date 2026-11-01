@@ -163,7 +163,8 @@ export function WeekAgendaTile({ compact }: TileProps) {
         <Placeholder>A quiet week ahead</Placeholder>
       ) : (
         // one grid for the whole tile (day | dot | time | title): the auto-sized
-        // time column is as wide as the longest time shown, so every title lines up
+        // time column is as wide as the longest entry shown ("All Day" included),
+        // so every title lines up
         <TileScroll innerClassName="grid grid-cols-[auto_auto_auto_minmax(0,1fr)] items-center gap-x-1.5 gap-y-0.5">
           {days.flatMap((day, dayIndex) => {
             const key = day.toISODate()!
@@ -181,7 +182,7 @@ export function WeekAgendaTile({ compact }: TileProps) {
                     style={{ backgroundColor: occurrenceColor(occ, peopleById, calendarsById) }}
                   />
                   <span className={`text-right text-xs font-bold whitespace-nowrap text-ink-faint tabular-nums ${gap}`}>
-                    {!occ.allDay && formatTime(occ.start, settings?.timeFormat ?? '12h')}
+                    {occ.allDay ? 'All Day' : formatTime(occ.start, settings?.timeFormat ?? '12h')}
                   </span>
                   <span className={`truncate font-bold ${compact ? 'text-xs' : 'text-sm'} ${gap}`}>{occ.title}</span>
                 </Fragment>

@@ -113,7 +113,8 @@ Add unit tests where sensible.
 - Covers the 6 days after today (today has its own tile); rolls over at midnight.
 - Shows every event (the tile scrolls) — no more "+N more" trimming.
 - Time before the name; the whole tile is one grid, so the time column is as wide
-  as the longest time shown and every name lines up (all-day rows leave it blank).
+  as the longest entry shown and every name lines up. All-day rows show "All Day"
+  in the time column (v0.8.9).
 
 ## v0.8.5 — photos + CI (same branch; 0.8.4 was never released)
 
