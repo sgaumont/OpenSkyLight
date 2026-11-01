@@ -120,9 +120,6 @@ Add unit tests where sensible.
 - Screensaver: shuffle photos, showing every photo once per pass, then start
   a new random order (no repeats until all have been shown).
 - Home photo tile: tap to advance to the next picture.
-- Week tab: put the event time in front of the event name on one line (today the
-  time sits on its own line above the name, in `EventCard.tsx`). EventCard is shared
-  with Day/Agenda views — confirm whether they should change too.
 
 ## Release checklist
 
