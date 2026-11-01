@@ -71,7 +71,7 @@ my own changes to one wall kiosk while staying mergeable with upstream.
   (`ipc/schemas.ts`), date ranges (`dates.ts`).
 - `tests/unit` — vitest suites.
 
-## Round 1 changes (branch `feature/round-1`)
+## Round 1 changes — shipped in v0.8.1 (branch `feature/round-1`)
 
 A. **Today tile hides finished events.** Drop timed events whose end time has
    passed; keep all-day and in-progress events. Re-evaluate as time passes (no
@@ -88,8 +88,14 @@ Add unit tests where sensible.
 
 ## Wishlist (not started)
 
-- Per-tab font sizes (calendar, chores, lists, meals, etc.).
-- Per-tile font sizes on the home screen.
+- Text sizes. Plan: a global "Text size" setting first (scale the root `rem`;
+  nearly all Tailwind sizing is rem-based), then the two overrides below.
+  - Per-tab font sizes (calendar, chores, lists, meals, etc.).
+  - Per-tile font sizes on the home screen.
+- Scrollable tiles on the Home tab (tiles currently clip overflow).
+- Screensaver: shuffle photos, showing every photo once per pass, then start
+  a new random order (no repeats until all have been shown).
+- Home photo tile: tap to advance to the next picture.
 
 ## Release checklist
 
