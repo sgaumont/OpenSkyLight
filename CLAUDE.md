@@ -31,10 +31,15 @@ my own changes to one wall kiosk while staying mergeable with upstream.
 
 ## Kiosk
 
-- Device: Microsoft Surface Pro, Windows 10, touch-only wall display.
-- Currently running upstream's release build (v0.8.0 or earlier).
-- Install type (NSIS installer vs portable exe): **TBD — confirm with me.**
-  Only the NSIS install auto-updates; the portable exe never does.
+- Device: Microsoft Surface Pro (~10" screen), Windows 10, touch-only wall display.
+  I develop on a 55" screen, so sizes/layout/fonts can only be judged on the device.
+- **Every change gets tested on the Surface before release:** build the portable
+  exe (`npm run dist` → `dist\OpenSkyLight <ver>.exe`), I run it on the device
+  (fully quit the running copy first — single-instance lock), and nothing is
+  released until I approve.
+- Currently runs the **portable exe** of upstream's build (v0.8.0 or earlier).
+  Only the NSIS (Setup) install auto-updates; the portable exe never does.
+  Both share `%APPDATA%\OpenSkyLight`, so switching install type keeps all data.
 - After my first fork release is installed over the top, its `app-update.yml`
   points at `sgaumont/OpenSkyLight`, so the kiosk follows my releases, not upstream's.
 
