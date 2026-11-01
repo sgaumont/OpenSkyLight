@@ -213,6 +213,12 @@ Add unit tests where sensible.
 - v0.8.18: the one-line weather layout is only for tiles ≤ 1 row (`rows <= 1`); the fine
   grid's in-between heights (1⅓, 1⅔ rows — the kiosk's tile) use columns and fill
   ~80% of the height instead of ~40%. Icon width cap 14 → 17cqw.
+- v0.8.20: tile padding halved and equal on all sides — `tilePadding()` = ~3.5% of the
+  shorter side, 3–8px × tile text size. Weather columns: items sized to ~80% of the height,
+  `justify-between` + `py-[1.5cqh]` spread the rest, so the forecast fills ~97% of the
+  height (descenders overflowed by 2px without the inset).
+- v0.8.20: the Home Today tile header shows its date, `TODAY (SUN 1)` (same `ccc d` format
+  as the This week day labels), so This week reads as its continuation.
 
 ## v0.8.16 — Week view wraps names; no Agenda in the menu (branch `feature/week-wrap`)
 

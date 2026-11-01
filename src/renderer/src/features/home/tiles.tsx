@@ -112,7 +112,8 @@ export function TodayEventsTile({ compact }: TileProps) {
   const occurrences = withoutEnded(all, now)
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <TileTitle>Today</TileTitle>
+      {/* the date ties it to the This week tile, whose list starts with tomorrow */}
+      <TileTitle>Today ({DateTime.fromISO(todayKey, { zone: ZONE }).toFormat('ccc d')})</TileTitle>
       {/* events take the space between the title and the meal strip */}
       <div className="flex min-h-0 flex-1 flex-col">
         {occurrences.length === 0 ? (
@@ -305,18 +306,20 @@ export function WeatherTile({ tile }: TileProps) {
           }
 
           // high above, low below: each column is only one value wide, so the
-          // width-bound columns can use much larger text
+          // width-bound columns can use much larger text. The items take ~80% of the
+          // height and justify-between spreads the rest between them, so the
+          // forecast runs edge to edge instead of floating with bands above/below.
           return (
-            <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center justify-center gap-[3cqh]">
-              <span className="font-bold tabular-nums leading-none" style={{ fontSize: highOnly ? fit(11, 22, 5, 26) : fit(13, 17, 7.5, 64) }}>
+            <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center justify-between gap-[1cqh] py-[1.5cqh]">
+              <span className="font-bold tabular-nums leading-none" style={{ fontSize: highOnly ? fit(11, 22, 5, 26) : fit(13, 22, 7.5, 64) }}>
                 {d.high}°
               </span>
-              <span className={labelCls} style={{ fontSize: fit(narrow ? 8 : 10, highOnly ? 16 : 7, 3.6, 24) }}>
+              <span className={labelCls} style={{ fontSize: fit(narrow ? 8 : 10, highOnly ? 16 : 8.5, 3.6, 24) }}>
                 {label}
               </span>
-              {icon(highOnly ? fit(14, 30, 12, 40) : fit(18, 18, 17, 80))}
+              {icon(highOnly ? fit(14, 30, 12, 40) : fit(18, 23, 17, 80))}
               {!highOnly && (
-                <span className="font-bold text-ink-faint tabular-nums leading-none" style={{ fontSize: fit(11, 14, 6.2, 52) }}>
+                <span className="font-bold text-ink-faint tabular-nums leading-none" style={{ fontSize: fit(11, 17, 6.2, 52) }}>
                   {d.low}°
                 </span>
               )}
@@ -324,8 +327,8 @@ export function WeatherTile({ tile }: TileProps) {
                   the same height and the days line up across the tile */}
               {!highOnly && (
                 <span
-                  className={`font-bold text-[#0091FF] ${rainy ? '' : 'invisible'}`}
-                  style={{ fontSize: fit(10, 7, 2.8, 20) }}
+                  className={`font-bold leading-none text-[#0091FF] ${rainy ? '' : 'invisible'}`}
+                  style={{ fontSize: fit(10, 8, 3.2, 20) }}
                 >
                   {rainy ? d.precipProb : 0}%
                 </span>

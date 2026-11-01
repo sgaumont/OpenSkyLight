@@ -25,12 +25,12 @@ const TileBody = memo(function TileBody({ tile, compact, zoom }: { tile: HomeTil
 })
 
 /**
- * Tile padding in px: ~7% of the tile's shorter side, so small tiles don't lose a
- * quarter of their space to it, scaled with the tile's own text size, between 6px
- * and 16px × that size. Large tiles at 100% keep the original 16px.
+ * Tile padding in px, the same on all sides: ~3.5% of the tile's shorter side,
+ * scaled with the tile's own text size, between 3px and 8px × that size — small
+ * tiles keep almost all their space for content.
  */
 function tilePadding(widthPx: number, heightPx: number, zoom: number): number {
-  return Math.round(Math.max(6, Math.min(16 * zoom, 0.07 * Math.min(widthPx, heightPx))))
+  return Math.round(Math.max(3, Math.min(8 * zoom, 0.035 * Math.min(widthPx, heightPx))))
 }
 
 /** Edge-to-edge media tiles have no text to size (and bleed past the padding, which zoom would break). */
