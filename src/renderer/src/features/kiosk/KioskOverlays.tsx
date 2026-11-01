@@ -6,9 +6,16 @@ import { useSettings } from '../../api/hooks'
 import { ZONE } from '../../stores/uiStore'
 import { useKioskState } from '../../stores/kioskStore'
 import { guardInput } from '@shared/inputGuard'
+import { ShuffleDeck } from '@shared/shuffleDeck'
 
 const WAKE_OVERRIDE_MS = 5 * 60 * 1000
 const SLIDE_MS = 12_000
+
+/**
+ * Shuffled slideshow order, kept for the life of the app so each screensaver
+ * session picks up where the last left off: every photo shows once per pass.
+ */
+const slideDeck = new ShuffleDeck<string>()
 
 /** Handler for the tap that dismisses an overlay: it wakes the screen and nothing else. */
 function consumeWakeTap(action: () => void) {
@@ -36,18 +43,27 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
     staleTime: 60_000
   })
   const { data: settings } = useSettings()
-  const [index, setIndex] = useState(0)
+  const [current, setCurrent] = useState<string | null>(null)
   const now = useClock()
   const timeFormat = settings?.timeFormat ?? '12h'
+  // the list is re-fetched; only a real change of photos should reshuffle
+  const photosKey = photos.join('\n')
 
+  // photosKey stands in for photos as the dependency
   useEffect(() => {
+    // an empty list (still loading) must not discard the pass in progress
+    if (photos.length === 0) {
+      setCurrent(null)
+      return
+    }
+    slideDeck.setItems(photos)
+    setCurrent(slideDeck.next() ?? null)
     if (photos.length < 2) return
-    const t = setInterval(() => setIndex((i) => (i + 1) % photos.length), SLIDE_MS)
+    const t = setInterval(() => setCurrent(slideDeck.next() ?? null), SLIDE_MS)
     return () => clearInterval(t)
-  }, [photos.length])
+  }, [photosKey])
 
-  const current = photos.length > 0 ? photos[index % photos.length] : null
-  const next = photos.length > 1 ? photos[(index + 1) % photos.length] : null
+  const next = photos.length > 1 ? (slideDeck.peek() ?? null) : null
 
   return (
     <div className="fixed inset-0 z-[80] cursor-none bg-black" onPointerDown={consumeWakeTap(onDismiss)}>

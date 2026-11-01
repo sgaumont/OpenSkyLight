@@ -666,6 +666,8 @@ export function CameraTile({ tile }: TileProps) {
   )
 }
 
+const PHOTO_TILE_MS = 30_000
+
 export function PhotoTile({ tile }: TileProps) {
   const { data: photos = [] } = useQuery({
     queryKey: ['screensaverPhotos'],
@@ -673,15 +675,19 @@ export function PhotoTile({ tile }: TileProps) {
     staleTime: 60_000
   })
   const [index, setIndex] = useState(0)
+  // re-armed on every change, so a tapped photo gets its full time on screen
   useEffect(() => {
     if (photos.length < 2) return
-    const t = setInterval(() => setIndex((i) => (i + 1) % photos.length), 30_000)
-    return () => clearInterval(t)
-  }, [photos.length])
+    const t = setTimeout(() => setIndex((i) => i + 1), PHOTO_TILE_MS)
+    return () => clearTimeout(t)
+  }, [photos.length, index])
   if (photos.length === 0) return <Placeholder>Pick a photo folder in Settings → General</Placeholder>
   const src = photos[(index + tile.id.length) % photos.length]
   return (
-    <div className="-m-4 h-[calc(100%+2rem)] overflow-hidden">
+    <div
+      className="-m-4 h-[calc(100%+2rem)] overflow-hidden"
+      onClick={photos.length > 1 ? () => setIndex((i) => i + 1) : undefined}
+    >
       <img key={src} src={src} alt="" className="h-full w-full object-cover" style={{ animation: 'fade-in 1s ease backwards' }} />
     </div>
   )

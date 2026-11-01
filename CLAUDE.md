@@ -115,11 +115,19 @@ Add unit tests where sensible.
 - Time before the name; the whole tile is one grid, so the time column is as wide
   as the longest time shown and every name lines up (all-day rows leave it blank).
 
+## v0.8.5 — photos + CI (same branch; 0.8.4 was never released)
+
+- Screensaver shuffle: `ShuffleDeck` (`src/shared/shuffleDeck.ts`) deals every
+  photo once per pass in random order, reshuffles each pass, never repeats
+  back-to-back. The deck lives for the app's lifetime (module scope in
+  `KioskOverlays.tsx`), so successive screensaver sessions continue the pass.
+- Home photo tile: tap to advance; the 30s timer restarts on every change.
+- Release workflow: `actions/checkout@v7`, `actions/setup-node@v7` (Node 24
+  runtime; clears GitHub's Node 20 deprecation warning).
+
 ## Wishlist (not started)
 
-- Screensaver: shuffle photos, showing every photo once per pass, then start
-  a new random order (no repeats until all have been shown).
-- Home photo tile: tap to advance to the next picture.
+- (empty)
 
 ## Release checklist
 
