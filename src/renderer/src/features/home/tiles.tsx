@@ -123,9 +123,12 @@ export function TodayEventsTile({ compact }: TileProps) {
               const color = occurrenceColor(occ, peopleById, calendarsById)
               return (
                 <div key={occ.key} className="flex items-center gap-2 rounded-lg bg-paper-deep/40 px-2 py-1.5">
-                  <span className="h-7 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                  {/* stretches with a wrapped, multi-line name */}
+                  <span className="min-h-7 w-1.5 shrink-0 self-stretch rounded-full" style={{ backgroundColor: color }} />
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate font-bold ${compact ? 'text-sm' : 'text-base'}`}>{occ.title}</span>
+                    <span className={`block font-bold [overflow-wrap:anywhere] ${compact ? 'text-sm' : 'text-base'}`}>
+                      {occ.title}
+                    </span>
                     <span className="block text-xs font-bold text-ink-faint">
                       {occ.allDay ? 'All day' : formatTime(occ.start, settings?.timeFormat ?? '12h')}
                     </span>
