@@ -210,6 +210,9 @@ Add unit tests where sensible.
 - Meals/Chores/Stars tile lists are top-aligned (were vertically centred).
 - Weather columns: high above the day, low below the icon (one value wide per
   column → larger numbers); width caps sized so "-12°" still fits.
+- v0.8.18: the one-line weather layout is only for tiles ≤ 1 row (`rows <= 1`); the fine
+  grid's in-between heights (1⅓, 1⅔ rows — the kiosk's tile) use columns and fill
+  ~80% of the height instead of ~40%. Icon width cap 14 → 17cqw.
 
 ## v0.8.16 — Week view wraps names; no Agenda in the menu (branch `feature/week-wrap`)
 

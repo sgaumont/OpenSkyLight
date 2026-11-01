@@ -238,7 +238,9 @@ export function WeatherTile({ tile }: TileProps) {
   const cols = tile.w / HOME_GRID_SCALE
   const rows = tile.h / HOME_GRID_SCALE
   const narrow = cols < 2.5
-  const oneRow = rows < 1.5
+  // only a true 1-row tile gets the one-line layout; anything taller (the fine grid allows
+  // 1⅓, 1⅔ rows…) has room for high-over-low columns, which use the height far better
+  const oneRow = rows <= 1
   const layout = tile.h > tile.w ? 'stacked' : oneRow && !narrow ? 'short' : 'columns'
   // a 1-row column only has room for the high
   const highOnly = oneRow
@@ -306,7 +308,7 @@ export function WeatherTile({ tile }: TileProps) {
               <span className={labelCls} style={{ fontSize: fit(narrow ? 8 : 10, highOnly ? 16 : 7, 3.6, 24) }}>
                 {label}
               </span>
-              {icon(highOnly ? fit(14, 30, 12, 40) : fit(18, 18, 14, 80))}
+              {icon(highOnly ? fit(14, 30, 12, 40) : fit(18, 18, 17, 80))}
               {!highOnly && (
                 <span className="font-bold text-ink-faint tabular-nums leading-none" style={{ fontSize: fit(11, 14, 6.2, 52) }}>
                   {d.low}°
