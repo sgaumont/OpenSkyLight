@@ -161,9 +161,18 @@ Add unit tests where sensible.
   value seen on mount, and requests while already editing). Same aria-label, so
   `e2e-home` still finds it.
 
+## v0.8.11 — Weather tile = 5-day forecast (same branch)
+
+- `WeatherTile` no longer shows the current temperature (the header has it); it
+  fills the tile with the 5 fetched days (today + 4; `forecast_days=5` in
+  `weatherService.ts`): day, icon, high/low, rain % when ≥ 20%. Side by side when
+  the tile is wide, stacked rows when it's taller than wide; narrow (compact)
+  tiles put the low under the high.
+
 ## Wishlist (not started)
 
-- (empty)
+- Header weather (top-left bar, `WeatherButton` in `features/weather/WeatherHeader.tsx`):
+  show today's expected high and low next to the current temperature.
 
 ## Release checklist
 

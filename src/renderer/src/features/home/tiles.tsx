@@ -221,30 +221,40 @@ export function WeatherTile({ tile, compact }: TileProps) {
   const { data: weather } = useWeather()
   if (!settings?.weather) return <Placeholder>Set a location in Settings → General</Placeholder>
   if (!weather) return <Placeholder>Loading forecast…</Placeholder>
-  const Icon = weatherIcon(weather.code, weather.isDay)
-  const showForecast = tile.w >= 3 && !compact
+  // the header already shows the current temperature; this tile is the 5-day outlook,
+  // side by side in a wide tile, stacked in a tall one
+  const stacked = tile.h > tile.w
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex flex-1 items-center justify-center gap-3">
-        <Icon size={compact ? 34 : 44} className="text-ember-deep" />
-        <span className={`font-display ${compact ? 'text-4xl' : 'text-5xl'}`}>{weather.temperature}°</span>
-      </div>
-      {showForecast && (
-        <div className="flex shrink-0 justify-around pb-1">
-          {weather.daily.slice(0, 4).map((d, i) => {
-            const DayIcon = weatherIcon(d.code, true)
-            return (
-              <span key={d.date} className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] font-extrabold text-ink-faint uppercase">
-                  {i === 0 ? 'Now' : DateTime.fromISO(d.date).toFormat('ccc')}
-                </span>
-                <DayIcon size={16} className="text-ember-deep" />
-                <span className="text-xs font-bold">{d.high}°</span>
-              </span>
-            )
-          })}
-        </div>
-      )}
+    <div className={`flex h-full overflow-hidden ${stacked ? 'flex-col' : ''}`}>
+      {weather.daily.slice(0, 5).map((d, i) => {
+        const Icon = weatherIcon(d.code, true)
+        const label = i === 0 ? 'Today' : DateTime.fromISO(d.date).toFormat('ccc')
+        const rain = d.precipProb !== null && d.precipProb >= 20 && (
+          <span className="text-xs font-bold text-[#0091FF]">{d.precipProb}%</span>
+        )
+        return stacked ? (
+          <div key={d.date} className="flex min-h-0 flex-1 items-center gap-2">
+            <span className="w-12 shrink-0 text-xs font-extrabold text-ink-faint uppercase">{label}</span>
+            <Icon size={compact ? 20 : 26} className="shrink-0 text-ember-deep" />
+            {rain}
+            <span className="ml-auto font-bold tabular-nums">{d.high}°</span>
+            <span className="w-8 text-right font-bold text-ink-faint tabular-nums">{d.low}°</span>
+          </div>
+        ) : (
+          <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1">
+            <span className={`font-extrabold text-ink-faint uppercase ${compact ? 'text-[10px]' : 'text-xs'}`}>
+              {label}
+            </span>
+            <Icon size={compact ? 22 : 30} className="text-ember-deep" />
+            {/* narrow columns put the low under the high instead of beside it */}
+            <span className={`flex items-baseline tabular-nums ${compact ? 'flex-col items-center leading-tight' : 'gap-1'}`}>
+              <span className={`font-bold ${compact ? 'text-sm' : 'text-base'}`}>{d.high}°</span>
+              <span className={`font-bold text-ink-faint ${compact ? 'text-xs' : 'text-sm'}`}>{d.low}°</span>
+            </span>
+            {rain}
+          </div>
+        )
+      })}
     </div>
   )
 }
