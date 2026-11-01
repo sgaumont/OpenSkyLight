@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import mpegts from 'mpegts.js'
@@ -135,48 +135,61 @@ export function TodayEventsTile({ compact }: TileProps) {
   )
 }
 
+/** Today's date key, re-checked every minute so a tile rolls over at midnight. */
+function useTodayKey(): string {
+  const [key, setKey] = useState(today)
+  useEffect(() => {
+    const t = setInterval(() => setKey(today()), 60_000)
+    return () => clearInterval(t)
+  }, [])
+  return key
+}
+
 export function WeekAgendaTile({ compact }: TileProps) {
-  const range = agendaRange(today(), ZONE, 7)
+  const todayKey = useTodayKey()
+  // today has its own tile, so this one covers the 6 days after it
+  const range = useMemo(() => {
+    const tomorrow = DateTime.fromISO(todayKey, { zone: ZONE }).plus({ days: 1 }).toISODate()!
+    return agendaRange(tomorrow, ZONE, 6)
+  }, [todayKey])
   const { byDay, peopleById, calendarsById } = useCalendarData(range)
   const { data: settings } = useSettings()
   const days = eachDay(range, ZONE)
+  const empty = days.every((day) => (byDay.get(day.toISODate()!) ?? []).length === 0)
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <TileTitle>This week</TileTitle>
-      <TileScroll innerClassName="flex flex-col gap-1">
-        {days.map((day) => {
-          const key = day.toISODate()!
-          const occs = byDay.get(key) ?? []
-          if (occs.length === 0) return null
-          return (
-            <div key={key} className="flex items-start gap-2">
-              <span className="w-12 shrink-0 pt-0.5 text-xs font-extrabold text-ink-faint uppercase">
-                {key === today() ? 'Today' : day.toFormat('ccc d')}
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                {occs.slice(0, compact ? 1 : 3).map((occ) => (
-                  <span key={occ.key} className="flex min-w-0 items-center gap-1.5">
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: occurrenceColor(occ, peopleById, calendarsById) }}
-                    />
-                    <span className={`truncate font-bold ${compact ? 'text-xs' : 'text-sm'}`}>{occ.title}</span>
-                    {!occ.allDay && (
-                      <span className="shrink-0 text-xs font-bold text-ink-faint">
-                        {formatTime(occ.start, settings?.timeFormat ?? '12h')}
-                      </span>
-                    )}
+      {empty ? (
+        <Placeholder>A quiet week ahead</Placeholder>
+      ) : (
+        // one grid for the whole tile (day | dot | time | title): the auto-sized
+        // time column is as wide as the longest time shown, so every title lines up
+        <TileScroll innerClassName="grid grid-cols-[auto_auto_auto_minmax(0,1fr)] items-center gap-x-1.5 gap-y-0.5">
+          {days.flatMap((day, dayIndex) => {
+            const key = day.toISODate()!
+            const occs = byDay.get(key) ?? []
+            return occs.map((occ, i) => {
+              // a little space above each new day
+              const gap = i === 0 && dayIndex > 0 ? 'mt-1' : ''
+              return (
+                <Fragment key={`${key}|${occ.key}`}>
+                  <span className={`pr-1 text-xs font-extrabold text-ink-faint uppercase ${gap}`}>
+                    {i === 0 ? day.toFormat('ccc d') : ''}
                   </span>
-                ))}
-                {occs.length > (compact ? 1 : 3) && (
-                  <span className="text-xs font-extrabold text-ink-faint">+{occs.length - (compact ? 1 : 3)} more</span>
-                )}
-              </span>
-            </div>
-          )
-        })}
-        {[...byDay.values()].every((v) => v.length === 0) && <Placeholder>A quiet week so far</Placeholder>}
-      </TileScroll>
+                  <span
+                    className={`h-2 w-2 rounded-full ${gap}`}
+                    style={{ backgroundColor: occurrenceColor(occ, peopleById, calendarsById) }}
+                  />
+                  <span className={`text-right text-xs font-bold whitespace-nowrap text-ink-faint tabular-nums ${gap}`}>
+                    {!occ.allDay && formatTime(occ.start, settings?.timeFormat ?? '12h')}
+                  </span>
+                  <span className={`truncate font-bold ${compact ? 'text-xs' : 'text-sm'} ${gap}`}>{occ.title}</span>
+                </Fragment>
+              )
+            })
+          })}
+        </TileScroll>
+      )}
     </div>
   )
 }

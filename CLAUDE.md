@@ -108,15 +108,18 @@ Add unit tests where sensible.
 - **Scrollable Home tiles:** `TileScroll` in `tiles.tsx` — scrolls when content
   overflows, fades the bottom edge while there's more (scrollbars are hidden).
 
+## v0.8.4 — Home "This week" tile (branch `feature/this-week-tile`)
+
+- Covers the 6 days after today (today has its own tile); rolls over at midnight.
+- Shows every event (the tile scrolls) — no more "+N more" trimming.
+- Time before the name; the whole tile is one grid, so the time column is as wide
+  as the longest time shown and every name lines up (all-day rows leave it blank).
+
 ## Wishlist (not started)
 
 - Screensaver: shuffle photos, showing every photo once per pass, then start
   a new random order (no repeats until all have been shown).
 - Home photo tile: tap to advance to the next picture.
-- Home "This week" tile (`WeekAgendaTile` in `features/home/tiles.tsx`): start
-  tomorrow (today is already on the Today tile) and cover the next 6 days; show
-  ALL events per day instead of trimming to the first 3 (+N more). Likely needs
-  scrolling within the tile — overlaps with "scrollable tiles" above.
 - Week tab: put the event time in front of the event name on one line (today the
   time sits on its own line above the name, in `EventCard.tsx`). EventCard is shared
   with Day/Agenda views — confirm whether they should change too.
