@@ -40,8 +40,9 @@ my own changes to one wall kiosk while staying mergeable with upstream.
 - Runs the **portable exe**, deliberately — I deploy by copying it over myself.
   Its autorun points at a file named **`OpenSkyLight 0.8.0.exe`**, so that name
   never changes: `npm run dist` triggers `postdist` (`scripts/copy-kiosk-exe.mjs`),
-  which copies the build to `kiosk\OpenSkyLight 0.8.0.exe` (git-ignored). That file
-  is the one to copy to the Surface, whatever the real app version is.
+  which renames the portable build to `dist\OpenSkyLight 0.8.0.exe` (overwriting
+  the previous one) and deletes older versions' installers. That file is the one
+  to copy to the Surface, whatever the real app version is.
 - The updater is disabled in portable builds (`PORTABLE_EXECUTABLE_FILE` check in
   `src/main/updater.ts`); otherwise electron-updater would silently install the
   Setup version at 03:30. Keep that check when merging upstream.
@@ -108,7 +109,7 @@ Add unit tests where sensible.
 1. On the feature branch, bump the version first (`npm version X.Y.Z --no-git-tag-version`,
    above upstream's latest and our last release) so the tested exe reports it.
 2. Green: `npm test`, `npm run typecheck`.
-3. `npm run dist` → hand me `kiosk\OpenSkyLight 0.8.0.exe` to test on the Surface.
+3. `npm run dist` → hand me `dist\OpenSkyLight 0.8.0.exe` to test on the Surface.
    **Wait for my approval.**
 4. Merge to `main`, tag `vX.Y.Z`, push `main` and **only that tag**
    (`git push origin main vX.Y.Z` — never `--tags`, which would push upstream's tags).
