@@ -125,6 +125,16 @@ Add unit tests where sensible.
 - Release workflow: `actions/checkout@v7`, `actions/setup-node@v7` (Node 24
   runtime; clears GitHub's Node 20 deprecation warning).
 
+## v0.8.6 — sleep tap-to-wake lasts while in use (branch `fix/sleep-wake-while-used`)
+
+- Was: a tap during the sleep window woke the screen for a fixed 5 min (renderer
+  timer), then blacked out mid-use; the display power hold also stayed released,
+  so Windows could blank the screen on its own.
+- Now: main owns it (`kiosk.ts` `wake()`/`updateSleep()`, `stillAwake()` in
+  `shared/sleepWindow.ts`): awake until `WAKE_IDLE_SECONDS` (5 min) pass with no
+  input (`powerMonitor.getSystemIdleTime`), or the window ends; the display hold
+  is re-taken while awake.
+
 ## Wishlist (not started)
 
 - (empty)

@@ -9,6 +9,17 @@ export function parseHhMm(s: string): number | null {
   return h * 60 + min
 }
 
+/** A screen woken during the sleep window goes back to sleep after this long untouched. */
+export const WAKE_IDLE_SECONDS = 5 * 60
+
+/**
+ * Whether a tap-to-wake should still hold the screen awake: it lasts while the
+ * screen is being used (any input within WAKE_IDLE_SECONDS) and ends with the window.
+ */
+export function stillAwake(awake: boolean, inWindow: boolean, idleSeconds: number): boolean {
+  return awake && inWindow && idleSeconds < WAKE_IDLE_SECONDS
+}
+
 /** Is `nowMinutes` (minutes since local midnight) inside [start, end)? */
 export function isInSleepWindow(nowMinutes: number, start: string, end: string): boolean {
   const s = parseHhMm(start)

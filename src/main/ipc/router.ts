@@ -291,6 +291,7 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('screensaver:pickFolder', null, () => services.kiosk.pickFolder())
   handle('screensaver:listPhotos', null, () => services.kiosk.listPhotos())
   handle('kiosk:previewScreensaver', null, () => services.kiosk.previewScreensaver())
+  handle('kiosk:wake', null, () => services.kiosk.wake())
 
   handle('companion:getStatus', null, () => services.companion.getStatus())
   handle('companion:issueToken', null, () => services.companion.issueToken())

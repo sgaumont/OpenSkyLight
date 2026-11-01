@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
@@ -8,7 +8,6 @@ import { useKioskState } from '../../stores/kioskStore'
 import { guardInput } from '@shared/inputGuard'
 import { ShuffleDeck } from '@shared/shuffleDeck'
 
-const WAKE_OVERRIDE_MS = 5 * 60 * 1000
 const SLIDE_MS = 12_000
 
 /**
@@ -103,12 +102,10 @@ function SleepOverlay({ onWake }: { onWake: () => void }) {
 export function KioskOverlays() {
   const [screensaver, setScreensaver] = useState(false)
   const [sleeping, setSleeping] = useState(false)
-  const [awakeOverride, setAwakeOverride] = useState(false)
-  const overrideTimer = useRef<number | null>(null)
   const setCovered = useKioskState((s) => s.setCovered)
 
   // let expensive tiles (camera streams) pause while a layer covers them
-  const covered = (sleeping && !awakeOverride) || screensaver
+  const covered = sleeping || screensaver
   useEffect(() => {
     setCovered(covered)
   }, [covered, setCovered])
@@ -117,14 +114,9 @@ export function KioskOverlays() {
     const offIdle = window.osl.on('push:kioskIdle', (d) => {
       setScreensaver((d as { state?: string })?.state === 'screensaver')
     })
+    // main decides: asleep in the window, except while woken and still in use
     const offSleep = window.osl.on('push:sleepState', (d) => {
-      const isSleeping = Boolean((d as { sleeping?: boolean })?.sleeping)
-      setSleeping(isSleeping)
-      if (!isSleeping) {
-        // window ended naturally — clear any tap-to-wake override
-        setAwakeOverride(false)
-        if (overrideTimer.current) window.clearTimeout(overrideTimer.current)
-      }
+      setSleeping(Boolean((d as { sleeping?: boolean })?.sleeping))
     })
     return () => {
       offIdle()
@@ -132,13 +124,12 @@ export function KioskOverlays() {
     }
   }, [])
 
-  if (sleeping && !awakeOverride) {
+  if (sleeping) {
     return (
       <SleepOverlay
         onWake={() => {
-          setAwakeOverride(true)
-          if (overrideTimer.current) window.clearTimeout(overrideTimer.current)
-          overrideTimer.current = window.setTimeout(() => setAwakeOverride(false), WAKE_OVERRIDE_MS)
+          setSleeping(false) // instant; main confirms and keeps it awake while in use
+          void ipcInvoke('kiosk:wake', undefined)
         }}
       />
     )

@@ -4,7 +4,7 @@ import { join, resolve, extname } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { DateTime } from 'luxon'
 import type { SettingsService } from '../services/settingsService'
-import { isInSleepWindow } from '@shared/sleepWindow'
+import { isInSleepWindow, stillAwake } from '@shared/sleepWindow'
 
 const PHOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'])
 const IDLE_POLL_MS = 5_000
@@ -16,6 +16,8 @@ export function createKiosk(deps: { settings: SettingsService; broadcast: (ch: s
   let sleepTimer: NodeJS.Timeout | null = null
   let screensaverOn = false
   let sleeping = false
+  /** woken by a tap during the sleep window */
+  let awake = false
   let blockerId: number | null = null
 
   /** Photos are served through osl-photo:// so the sandboxed renderer never touches the filesystem. */
@@ -106,15 +108,22 @@ export function createKiosk(deps: { settings: SettingsService; broadcast: (ch: s
       setScreensaver(s.folder !== null && idleSeconds >= s.idleMinutes * 60)
     }, IDLE_POLL_MS)
 
-    sleepTimer = setInterval(() => {
-      const s = settings.getAll().sleep
-      if (!s.enabled) {
-        setSleeping(false)
-        return
-      }
-      const now = DateTime.now()
-      setSleeping(isInSleepWindow(now.hour * 60 + now.minute, s.start, s.end))
-    }, SLEEP_POLL_MS)
+    sleepTimer = setInterval(updateSleep, SLEEP_POLL_MS)
+  }
+
+  function updateSleep(): void {
+    const s = settings.getAll().sleep
+    const now = DateTime.now()
+    const inWindow = s.enabled && isInSleepWindow(now.hour * 60 + now.minute, s.start, s.end)
+    awake = stillAwake(awake, inWindow, powerMonitor.getSystemIdleTime())
+    // while woken, sleeping is false, so the display is held on too
+    setSleeping(inWindow && !awake)
+  }
+
+  /** Tap-to-wake from the sleep overlay: stays awake for as long as the screen is being used. */
+  function wake(): void {
+    awake = true
+    setSleeping(false)
   }
 
   function stop(): void {
@@ -134,7 +143,7 @@ export function createKiosk(deps: { settings: SettingsService; broadcast: (ch: s
     app.setLoginItemSettings({ openAtLogin: enabled, path: process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath })
   }
 
-  return { start, stop, listPhotos, pickFolder, previewScreensaver, setLaunchOnStartup, applyTextSize }
+  return { start, stop, listPhotos, pickFolder, previewScreensaver, setLaunchOnStartup, applyTextSize, wake }
 }
 
 export type Kiosk = ReturnType<typeof createKiosk>

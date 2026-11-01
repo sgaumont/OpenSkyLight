@@ -162,6 +162,7 @@ export type IpcContract = {
   'screensaver:pickFolder': { req: void; res: { folder: string | null } }
   'screensaver:listPhotos': { req: void; res: string[] }
   'kiosk:previewScreensaver': { req: void; res: void }
+  'kiosk:wake': { req: void; res: void }
 
   'companion:getStatus': {
     req: void

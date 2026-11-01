@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isInSleepWindow, parseHhMm } from '../../src/shared/sleepWindow'
+import { isInSleepWindow, parseHhMm, stillAwake, WAKE_IDLE_SECONDS } from '../../src/shared/sleepWindow'
 
 const m = (h: number, min = 0): number => h * 60 + min
 
@@ -35,5 +35,21 @@ describe('isInSleepWindow', () => {
   it('never sleeps on a zero-length or invalid window', () => {
     expect(isInSleepWindow(m(12), '12:00', '12:00')).toBe(false)
     expect(isInSleepWindow(m(12), 'bad', '14:00')).toBe(false)
+  })
+})
+
+describe('stillAwake', () => {
+  it('stays awake while the screen keeps being used, however long', () => {
+    expect(stillAwake(true, true, 0)).toBe(true)
+    expect(stillAwake(true, true, WAKE_IDLE_SECONDS - 1)).toBe(true)
+  })
+  it('goes back to sleep after the idle limit untouched', () => {
+    expect(stillAwake(true, true, WAKE_IDLE_SECONDS)).toBe(false)
+  })
+  it('ends when the sleep window ends', () => {
+    expect(stillAwake(true, false, 0)).toBe(false)
+  })
+  it('never starts on its own', () => {
+    expect(stillAwake(false, true, 0)).toBe(false)
   })
 })
