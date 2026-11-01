@@ -62,6 +62,12 @@ body::before {
   height: 0;
 }
 
+/* swipe areas (useSwipe): touch-action only applies up to the nearest scroll
+   container, so inner scrollers must also leave horizontal moves to the app */
+[data-swipe] * {
+  touch-action: pan-y;
+}
+
 @utility pressable {
   transition:
     transform 0.13s ease,

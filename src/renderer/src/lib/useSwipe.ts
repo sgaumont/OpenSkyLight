@@ -11,7 +11,10 @@ export function useSwipe(onStep: (direction: 1 | -1) => void) {
   const swallowClick = useRef(false)
 
   return {
-    // the browser keeps vertical panning; horizontal moves come to us
+    // the browser keeps vertical panning; horizontal moves come to us. touch-action
+    // only reaches up to the nearest scroll container, so global.css also applies
+    // pan-y to everything inside [data-swipe] (e.g. the Week view's scrolling columns)
+    'data-swipe': '',
     style: { touchAction: 'pan-y' } as CSSProperties,
     onPointerDown: (e: PointerEvent) => {
       if (!e.isPrimary) return

@@ -239,6 +239,10 @@ Add unit tests where sensible.
   tested): ≥60px sideways, ≥2× more horizontal than vertical, ≤800ms. `touch-action: pan-y`;
   the click after a swipe is swallowed so a swipe starting on a date doesn't open that day.
   Reusable for other views (Week, Chores…).
+- v0.8.22: the Week view uses it too. touch-action only reaches up to the nearest scroll
+  container, so `global.css` applies `pan-y` to everything inside `[data-swipe]` — without
+  it, a swipe starting inside a scrolling Week column was claimed by the browser
+  (pointercancel).
 
 ## Wishlist (not started)
 

@@ -11,6 +11,7 @@ import { EventCard } from './EventCard'
 import { useCalendarData, useViewRange } from './useCalendarData'
 import { PlusIcon } from '../../components/icons'
 import { MealsDialog, MealStrip, useMealsForRange } from '../meals/Meals'
+import { useSwipe } from '../../lib/useSwipe'
 
 export function WeekView() {
   const range = useViewRange()
@@ -18,6 +19,9 @@ export function WeekView() {
   const { data: settings } = useSettings()
   const openCreate = useUi((s) => s.openCreate)
   const openEdit = useUi((s) => s.openEdit)
+  const step = useUi((s) => s.step)
+  // swipe left = next week, right = previous (same as the header arrows)
+  const swipe = useSwipe(step)
   const timeFormat = settings?.timeFormat ?? '12h'
   const mealsZoom = weekMealsZoom(settings?.textSize ?? DEFAULT_SETTINGS.textSize)
   const days = eachDay(range, ZONE)
@@ -25,7 +29,7 @@ export function WeekView() {
   const [mealDate, setMealDate] = useState<string | null>(null)
 
   return (
-    <div className="grid h-full grid-cols-7 gap-3 px-6 pb-6">
+    <div className="grid h-full grid-cols-7 gap-3 px-6 pb-6" {...swipe}>
       {days.map((day, i) => {
         const key = day.toISODate()!
         const occurrences = byDay.get(key) ?? []
