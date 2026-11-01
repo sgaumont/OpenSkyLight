@@ -142,6 +142,12 @@ Add unit tests where sensible.
   Settings → General → Text size → "Week meals" (A−/A+, Reset). Day view's meal
   strip is not affected.
 
+## v0.8.8 — no Day button in the header menu (same branch)
+
+- Removed 'Day' from the header `SegmentedControl` (`Header.tsx`). The Day view
+  itself stays: the Home Today tile and tapping a Month date still open it
+  (no menu tab is highlighted while it's shown).
+
 ## Wishlist (not started)
 
 - (empty)

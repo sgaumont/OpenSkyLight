@@ -132,7 +132,6 @@ export function Header() {
         onChange={setView}
         options={[
           { value: 'home', label: 'Home' },
-          { value: 'day', label: 'Day' },
           { value: 'week', label: 'Week' },
           { value: 'month', label: 'Month' },
           { value: 'agenda', label: 'Agenda' },
