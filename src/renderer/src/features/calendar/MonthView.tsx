@@ -4,6 +4,7 @@ import { useUi, ZONE } from '../../stores/uiStore'
 import { occurrenceColor } from '../../lib/colors'
 import { isToday, textOn } from '../../lib/format'
 import { useCalendarData, useViewRange } from './useCalendarData'
+import { useSwipe } from '../../lib/useSwipe'
 
 const MAX_PILLS = 3
 
@@ -13,6 +14,7 @@ export function MonthView() {
   const focusedDate = useUi((s) => s.focusedDate)
   const setFocusedDate = useUi((s) => s.setFocusedDate)
   const setView = useUi((s) => s.setView)
+  const step = useUi((s) => s.step)
   const days = eachDay(range, ZONE)
   const focusedMonth = DateTime.fromISO(focusedDate, { zone: ZONE }).month
 
@@ -20,9 +22,11 @@ export function MonthView() {
     setFocusedDate(key)
     setView('day')
   }
+  // swipe left = next month, right = previous (same as the header arrows)
+  const swipe = useSwipe(step)
 
   return (
-    <div className="flex h-full flex-col px-6 pb-6">
+    <div className="flex h-full flex-col px-6 pb-6" {...swipe}>
       <div className="grid grid-cols-7 gap-x-2 pb-1">
         {days.slice(0, 7).map((d) => (
           <div key={d.toISODate()} className="px-2 text-sm font-extrabold uppercase text-ink-faint">

@@ -232,6 +232,14 @@ Add unit tests where sensible.
   reachable from the Home "This week" tile (`navTarget: 'agenda'`), like Day via
   the Today tile / Month dates.
 
+## v0.8.21 — swipe to change month (same branch)
+
+- `useSwipe()` (`src/renderer/src/lib/useSwipe.ts`) on the Month view container: swipe left =
+  next month, right = previous (`uiStore.step`). Rule in `swipeStep()` (`src/shared/swipe.ts`,
+  tested): ≥60px sideways, ≥2× more horizontal than vertical, ≤800ms. `touch-action: pan-y`;
+  the click after a swipe is swallowed so a swipe starting on a date doesn't open that day.
+  Reusable for other views (Week, Chores…).
+
 ## Wishlist (not started)
 
 - Header weather (top-left bar, `WeatherButton` in `features/weather/WeatherHeader.tsx`):
