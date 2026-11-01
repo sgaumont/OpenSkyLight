@@ -220,6 +220,8 @@ Add unit tests where sensible.
   (all-day too). Only `WeekView` passes it; Day/Agenda keep one-line titles.
 - v0.8.17: the Home Today tile wraps event names the same way; its colour bar
   stretches with the name (`self-stretch min-h-7`).
+- v0.8.19: the Home This week tile wraps names too; its grid uses `items-baseline` so day,
+  dot (inline-block in a text-sized span) and time stay level with a wrapped name's first line.
 - Header menu is now Home · Week · Month · Chores · Lists. The Agenda view stays
   reachable from the Home "This week" tile (`navTarget: 'agenda'`), like Day via
   the Today tile / Month dates.
