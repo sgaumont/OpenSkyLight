@@ -37,9 +37,15 @@ my own changes to one wall kiosk while staying mergeable with upstream.
   exe (`npm run dist` → `dist\OpenSkyLight <ver>.exe`), I run it on the device
   (fully quit the running copy first — single-instance lock), and nothing is
   released until I approve.
-- Currently runs the **portable exe** of upstream's build (v0.8.0 or earlier).
-  Only the NSIS (Setup) install auto-updates; the portable exe never does.
-  Both share `%APPDATA%\OpenSkyLight`, so switching install type keeps all data.
+- Runs the **portable exe**, deliberately — I deploy by copying it over myself.
+  Its autorun points at a file named **`OpenSkyLight 0.8.0.exe`**, so that name
+  never changes: `npm run dist` triggers `postdist` (`scripts/copy-kiosk-exe.mjs`),
+  which copies the build to `kiosk\OpenSkyLight 0.8.0.exe` (git-ignored). That file
+  is the one to copy to the Surface, whatever the real app version is.
+- The updater is disabled in portable builds (`PORTABLE_EXECUTABLE_FILE` check in
+  `src/main/updater.ts`); otherwise electron-updater would silently install the
+  Setup version at 03:30. Keep that check when merging upstream.
+- Setup and portable share `%APPDATA%\OpenSkyLight`, so switching keeps all data.
 - After my first fork release is installed over the top, its `app-update.yml`
   points at `sgaumont/OpenSkyLight`, so the kiosk follows my releases, not upstream's.
 
@@ -99,9 +105,11 @@ Add unit tests where sensible.
 
 ## Release checklist
 
-1. Feature branch green: `npm test`, `npm run typecheck`.
-2. `npm run dist` → test the portable exe from `dist\` on the Surface.
-3. Merge to `main`, bump `package.json` version above upstream's latest, tag `vX.Y.Z`,
-   `git push origin main --tags`.
-4. Watch the Release workflow on the fork; confirm the GitHub Release has the
-   installer, `latest.yml`, and blockmap.
+1. On the feature branch, bump the version first (`npm version X.Y.Z --no-git-tag-version`,
+   above upstream's latest and our last release) so the tested exe reports it.
+2. Green: `npm test`, `npm run typecheck`.
+3. `npm run dist` → hand me `kiosk\OpenSkyLight 0.8.0.exe` to test on the Surface.
+   **Wait for my approval.**
+4. Merge to `main`, tag `vX.Y.Z`, push `main` and **only that tag**
+   (`git push origin main vX.Y.Z` — never `--tags`, which would push upstream's tags).
+5. Watch the Release workflow on the fork; confirm the release has both exes and `latest.yml`.

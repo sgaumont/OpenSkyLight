@@ -124,7 +124,8 @@ export function createKiosk(deps: { settings: SettingsService; broadcast: (ch: s
 
   function setLaunchOnStartup(enabled: boolean): void {
     if (!app.isPackaged) return // pointless (and confusing) for dev runs
-    app.setLoginItemSettings({ openAtLogin: enabled, path: process.execPath })
+    // a portable build runs from a temp unpack dir; register the portable exe itself
+    app.setLoginItemSettings({ openAtLogin: enabled, path: process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath })
   }
 
   return { start, stop, listPhotos, pickFolder, previewScreensaver, setLaunchOnStartup }

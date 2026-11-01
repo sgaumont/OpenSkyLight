@@ -1,6 +1,7 @@
 node_modules/
 out/
 dist/
+kiosk/
 shots/
 *.local
 .DS_Store

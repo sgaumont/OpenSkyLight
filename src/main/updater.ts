@@ -29,6 +29,9 @@ export function createUpdater(deps: { broadcast: (channel: string, payload: unkn
 
   function start(): void {
     if (!app.isPackaged) return // updater is meaningless (and errors) in dev
+    // The portable exe can't update itself: electron-updater would instead download
+    // and silently run the Setup installer, turning the kiosk into an installed copy.
+    if (process.env.PORTABLE_EXECUTABLE_FILE) return
 
     autoUpdater.autoDownload = true
     autoUpdater.autoInstallOnAppQuit = true
