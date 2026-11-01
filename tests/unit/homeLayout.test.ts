@@ -12,6 +12,24 @@ import {
 } from '../../src/shared/home'
 import type { HomeTile } from '../../src/shared/types'
 
+describe('minimum tile heights', () => {
+  it('scrolling text tiles can shrink to one row; Today keeps two for its meal strip', () => {
+    for (const type of ['weekAgenda', 'list', 'choresProgress', 'starBalances', 'meals', 'news', 'birdnet'] as const) {
+      expect(TILE_SPECS[type].minH).toBe(1)
+    }
+    expect(TILE_SPECS.todayEvents.minH).toBe(2)
+  })
+  it('non-scrolling tiles keep two rows', () => {
+    for (const type of ['weather', 'clock', 'photo', 'camera', 'timer'] as const) {
+      expect(TILE_SPECS[type].minH).toBe(2)
+    }
+  })
+  it('a stored one-row list tile is kept at one row', () => {
+    const [tile] = sanitizeLayout([{ id: 'l', type: 'list', x: 0, y: 5, w: 3, h: 1, config: { listId: 'x' } }])
+    expect(tile).toMatchObject({ y: 5, h: 1 })
+  })
+})
+
 describe('rectsOverlap / inBounds', () => {
   it('edge-touching rects do not overlap', () => {
     expect(rectsOverlap({ x: 0, y: 0, w: 2, h: 2 }, { x: 2, y: 0, w: 2, h: 2 })).toBe(false)

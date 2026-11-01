@@ -23,18 +23,20 @@ export interface TileSpec {
 }
 
 export const TILE_SPECS: Record<HomeTileType, TileSpec> = {
-  todayEvents: { minW: 3, minH: 3, defaultW: 4, defaultH: 6, allowMultiple: false, configKeys: [] },
-  weekAgenda: { minW: 4, minH: 3, defaultW: 5, defaultH: 4, allowMultiple: false, configKeys: [] },
+  // text tiles scroll (TileScroll), so their minimum heights are low; Today keeps
+  // 2 rows for its meal strip. Weather/clock/photo/camera/timer don't scroll.
+  todayEvents: { minW: 3, minH: 2, defaultW: 4, defaultH: 6, allowMultiple: false, configKeys: [] },
+  weekAgenda: { minW: 4, minH: 1, defaultW: 5, defaultH: 4, allowMultiple: false, configKeys: [] },
   weather: { minW: 2, minH: 2, defaultW: 3, defaultH: 2, allowMultiple: false, configKeys: [] },
-  choresProgress: { minW: 3, minH: 2, defaultW: 3, defaultH: 2, allowMultiple: false, configKeys: [] },
-  starBalances: { minW: 2, minH: 2, defaultW: 2, defaultH: 2, allowMultiple: false, configKeys: [] },
-  list: { minW: 2, minH: 3, defaultW: 3, defaultH: 4, allowMultiple: true, configKeys: ['listId'] },
-  meals: { minW: 2, minH: 2, defaultW: 3, defaultH: 2, allowMultiple: false, configKeys: [] },
+  choresProgress: { minW: 3, minH: 1, defaultW: 3, defaultH: 2, allowMultiple: false, configKeys: [] },
+  starBalances: { minW: 2, minH: 1, defaultW: 2, defaultH: 2, allowMultiple: false, configKeys: [] },
+  list: { minW: 2, minH: 1, defaultW: 3, defaultH: 4, allowMultiple: true, configKeys: ['listId'] },
+  meals: { minW: 2, minH: 1, defaultW: 3, defaultH: 2, allowMultiple: false, configKeys: [] },
   clock: { minW: 2, minH: 2, defaultW: 2, defaultH: 2, allowMultiple: false, configKeys: [] },
   photo: { minW: 2, minH: 2, defaultW: 3, defaultH: 4, allowMultiple: true, configKeys: [] },
-  news: { minW: 3, minH: 2, defaultW: 4, defaultH: 3, allowMultiple: true, configKeys: ['feedId'] },
+  news: { minW: 3, minH: 1, defaultW: 4, defaultH: 3, allowMultiple: true, configKeys: ['feedId'] },
   camera: { minW: 3, minH: 2, defaultW: 4, defaultH: 3, allowMultiple: true, configKeys: ['cameraId'] },
-  birdnet: { minW: 3, minH: 2, defaultW: 4, defaultH: 4, allowMultiple: true, configKeys: ['birdnetUrl'] },
+  birdnet: { minW: 3, minH: 1, defaultW: 4, defaultH: 4, allowMultiple: true, configKeys: ['birdnetUrl'] },
   timer: { minW: 3, minH: 2, defaultW: 4, defaultH: 3, allowMultiple: false, configKeys: [] }
 }
 

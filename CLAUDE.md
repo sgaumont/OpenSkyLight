@@ -169,6 +169,14 @@ Add unit tests where sensible.
   the tile is wide, stacked rows when it's taller than wide; narrow (compact)
   tiles put the low under the high.
 
+## v0.8.12 — lower minimum tile heights (same branch)
+
+- `TILE_SPECS.minH` in `src/shared/home.ts` (grid is 12×6; one row ≈ 106–120px on
+  the Surface). Scrolling text tiles — This week, List, Chores, Stars, Meals,
+  News, Birds — can shrink to 1 row; Today to 2 (room for its meal strip).
+  Weather, Clock, Photo, Camera, Timer stay at 2 (they don't scroll).
+  Pinned by tests in `tests/unit/homeLayout.test.ts`.
+
 ## Wishlist (not started)
 
 - Header weather (top-left bar, `WeatherButton` in `features/weather/WeatherHeader.tsx`):
