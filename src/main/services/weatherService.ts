@@ -44,7 +44,7 @@ export function createWeatherService(settings: SettingsService) {
       '&current=temperature_2m,weather_code,is_day' +
       '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
       `&temperature_unit=${unit === 'f' ? 'fahrenheit' : 'celsius'}` +
-      '&timezone=auto&forecast_days=5'
+      '&timezone=auto&forecast_days=6'
     const res = await fetch(url)
     if (!res.ok) {
       // serve stale data over an error if we have any

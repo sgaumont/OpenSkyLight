@@ -254,9 +254,10 @@ export function WeatherTile({ tile }: TileProps) {
   return (
     <div className="h-full overflow-hidden" style={{ containerType: 'size' }}>
       <div className={`flex h-full ${layout === 'stacked' ? 'flex-col' : ''}`}>
-        {weather.daily.slice(0, 5).map((d, i) => {
+        {/* today is in the header (current temp + today's high/low), so the tile is the next 5 days */}
+        {weather.daily.slice(1, 6).map((d) => {
           const Icon = weatherIcon(d.code, true)
-          const label = i === 0 ? 'Today' : DateTime.fromISO(d.date).toFormat('ccc')
+          const label = DateTime.fromISO(d.date).toFormat('ccc')
           const rainy = d.precipProb !== null && d.precipProb >= 20
           const labelCls = 'font-extrabold text-ink-faint uppercase leading-none'
           const icon = (size: string) => (

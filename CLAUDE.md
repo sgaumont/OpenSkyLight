@@ -244,10 +244,17 @@ Add unit tests where sensible.
   it, a swipe starting inside a scrolling Week column was claimed by the browser
   (pointercancel).
 
+## v0.8.23 — today's high/low in the header; weather tile starts tomorrow (same branch)
+
+- `WeatherButton` (`features/weather/WeatherHeader.tsx`) shows today's high over low next to the
+  current temperature. Forecast fetch is now `forecast_days=6`: the Home weather tile shows
+  `daily.slice(1, 6)` (tomorrow + 4, weekday labels); the header's forecast dialog stays today + 4.
+- The header already overflowed (45px) at ~1050px layout width (Surface at 130% text, Week tab,
+  4 people). Below 1150px it now uses smaller day/clock/temperature and tighter gaps (`max-[1150px]:`).
+
 ## Wishlist (not started)
 
-- Header weather (top-left bar, `WeatherButton` in `features/weather/WeatherHeader.tsx`):
-  show today's expected high and low next to the current temperature.
+- (empty)
 
 ## Release checklist
 

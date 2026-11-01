@@ -55,25 +55,31 @@ export function Header() {
   const weekViewStart = settings?.weekViewStart ?? 'rolling'
   const timeFormat = settings?.timeFormat ?? '12h'
   return (
-    <header className="flex items-center gap-2 px-4 pt-5 pb-4 min-[1500px]:gap-3 min-[1500px]:px-5">
+    <header className="flex items-center gap-2 px-4 pt-5 pb-4 max-[1150px]:gap-1.5 max-[1150px]:px-3 min-[1500px]:gap-3 min-[1500px]:px-5">
       {/* Today + a big clock (the header is the only clock since the home
           screen dropped its clock tile); scales down so everything still
-          fits on 1280-wide displays */}
-      <button type="button" onClick={goToday} className="pressable flex shrink-0 items-center gap-3 text-left min-[1500px]:gap-4">
+          fits on narrow layouts too (e.g. a 10" kiosk at 130% text ≈ 1050px) */}
+      <button
+        type="button"
+        onClick={goToday}
+        className="pressable flex shrink-0 items-center gap-3 text-left max-[1150px]:gap-2 min-[1500px]:gap-4"
+      >
         <div>
-          <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight min-[1500px]:text-[2.6rem]">
+          <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight max-[1150px]:text-[1.65rem] min-[1500px]:text-[2.6rem]">
             {now.toFormat('cccc')}
           </div>
-          <div className="mt-1 text-base font-bold text-ink-soft min-[1500px]:text-lg">{now.toFormat('LLLL d')}</div>
+          <div className="mt-1 text-base font-bold text-ink-soft max-[1150px]:text-sm min-[1500px]:text-lg">
+            {now.toFormat('LLLL d')}
+          </div>
         </div>
         <div className="w-px self-stretch bg-ink-faint/30" />
-        <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight tabular-nums min-[1500px]:text-[3.1rem]">
+        <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight tabular-nums max-[1150px]:text-[1.65rem] min-[1500px]:text-[3.1rem]">
           {timeFormat === '24h' ? (
             now.toFormat('HH:mm')
           ) : (
             <>
               {now.toFormat('h:mm')}
-              <span className="ml-1 text-lg font-bold text-ink-soft min-[1500px]:ml-1.5 min-[1500px]:text-2xl">
+              <span className="ml-1 text-lg font-bold text-ink-soft max-[1150px]:text-base min-[1500px]:ml-1.5 min-[1500px]:text-2xl">
                 {now.toFormat('a').toLowerCase()}
               </span>
             </>

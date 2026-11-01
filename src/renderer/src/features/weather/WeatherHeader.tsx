@@ -32,17 +32,28 @@ export function WeatherButton() {
   const [open, setOpen] = useState(false)
   if (!weather) return null
   const Icon = weatherIcon(weather.code, weather.isDay)
+  const today = weather.daily[0]
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="pressable flex items-center gap-2 rounded-2xl px-3 py-1.5 hover:bg-paper-deep/70"
+        className="pressable flex shrink-0 items-center gap-2 rounded-2xl px-3 py-1.5 hover:bg-paper-deep/70 max-[1150px]:gap-1.5 max-[1150px]:px-2"
         aria-label="Weather forecast"
       >
-        <Icon size={34} className="text-ember-deep" />
-        <span className="font-display text-3xl leading-none">{weather.temperature}°</span>
+        <Icon size={34} className="text-ember-deep max-[1150px]:h-7 max-[1150px]:w-7" />
+        <span className="font-display text-3xl leading-none max-[1150px]:text-2xl">{weather.temperature}°</span>
+        {/* today's expected high over low, like the weather tile — stacked to stay narrow */}
+        {today && (
+          <span
+            className="flex flex-col items-start gap-0.5 text-base leading-none font-bold tabular-nums"
+            aria-label={`Today: high ${today.high}°, low ${today.low}°`}
+          >
+            <span>{today.high}°</span>
+            <span className="text-ink-faint">{today.low}°</span>
+          </span>
+        )}
         {/* hidden on narrow displays — the tap-for-forecast dialog still has all 5 days */}
         {weather.daily.length > 1 && (
           <span className="ml-1 hidden items-center gap-2.5 border-l border-ink-faint/30 pl-3 min-[1500px]:flex">
@@ -66,7 +77,8 @@ export function WeatherButton() {
 
       <Dialog open={open} onClose={() => setOpen(false)} title={weather.label}>
         <div className="grid grid-cols-5 gap-2">
-          {weather.daily.map((d, i) => {
+          {/* today + 4: the 6th fetched day is only for the Home weather tile */}
+          {weather.daily.slice(0, 5).map((d, i) => {
             const DayIcon = weatherIcon(d.code, true)
             return (
               <div key={d.date} className="flex flex-col items-center gap-1.5 rounded-2xl bg-paper-deep/50 px-1 py-3">
