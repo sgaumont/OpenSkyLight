@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_SETTINGS, type HomeTile, type HomeTileType } from '@shared/types'
 import { sanitizeLayout } from '@shared/home'
 import { stepTextSize, tileZoom } from '@shared/textSize'
@@ -6,7 +6,7 @@ import { useAuthMutations, useAuthStatus, useSettings, useSettingsMutation } fro
 import { useUi } from '../../stores/uiStore'
 import { BigButton } from '../../components/ui'
 import { PinDialog } from '../../components/PinDialog'
-import { GripIcon, PencilIcon, PlusIcon, XIcon } from '../../components/icons'
+import { GripIcon, PlusIcon, XIcon } from '../../components/icons'
 import { TILE_REGISTRY } from './tileRegistry'
 import { useHomeGrid } from './useHomeGrid'
 import { AddTileSheet } from './AddTileSheet'
@@ -67,6 +67,16 @@ export function HomeView() {
       setDraft(layout.map((t) => ({ ...t })))
     }
   }
+
+  // the header's pencil asks for customize mode; remember the count seen on
+  // mount so returning to Home never replays an old request
+  const homeEditRequest = useUi((s) => s.homeEditRequest)
+  const seenEditRequest = useRef(homeEditRequest)
+  useEffect(() => {
+    if (homeEditRequest === seenEditRequest.current) return
+    seenEditRequest.current = homeEditRequest
+    if (!editing) enterEdit()
+  }, [homeEditRequest])
 
   const relock = (): void => {
     if (auth?.pinSet) authMutations.lock.mutate(undefined)
@@ -197,16 +207,8 @@ export function HomeView() {
         )}
       </div>
 
-      {!editing ? (
-        <button
-          type="button"
-          aria-label="Customize home screen"
-          onClick={enterEdit}
-          className="pressable fixed bottom-7 left-7 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-card text-ink-soft shadow-float"
-        >
-          <PencilIcon size={22} />
-        </button>
-      ) : (
+      {/* the customize pencil lives in the header (next to the gear) */}
+      {editing && (
         <div className="fixed inset-x-0 bottom-5 z-30 flex justify-center">
           <div className="flex items-center gap-3 rounded-full bg-ink/90 p-2 shadow-float backdrop-blur-sm">
             <BigButton variant="ghost" onClick={() => setAddOpen(true)}>

@@ -16,6 +16,8 @@ interface UiState {
   hiddenPeople: string[]
   editor: EditorState
   settingsOpen: boolean
+  /** bumped by the header's pencil; HomeView enters customize mode when it changes */
+  homeEditRequest: number
 
   setView(view: CalendarViewKind): void
   setFocusedDate(date: string): void
@@ -26,6 +28,7 @@ interface UiState {
   openEdit(occurrence: OccurrenceDto): void
   closeEditor(): void
   setSettingsOpen(open: boolean): void
+  requestHomeEdit(): void
 }
 
 const today = (): string => DateTime.now().setZone(ZONE).toISODate()!
@@ -36,6 +39,7 @@ export const useUi = create<UiState>((set, get) => ({
   hiddenPeople: [],
   editor: { mode: 'closed' },
   settingsOpen: false,
+  homeEditRequest: 0,
 
   setView: (view) => set({ view }),
   setFocusedDate: (focusedDate) => set({ focusedDate }),
@@ -61,5 +65,6 @@ export const useUi = create<UiState>((set, get) => ({
   openCreate: (date) => set({ editor: { mode: 'create', date: date ?? get().focusedDate } }),
   openEdit: (occurrence) => set({ editor: { mode: 'edit', occurrence } }),
   closeEditor: () => set({ editor: { mode: 'closed' } }),
-  setSettingsOpen: (settingsOpen) => set({ settingsOpen })
+  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  requestHomeEdit: () => set((s) => ({ homeEditRequest: s.homeEditRequest + 1 }))
 }))

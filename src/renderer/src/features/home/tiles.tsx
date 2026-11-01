@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import mpegts from 'mpegts.js'
@@ -22,7 +23,7 @@ import { useTimers } from '../../stores/timerStore'
 import { formatDuration } from '@shared/timer'
 import { startAlarm, stopAlarm } from '../../lib/alarm'
 import { weatherIcon } from '../weather/WeatherHeader'
-import { SLOT_META } from '../meals/Meals'
+import { MealsDialog, MealStrip, SLOT_META, useMealsForRange } from '../meals/Meals'
 import { ZONE } from '../../stores/uiStore'
 import { formatTime, initials, textOn } from '../../lib/format'
 import { occurrenceColor } from '../../lib/colors'
@@ -111,26 +112,46 @@ export function TodayEventsTile({ compact }: TileProps) {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <TileTitle>Today</TileTitle>
-      {occurrences.length === 0 ? (
-        <Placeholder>{all.length === 0 ? 'Nothing on the calendar today' : 'Nothing else on the calendar today'}</Placeholder>
-      ) : (
-        <TileScroll innerClassName="flex flex-col gap-1.5">
-          {occurrences.map((occ) => {
-            const color = occurrenceColor(occ, peopleById, calendarsById)
-            return (
-              <div key={occ.key} className="flex items-center gap-2 rounded-lg bg-paper-deep/40 px-2 py-1.5">
-                <span className="h-7 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-                <span className="min-w-0 flex-1">
-                  <span className={`block truncate font-bold ${compact ? 'text-sm' : 'text-base'}`}>{occ.title}</span>
-                  <span className="block text-xs font-bold text-ink-faint">
-                    {occ.allDay ? 'All day' : formatTime(occ.start, settings?.timeFormat ?? '12h')}
+      {/* events take the space between the title and the meal strip */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {occurrences.length === 0 ? (
+          <Placeholder>{all.length === 0 ? 'Nothing on the calendar today' : 'Nothing else on the calendar today'}</Placeholder>
+        ) : (
+          <TileScroll innerClassName="flex flex-col gap-1.5">
+            {occurrences.map((occ) => {
+              const color = occurrenceColor(occ, peopleById, calendarsById)
+              return (
+                <div key={occ.key} className="flex items-center gap-2 rounded-lg bg-paper-deep/40 px-2 py-1.5">
+                  <span className="h-7 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                  <span className="min-w-0 flex-1">
+                    <span className={`block truncate font-bold ${compact ? 'text-sm' : 'text-base'}`}>{occ.title}</span>
+                    <span className="block text-xs font-bold text-ink-faint">
+                      {occ.allDay ? 'All day' : formatTime(occ.start, settings?.timeFormat ?? '12h')}
+                    </span>
                   </span>
-                </span>
-              </div>
-            )
-          })}
-        </TileScroll>
-      )}
+                </div>
+              )
+            })}
+          </TileScroll>
+        )}
+      </div>
+      <TodayMeals date={todayKey} />
+    </div>
+  )
+}
+
+/** Today's meal strip, as under each Week day; tapping it edits the meals (not the tile's tap). */
+function TodayMeals({ date }: { date: string }) {
+  const range = useMemo(() => dayRange(date, ZONE), [date])
+  const meals = useMealsForRange(range).get(date) ?? []
+  const [open, setOpen] = useState(false)
+  return (
+    // stops taps on the strip, and (via React's portal bubbling) inside the dialog,
+    // from also counting as a tap on the tile, which opens the Day view
+    <div className="mt-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+      <MealStrip date={date} meals={meals} onOpen={() => setOpen(true)} />
+      {/* portal: the dialog must escape the tile's clipping and text-size zoom */}
+      {createPortal(<MealsDialog date={open ? date : null} meals={meals} onClose={() => setOpen(false)} />, document.body)}
     </div>
   )
 }

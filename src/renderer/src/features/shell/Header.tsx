@@ -3,7 +3,7 @@ import { DateTime } from 'luxon'
 import { usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { SegmentedControl, IconButton } from '../../components/ui'
-import { ChevronLeftIcon, ChevronRightIcon, GearIcon, PlusIcon } from '../../components/icons'
+import { ChevronLeftIcon, ChevronRightIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
 import { WeatherButton } from '../weather/WeatherHeader'
 import { initials, textOn } from '../../lib/format'
 import type { CalendarViewKind } from '@shared/types'
@@ -50,6 +50,7 @@ export function Header() {
   const hiddenPeople = useUi((s) => s.hiddenPeople)
   const togglePerson = useUi((s) => s.togglePerson)
   const setSettingsOpen = useUi((s) => s.setSettingsOpen)
+  const requestHomeEdit = useUi((s) => s.requestHomeEdit)
   const weekStartsOn = settings?.weekStartsOn ?? 0
   const weekViewStart = settings?.weekViewStart ?? 'rolling'
   const timeFormat = settings?.timeFormat ?? '12h'
@@ -139,6 +140,12 @@ export function Header() {
           { value: 'lists', label: 'Lists' }
         ]}
       />
+
+      {view === 'home' && (
+        <IconButton label="Customize home screen" onClick={requestHomeEdit}>
+          <PencilIcon size={22} />
+        </IconButton>
+      )}
 
       <IconButton label="Settings" onClick={() => setSettingsOpen(true)}>
         <GearIcon size={26} />

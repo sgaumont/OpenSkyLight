@@ -149,6 +149,18 @@ Add unit tests where sensible.
   itself stays: the Home Today tile and tapping a Month date still open it
   (no menu tab is highlighted while it's shown).
 
+## v0.8.10 — meals on the Today tile; Customize pencil in the header (same branch)
+
+- Home Today tile: `TodayMeals` (in `tiles.tsx`) puts the Week view's `MealStrip`
+  at the bottom (events scroll above it). Tapping it opens `MealsDialog` via a
+  portal (escapes the tile's clipping/zoom); a wrapper stops clicks so the strip
+  and dialog don't also trigger the tile's tap (which opens Day view).
+- The Home "Customize" pencil moved from a floating bottom-left button (it covered
+  that strip) into the header, left of the gear, Home tab only. It bumps
+  `uiStore.homeEditRequest`; `HomeView` enters edit mode on change (ignores the
+  value seen on mount, and requests while already editing). Same aria-label, so
+  `e2e-home` still finds it.
+
 ## Wishlist (not started)
 
 - (empty)
