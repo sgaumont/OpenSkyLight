@@ -19,8 +19,11 @@ describe('minimum tile heights', () => {
     }
     expect(TILE_SPECS.todayEvents.minH).toBe(2)
   })
+  it('weather has a 1-row layout', () => {
+    expect(TILE_SPECS.weather.minH).toBe(1)
+  })
   it('non-scrolling tiles keep two rows', () => {
-    for (const type of ['weather', 'clock', 'photo', 'camera', 'timer'] as const) {
+    for (const type of ['clock', 'photo', 'camera', 'timer'] as const) {
       expect(TILE_SPECS[type].minH).toBe(2)
     }
   })

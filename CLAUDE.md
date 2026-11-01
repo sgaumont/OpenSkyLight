@@ -177,6 +177,15 @@ Add unit tests where sensible.
   Weather, Clock, Photo, Camera, Timer stay at 2 (they don't scroll).
   Pinned by tests in `tests/unit/homeLayout.test.ts`.
 
+## v0.8.13 — weather tile fills its box; 1-row weather (same branch)
+
+- Weather `minH` 1. `WeatherTile` sets `container-type: size` and sizes everything
+  with `fit(min, cqh, cqw, max)` (CSS `clamp(min(cqh, cqw))`), so the forecast grows
+  with the tile. Layouts: stacked rows (tall), one line per day (1-row, ≥3 wide;
+  low hides via `@max-[17rem]` container query when too narrow), columns otherwise
+  (low under high in squarish/narrow tiles; a 1-row 2-wide tile shows highs only).
+  The rain line is always reserved so columns line up.
+
 ## Wishlist (not started)
 
 - Header weather (top-left bar, `WeatherButton` in `features/weather/WeatherHeader.tsx`):
