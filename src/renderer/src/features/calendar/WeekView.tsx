@@ -71,6 +71,7 @@ export function WeekView() {
                   timeFormat={timeFormat}
                   peopleById={peopleById}
                   onTap={() => openEdit(occ)}
+                  wrap
                 />
               ))}
               {occurrences.length === 0 && (

@@ -211,6 +211,14 @@ Add unit tests where sensible.
 - Weather columns: high above the day, low below the icon (one value wide per
   column → larger numbers); width caps sized so "-12°" still fits.
 
+## v0.8.16 — Week view wraps names; no Agenda in the menu (branch `feature/week-wrap`)
+
+- `EventCard` takes `wrap`: titles use `overflow-wrap:anywhere` instead of `truncate`
+  (all-day too). Only `WeekView` passes it; Day/Agenda keep one-line titles.
+- Header menu is now Home · Week · Month · Chores · Lists. The Agenda view stays
+  reachable from the Home "This week" tile (`navTarget: 'agenda'`), like Day via
+  the Today tile / Month dates.
+
 ## Wishlist (not started)
 
 - Header weather (top-left bar, `WeatherButton` in `features/weather/WeatherHeader.tsx`):

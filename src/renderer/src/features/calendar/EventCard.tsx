@@ -27,7 +27,8 @@ export function EventCard({
   timeFormat,
   peopleById,
   onTap,
-  size = 'md'
+  size = 'md',
+  wrap = false
 }: {
   occ: OccurrenceDto
   color: string
@@ -35,7 +36,11 @@ export function EventCard({
   peopleById: Map<string, PersonDto>
   onTap: () => void
   size?: 'md' | 'lg'
+  /** show the whole title over as many lines as needed instead of cutting it off with "…" */
+  wrap?: boolean
 }) {
+  // overflow-wrap:anywhere also breaks a single long word (e.g. a URL) inside narrow columns
+  const titleFit = wrap ? '[overflow-wrap:anywhere]' : 'truncate'
   if (occ.allDay) {
     return (
       <button
@@ -43,10 +48,10 @@ export function EventCard({
         onClick={onTap}
         className={`pressable flex w-full items-center gap-2 rounded-xl px-3 text-left font-bold shadow-card ${
           size === 'lg' ? 'min-h-14 text-lg' : 'min-h-11 text-[15px]'
-        }`}
+        } ${wrap ? 'py-2' : ''}`}
         style={{ backgroundColor: color, color: textOn(color) }}
       >
-        <span className="truncate">{occ.title}</span>
+        <span className={`min-w-0 ${titleFit}`}>{occ.title}</span>
         {occ.isRecurring && <RepeatIcon size={14} className="shrink-0 opacity-70" />}
       </button>
     )
@@ -67,7 +72,7 @@ export function EventCard({
         {occ.isRecurring && <RepeatIcon size={13} className="shrink-0 text-ink-faint" />}
         <PersonDots personIds={occ.personIds} peopleById={peopleById} />
       </div>
-      <div className={`truncate font-bold text-ink ${size === 'lg' ? 'text-xl' : 'text-[15px]'}`}>{occ.title}</div>
+      <div className={`${titleFit} font-bold text-ink ${size === 'lg' ? 'text-xl' : 'text-[15px]'}`}>{occ.title}</div>
       {size === 'lg' && occ.location && (
         <div className="mt-1 flex items-center gap-1 text-sm font-semibold text-ink-soft">
           <MapPinIcon size={14} />

@@ -135,7 +135,6 @@ export function Header() {
           { value: 'home', label: 'Home' },
           { value: 'week', label: 'Week' },
           { value: 'month', label: 'Month' },
-          { value: 'agenda', label: 'Agenda' },
           { value: 'chores', label: 'Chores' },
           { value: 'lists', label: 'Lists' }
         ]}
