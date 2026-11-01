@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { DEFAULT_SETTINGS, type HomeTile, type HomeTileType } from '@shared/types'
 import { sanitizeLayout } from '@shared/home'
 import { stepTextSize, tileZoom } from '@shared/textSize'
@@ -16,11 +16,22 @@ import { AddTileSheet } from './AddTileSheet'
 const TileBody = memo(function TileBody({ tile, compact, zoom }: { tile: HomeTile; compact: boolean; zoom: number }) {
   const Component = TILE_REGISTRY[tile.type].component
   return (
-    <div className="h-full" style={zoom !== 1 ? { zoom } : undefined}>
+    // flow-root: a child's negative margin (edge-to-edge camera/photo) must not
+    // collapse through this wrapper, or the media sits short of the tile's top
+    <div className="flow-root h-full" style={zoom !== 1 ? { zoom } : undefined}>
       <Component tile={tile} compact={compact} />
     </div>
   )
 })
+
+/**
+ * Tile padding in px: ~7% of the tile's shorter side, so small tiles don't lose a
+ * quarter of their space to it, scaled with the tile's own text size, between 6px
+ * and 16px × that size. Large tiles at 100% keep the original 16px.
+ */
+function tilePadding(widthPx: number, heightPx: number, zoom: number): number {
+  return Math.round(Math.max(6, Math.min(16 * zoom, 0.07 * Math.min(widthPx, heightPx))))
+}
 
 /** Edge-to-edge media tiles have no text to size (and bleed past the padding, which zoom would break). */
 const NO_TEXT_SIZE = new Set<HomeTileType>(['camera', 'photo'])
@@ -111,6 +122,7 @@ export function HomeView() {
           const zoom = NO_TEXT_SIZE.has(tile.type) ? 1 : tileZoom(textSizes, tile.config?.textSize)
           // bigger text makes the tile effectively smaller
           const compact = grid.spanW(tile.w) < 260 * zoom || grid.spanH(tile.h) < 170 * zoom
+          const padStyle: CSSProperties = { padding: tilePadding(grid.spanW(tile.w), grid.spanH(tile.h), zoom) }
           const isActive = grid.activeTileId === tile.id
           if (!editing) {
             const navTarget = TILE_REGISTRY[tile.type].navTarget
@@ -120,9 +132,9 @@ export function HomeView() {
                 type="button"
                 data-tile-id={tile.id}
                 data-tile-type={tile.type}
-                style={grid.tileStyle(tile)}
+                style={{ ...grid.tileStyle(tile), ...padStyle }}
                 onClick={() => navTarget && setView(navTarget)}
-                className={`animate-rise rounded-card bg-card p-4 text-left shadow-card ${navTarget ? 'pressable' : 'cursor-default'} overflow-hidden`}
+                className={`animate-rise rounded-card bg-card text-left shadow-card ${navTarget ? 'pressable' : 'cursor-default'} overflow-hidden`}
               >
                 <TileBody tile={tile} compact={compact} zoom={zoom} />
               </button>
@@ -133,9 +145,9 @@ export function HomeView() {
               key={tile.id}
               data-tile-id={tile.id}
               data-tile-type={tile.type}
-              style={{ ...grid.tileStyle(tile), touchAction: 'none' }}
+              style={{ ...grid.tileStyle(tile), ...padStyle, touchAction: 'none' }}
               {...grid.tileHandlers(tile.id)}
-              className={`rounded-card bg-card p-4 shadow-card select-none ${
+              className={`rounded-card bg-card shadow-card select-none ${
                 isActive ? 'ring-4 ring-ember' : 'ring-2 ring-ember/50'
               } overflow-hidden`}
             >

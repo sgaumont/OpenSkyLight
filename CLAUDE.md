@@ -200,6 +200,17 @@ Add unit tests where sensible.
   thresholds, `e2e-home.mjs` coordinates, `homeLayout.test.ts`). Pixel checks use
   `grid.spanW/spanH` (gaps included), not `w * cellW`.
 
+## v0.8.15 — proportional tile padding; weather high-over-low (same branch)
+
+- Tile padding is `tilePadding()` in `HomeView.tsx`: ~7% of the tile's shorter side,
+  6px–16px × the tile's text size (large tiles keep 16px; 1-row tiles ~9px). Was a
+  fixed `p-4` that ate 26–37% of a 1-row tile's height.
+- Camera/photo tiles fill edge to edge via `position:absolute; inset:0` (`BLEED` in
+  `tiles.tsx`) — the old negative-margin bleed left an 8px gap at the top.
+- Meals/Chores/Stars tile lists are top-aligned (were vertically centred).
+- Weather columns: high above the day, low below the icon (one value wide per
+  column → larger numbers); width caps sized so "-12°" still fits.
+
 ## Wishlist (not started)
 
 - Header weather (top-left bar, `WeatherButton` in `features/weather/WeatherHeader.tsx`):

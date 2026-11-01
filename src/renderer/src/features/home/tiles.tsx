@@ -224,7 +224,7 @@ export function WeekAgendaTile({ compact }: TileProps) {
 const fit = (minPx: number, cqh: number, cqw: number, maxPx: number): string =>
   `clamp(${minPx}px, min(${cqh}cqh, ${cqw}cqw), ${maxPx}px)`
 
-export function WeatherTile({ tile, compact }: TileProps) {
+export function WeatherTile({ tile }: TileProps) {
   const { data: settings } = useSettings()
   const { data: weather } = useWeather()
   if (!settings?.weather) return <Placeholder>Set a location in Settings → General</Placeholder>
@@ -237,9 +237,7 @@ export function WeatherTile({ tile, compact }: TileProps) {
   const narrow = cols < 2.5
   const oneRow = rows < 1.5
   const layout = tile.h > tile.w ? 'stacked' : oneRow && !narrow ? 'short' : 'columns'
-  // columns are width-bound, so in squarish (or narrow) tiles the low goes under the
-  // high, letting everything grow taller; a 1-row column has room for the high only
-  const tempsStacked = compact || tile.h / tile.w >= 0.6
+  // a 1-row column only has room for the high
   const highOnly = oneRow
   return (
     <div className="h-full overflow-hidden" style={{ containerType: 'size' }}>
@@ -295,32 +293,20 @@ export function WeatherTile({ tile, compact }: TileProps) {
             )
           }
 
+          // high above, low below: each column is only one value wide, so the
+          // width-bound columns can use much larger text
           return (
             <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center justify-center gap-[3cqh]">
-              <span className={labelCls} style={{ fontSize: fit(narrow ? 8 : 10, highOnly ? 16 : 8, 3.4, 24) }}>
+              <span className="font-bold tabular-nums leading-none" style={{ fontSize: highOnly ? fit(11, 22, 5, 26) : fit(13, 17, 7.5, 64) }}>
+                {d.high}°
+              </span>
+              <span className={labelCls} style={{ fontSize: fit(narrow ? 8 : 10, highOnly ? 16 : 7, 3.6, 24) }}>
                 {label}
               </span>
-              {icon(highOnly ? fit(14, 30, 12, 40) : fit(20, 30, 13, 96))}
-              {highOnly ? (
-                <span className="font-bold tabular-nums leading-none" style={{ fontSize: fit(11, 22, 5, 26) }}>
-                  {d.high}°
-                </span>
-              ) : (
-                <span
-                  className={`flex items-baseline tabular-nums ${tempsStacked ? 'flex-col items-center leading-tight' : 'gap-[0.3em]'}`}
-                >
-                  <span
-                    className="font-bold"
-                    style={{ fontSize: tempsStacked ? fit(12, 12, 7, 44) : fit(13, 12, 4.6, 40) }}
-                  >
-                    {d.high}°
-                  </span>
-                  <span
-                    className="font-bold text-ink-faint"
-                    style={{ fontSize: tempsStacked ? fit(10, 10, 6, 36) : fit(11, 10, 3.8, 34) }}
-                  >
-                    {d.low}°
-                  </span>
+              {icon(highOnly ? fit(14, 30, 12, 40) : fit(18, 18, 14, 80))}
+              {!highOnly && (
+                <span className="font-bold text-ink-faint tabular-nums leading-none" style={{ fontSize: fit(11, 14, 6.2, 52) }}>
+                  {d.low}°
                 </span>
               )}
               {/* the rain line is always reserved (blank when dry) so every column is
@@ -351,7 +337,7 @@ export function ChoresProgressTile({ compact }: TileProps) {
       {withChores.length === 0 ? (
         <Placeholder>No chores today</Placeholder>
       ) : (
-        <TileScroll className="flex-1" innerClassName="flex min-h-full flex-col justify-center gap-2">
+        <TileScroll className="flex-1" innerClassName="flex flex-col gap-2">
           {withChores.map((p) => {
             const mine = chores.filter((c) => c.personId === p.id)
             const done = mine.filter((c) => c.completed).length
@@ -396,7 +382,7 @@ export function StarBalancesTile({ compact }: TileProps) {
       {shown.length === 0 ? (
         <Placeholder>Add family members in Settings</Placeholder>
       ) : (
-        <TileScroll className="flex-1" innerClassName="flex min-h-full flex-col justify-center gap-1.5">
+        <TileScroll className="flex-1" innerClassName="flex flex-col gap-1.5">
           {shown.map((p) => (
             <div key={p.id} className="flex items-center gap-2">
               <span
@@ -456,7 +442,7 @@ export function MealsTile({ compact }: TileProps) {
       {meals.length === 0 ? (
         <Placeholder>No meals planned</Placeholder>
       ) : (
-        <TileScroll className="flex-1" innerClassName="flex min-h-full flex-col justify-center gap-1.5">
+        <TileScroll className="flex-1" innerClassName="flex flex-col gap-1.5">
           {meals.map((m) => (
             <span key={m.slot} className="flex items-center gap-2">
               <span
@@ -678,6 +664,12 @@ export function BirdNetTile({ tile, compact }: TileProps) {
   )
 }
 
+/**
+ * Edge-to-edge media: pinned to the tile's own edges (the tile is absolutely
+ * positioned, so it's the containing block), ignoring its padding at any size.
+ */
+const BLEED: React.CSSProperties = { position: 'absolute', inset: 0 }
+
 const CAMERA_RETRY_MS = 10_000
 
 export function CameraTile({ tile }: TileProps) {
@@ -765,7 +757,7 @@ export function CameraTile({ tile }: TileProps) {
   if (!camera) return <Placeholder>Camera not found — re-add this tile</Placeholder>
 
   return (
-    <div className="relative -m-4 h-[calc(100%+2rem)] overflow-hidden bg-black/90">
+    <div className="overflow-hidden bg-black/90" style={BLEED}>
       <video ref={videoRef} muted autoPlay playsInline className="h-full w-full object-cover" />
       <span className="absolute top-2 left-2 rounded-full bg-black/55 px-2.5 py-1 text-xs font-extrabold text-white/90">
         {camera.name}
@@ -799,7 +791,8 @@ export function PhotoTile({ tile }: TileProps) {
   const src = photos[(index + tile.id.length) % photos.length]
   return (
     <div
-      className="-m-4 h-[calc(100%+2rem)] overflow-hidden"
+      className="overflow-hidden"
+      style={BLEED}
       onClick={photos.length > 1 ? () => setIndex((i) => i + 1) : undefined}
     >
       <img key={src} src={src} alt="" className="h-full w-full object-cover" style={{ animation: 'fade-in 1s ease backwards' }} />
