@@ -5,9 +5,20 @@ import { ipcInvoke } from '../../api/client'
 import { useSettings } from '../../api/hooks'
 import { ZONE } from '../../stores/uiStore'
 import { useKioskState } from '../../stores/kioskStore'
+import { guardInput } from '@shared/inputGuard'
 
 const WAKE_OVERRIDE_MS = 5 * 60 * 1000
 const SLIDE_MS = 12_000
+
+/** Handler for the tap that dismisses an overlay: it wakes the screen and nothing else. */
+function consumeWakeTap(action: () => void) {
+  return (e: React.PointerEvent): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    guardInput(window)
+    action()
+  }
+}
 
 function useClock(): DateTime {
   const [now, setNow] = useState(() => DateTime.now().setZone(ZONE))
@@ -39,7 +50,7 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
   const next = photos.length > 1 ? photos[(index + 1) % photos.length] : null
 
   return (
-    <div className="fixed inset-0 z-[80] cursor-none bg-black" onPointerDown={onDismiss}>
+    <div className="fixed inset-0 z-[80] cursor-none bg-black" onPointerDown={consumeWakeTap(onDismiss)}>
       {current && (
         <img
           key={current}
@@ -64,7 +75,7 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
 function SleepOverlay({ onWake }: { onWake: () => void }) {
   const now = useClock()
   return (
-    <div className="fixed inset-0 z-[90] cursor-none bg-black" onPointerDown={onWake}>
+    <div className="fixed inset-0 z-[90] cursor-none bg-black" onPointerDown={consumeWakeTap(onWake)}>
       <div className="absolute right-8 bottom-6 text-xl font-semibold text-white/15 select-none">
         {now.toFormat('h:mm a').toLowerCase()}
       </div>

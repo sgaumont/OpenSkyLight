@@ -289,6 +289,8 @@ export interface RedemptionDto {
 export interface AppSettings {
   /** 0 = Sunday, 1 = Monday */
   weekStartsOn: 0 | 1
+  /** Week view: 7 days from the focused date ('rolling'), or the calendar week containing it ('fixed') */
+  weekViewStart: 'rolling' | 'fixed'
   defaultView: CalendarViewKind
   timeFormat: '12h' | '24h'
   temperatureUnit: 'f' | 'c'
@@ -307,6 +309,7 @@ import { DEFAULT_HOME_LAYOUT } from '../home'
 
 export const DEFAULT_SETTINGS: AppSettings = {
   weekStartsOn: 0,
+  weekViewStart: 'rolling',
   defaultView: 'home',
   timeFormat: '12h',
   temperatureUnit: 'f',

@@ -33,6 +33,19 @@ export function weekRange(dateIso: string, zone: string, weekStartsOn: 0 | 1): D
   return { start: isoUtc(start), end: isoUtc(start.plus({ days: 7 })) }
 }
 
+/**
+ * The 7 days the week view shows: starting on `dateIso` itself when rolling,
+ * otherwise the calendar week containing it.
+ */
+export function weekViewRange(
+  dateIso: string,
+  zone: string,
+  start: 'rolling' | 'fixed',
+  weekStartsOn: 0 | 1
+): DateRange {
+  return start === 'rolling' ? agendaRange(dateIso, zone, 7) : weekRange(dateIso, zone, weekStartsOn)
+}
+
 export function dayRange(dateIso: string, zone: string): DateRange {
   const d = DateTime.fromISO(dateIso, { zone }).startOf('day')
   return { start: isoUtc(d), end: isoUtc(d.plus({ days: 1 })) }

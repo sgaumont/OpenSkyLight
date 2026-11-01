@@ -7,6 +7,7 @@ import { ChevronLeftIcon, ChevronRightIcon, GearIcon, PlusIcon } from '../../com
 import { WeatherButton } from '../weather/WeatherHeader'
 import { initials, textOn } from '../../lib/format'
 import type { CalendarViewKind } from '@shared/types'
+import { eachDay, weekViewRange } from '@shared/dates'
 
 function useNow(): DateTime {
   const [now, setNow] = useState(() => DateTime.now().setZone(ZONE))
@@ -17,16 +18,21 @@ function useNow(): DateTime {
   return now
 }
 
-function periodLabel(view: CalendarViewKind, focusedDate: string, weekStartsOn: 0 | 1): string {
+function periodLabel(
+  view: CalendarViewKind,
+  focusedDate: string,
+  weekViewStart: 'rolling' | 'fixed',
+  weekStartsOn: 0 | 1
+): string {
   const d = DateTime.fromISO(focusedDate, { zone: ZONE })
   if (view === 'home' || view === 'lists') return ''
   if (view === 'day' || view === 'chores') return d.toFormat('LLL d')
   if (view === 'month') return d.toFormat('LLLL yyyy')
   if (view === 'agenda') return `From ${d.toFormat('LLL d')}`
-  const target = weekStartsOn === 0 ? 7 : 1
-  let start = d
-  while (start.weekday !== target) start = start.minus({ days: 1 })
-  const end = start.plus({ days: 6 })
+  // same range the week grid renders, so the label always matches the columns
+  const days = eachDay(weekViewRange(focusedDate, ZONE, weekViewStart, weekStartsOn), ZONE)
+  const start = days[0]
+  const end = days[days.length - 1]
   return start.month === end.month
     ? `${start.toFormat('LLL d')} – ${end.toFormat('d')}`
     : `${start.toFormat('LLL d')} – ${end.toFormat('LLL d')}`
@@ -45,6 +51,7 @@ export function Header() {
   const togglePerson = useUi((s) => s.togglePerson)
   const setSettingsOpen = useUi((s) => s.setSettingsOpen)
   const weekStartsOn = settings?.weekStartsOn ?? 0
+  const weekViewStart = settings?.weekViewStart ?? 'rolling'
   const timeFormat = settings?.timeFormat ?? '12h'
   return (
     <header className="flex items-center gap-2 px-4 pt-5 pb-4 min-[1500px]:gap-3 min-[1500px]:px-5">
@@ -112,7 +119,7 @@ export function Header() {
             onClick={goToday}
             className="pressable min-w-16 rounded-xl px-2 py-2 text-center text-base font-extrabold text-ink min-[1500px]:min-w-24"
           >
-            {periodLabel(view, focusedDate, weekStartsOn)}
+            {periodLabel(view, focusedDate, weekViewStart, weekStartsOn)}
           </button>
           <IconButton label="Next" onClick={() => step(1)}>
             <ChevronRightIcon />

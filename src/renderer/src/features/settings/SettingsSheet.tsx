@@ -1192,6 +1192,17 @@ function GeneralTab() {
         />
       </div>
       <div>
+        <FieldLabel>Week view</FieldLabel>
+        <SegmentedControl
+          value={settings.weekViewStart}
+          onChange={(weekViewStart) => mutation.mutate({ weekViewStart })}
+          options={[
+            { value: 'rolling', label: 'Rolling (starts today)' },
+            { value: 'fixed', label: 'Fixed start day' }
+          ]}
+        />
+      </div>
+      <div>
         <FieldLabel>Time format</FieldLabel>
         <SegmentedControl
           value={settings.timeFormat}

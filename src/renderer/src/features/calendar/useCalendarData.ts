@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { DateTime } from 'luxon'
-import { agendaRange, dayRange, monthGridRange, weekRange, type DateRange } from '@shared/dates'
+import { agendaRange, dayRange, monthGridRange, weekViewRange, type DateRange } from '@shared/dates'
 import type { CalendarDto, OccurrenceDto, PersonDto } from '@shared/types'
 import { useCalendars, useOccurrences, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
@@ -11,10 +11,16 @@ export function useWeekStartsOn(): 0 | 1 {
   return settings?.weekStartsOn ?? 0
 }
 
+export function useWeekViewStart(): 'rolling' | 'fixed' {
+  const { data: settings } = useSettings()
+  return settings?.weekViewStart ?? 'rolling'
+}
+
 export function useViewRange(): DateRange {
   const view = useUi((s) => s.view)
   const focusedDate = useUi((s) => s.focusedDate)
   const weekStartsOn = useWeekStartsOn()
+  const weekViewStart = useWeekViewStart()
   return useMemo(() => {
     switch (view) {
       case 'day':
@@ -24,9 +30,9 @@ export function useViewRange(): DateRange {
       case 'agenda':
         return agendaRange(focusedDate, ZONE)
       default:
-        return weekRange(focusedDate, ZONE, weekStartsOn)
+        return weekViewRange(focusedDate, ZONE, weekViewStart, weekStartsOn)
     }
-  }, [view, focusedDate, weekStartsOn])
+  }, [view, focusedDate, weekStartsOn, weekViewStart])
 }
 
 export interface CalendarData {

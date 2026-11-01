@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import mpegts from 'mpegts.js'
 import type { HomeTile } from '@shared/types'
 import { presetById } from '@shared/rss'
 import { agendaRange, dayRange, eachDay } from '@shared/dates'
+import { withoutEnded } from '@shared/occurrences'
 import { ipcInvoke } from '../../api/client'
 import {
   useBalances,
@@ -49,16 +50,26 @@ function Placeholder({ children }: { children: React.ReactNode }) {
 
 const today = (): string => DateTime.now().setZone(ZONE).toISODate()!
 
+/** How often the Today tile re-checks for events that have finished. */
+const TODAY_REFRESH_MS = 30_000
+
 export function TodayEventsTile({ compact }: TileProps) {
-  const range = dayRange(today(), ZONE)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), TODAY_REFRESH_MS)
+    return () => clearInterval(t)
+  }, [])
+  const todayKey = DateTime.fromMillis(now).setZone(ZONE).toISODate()!
+  const range = useMemo(() => dayRange(todayKey, ZONE), [todayKey])
   const { byDay, peopleById, calendarsById } = useCalendarData(range)
   const { data: settings } = useSettings()
-  const occurrences = byDay.get(today()) ?? []
+  const all = byDay.get(todayKey) ?? []
+  const occurrences = withoutEnded(all, now)
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <TileTitle>Today</TileTitle>
       {occurrences.length === 0 ? (
-        <Placeholder>Nothing on the calendar today</Placeholder>
+        <Placeholder>{all.length === 0 ? 'Nothing on the calendar today' : 'Nothing else on the calendar today'}</Placeholder>
       ) : (
         <div className="flex min-h-0 flex-col gap-1.5 overflow-hidden">
           {occurrences.map((occ) => {

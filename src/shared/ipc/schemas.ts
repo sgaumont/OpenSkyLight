@@ -141,6 +141,7 @@ export const settingsPatchSchema = z.object({
   patch: z
     .object({
       weekStartsOn: z.union([z.literal(0), z.literal(1)]).optional(),
+      weekViewStart: z.enum(['rolling', 'fixed']).optional(),
       defaultView: z.enum(['home', 'day', 'week', 'month', 'agenda', 'chores', 'lists']).optional(),
       homeLayout: z.array(homeTileSchema).max(24).optional(),
       timeFormat: z.enum(['12h', '24h']).optional(),

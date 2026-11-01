@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
+import { DateTime } from 'luxon'
 import { usePushInvalidation, useSettings } from './api/hooks'
 import { useTheme } from './lib/useTheme'
-import { useUi } from './stores/uiStore'
+import { useUi, ZONE } from './stores/uiStore'
 import { HomeView } from './features/home/HomeView'
 import { Header, Fab } from './features/shell/Header'
 import { Toasts } from './features/shell/Toasts'
@@ -34,6 +35,21 @@ export default function App() {
       state.setView(settings.defaultView)
     }
   }, [settings])
+
+  // At midnight, a screen that was showing today moves on to the new today
+  // (otherwise a rolling week left up overnight would start yesterday).
+  useEffect(() => {
+    const todayKey = (): string => DateTime.now().setZone(ZONE).toISODate()!
+    let current = todayKey()
+    const t = setInterval(() => {
+      const next = todayKey()
+      if (next === current) return
+      const state = useUi.getState()
+      if (state.focusedDate === current) state.setFocusedDate(next)
+      current = next
+    }, 60_000)
+    return () => clearInterval(t)
+  }, [])
 
   return (
     <div className="flex h-full flex-col">
