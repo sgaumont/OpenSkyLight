@@ -93,13 +93,23 @@ C. **Week view start mode.** New setting: "Rolling (starts today)" vs "Fixed sta
 
 Add unit tests where sensible.
 
+## Round 2 — v0.8.3 (branch `feature/round-2`)
+
+- **Text sizes** (whole percents 70–200, step 10; math in `src/shared/textSize.ts`):
+  - Overall: `settings.textSize.global` → the window zoom factor
+    (`kiosk.applyTextSize`, applied on every page load and on change). Scales everything.
+  - Per tab: `settings.textSize.tabs[view]` (absolute) → CSS `zoom` on the `<main>`
+    content wrapper in `App.tsx`, relative to overall. Header unaffected.
+  - Home is special: zooming the grid would break `useHomeGrid`'s pixel math, so
+    the Home tab size is applied per tile, times each tile's own
+    `config.textSize` (A−/A+ pill on each tile in Home edit mode). Camera/photo
+    tiles are excluded (edge-to-edge media, no text).
+  - UI: Settings → General → Text size.
+- **Scrollable Home tiles:** `TileScroll` in `tiles.tsx` — scrolls when content
+  overflows, fades the bottom edge while there's more (scrollbars are hidden).
+
 ## Wishlist (not started)
 
-- Text sizes. Plan: a global "Text size" setting first (scale the root `rem`;
-  nearly all Tailwind sizing is rem-based), then the two overrides below.
-  - Per-tab font sizes (calendar, chores, lists, meals, etc.).
-  - Per-tile font sizes on the home screen.
-- Scrollable tiles on the Home tab (tiles currently clip overflow).
 - Screensaver: shuffle photos, showing every photo once per pass, then start
   a new random order (no repeats until all have been shown).
 - Home photo tile: tap to advance to the next picture.

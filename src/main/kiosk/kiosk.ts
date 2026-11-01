@@ -1,4 +1,4 @@
-import { app, dialog, net, powerMonitor, powerSaveBlocker, protocol } from 'electron'
+import { app, BrowserWindow, dialog, net, powerMonitor, powerSaveBlocker, protocol } from 'electron'
 import { readdirSync } from 'node:fs'
 import { join, resolve, extname } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -122,13 +122,19 @@ export function createKiosk(deps: { settings: SettingsService; broadcast: (ch: s
     if (sleepTimer) clearInterval(sleepTimer)
   }
 
+  /** Overall text size is the window zoom factor (like Ctrl +/-), so the whole UI scales together. */
+  function applyTextSize(): void {
+    const factor = (settings.getAll().textSize?.global ?? 100) / 100
+    for (const win of BrowserWindow.getAllWindows()) win.webContents.setZoomFactor(factor)
+  }
+
   function setLaunchOnStartup(enabled: boolean): void {
     if (!app.isPackaged) return // pointless (and confusing) for dev runs
     // a portable build runs from a temp unpack dir; register the portable exe itself
     app.setLoginItemSettings({ openAtLogin: enabled, path: process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath })
   }
 
-  return { start, stop, listPhotos, pickFolder, previewScreensaver, setLaunchOnStartup }
+  return { start, stop, listPhotos, pickFolder, previewScreensaver, setLaunchOnStartup, applyTextSize }
 }
 
 export type Kiosk = ReturnType<typeof createKiosk>

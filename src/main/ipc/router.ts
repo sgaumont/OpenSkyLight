@@ -188,6 +188,7 @@ export function buildChannelTable(services: Services): ChannelTable {
     const result = services.settings.set(req.patch)
     if (req.patch.launchOnStartup !== undefined) services.kiosk.setLaunchOnStartup(req.patch.launchOnStartup)
     if (req.patch.companion !== undefined) services.companion.applySettings()
+    if (req.patch.textSize !== undefined) services.kiosk.applyTextSize()
     return result
   })
 

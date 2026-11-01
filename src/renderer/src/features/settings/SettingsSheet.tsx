@@ -1,6 +1,21 @@
 import { useState } from 'react'
-import type { CalendarDto, ChoreDto, PersonDto, PersonRole, RecurrenceInput, RewardDto } from '@shared/types'
-import { PERSON_COLORS } from '@shared/types'
+import type {
+  CalendarDto,
+  CalendarViewKind,
+  ChoreDto,
+  PersonDto,
+  PersonRole,
+  RecurrenceInput,
+  RewardDto
+} from '@shared/types'
+import { DEFAULT_SETTINGS, PERSON_COLORS } from '@shared/types'
+import {
+  stepTextSize,
+  tabTextSize,
+  TEXT_SIZE_MAX,
+  TEXT_SIZE_MIN,
+  withTabTextSize
+} from '@shared/textSize'
 import { describeRecurrence } from '@shared/recurrence/build'
 import {
   useAuthMutations,
@@ -1139,6 +1154,92 @@ function SleepSection() {
   )
 }
 
+function TextSizeStepper({ value, onChange, label }: { value: number; onChange: (pct: number) => void; label: string }) {
+  return (
+    <div className="flex shrink-0 items-center rounded-2xl bg-paper-deep p-1">
+      <button
+        type="button"
+        aria-label={`Smaller text: ${label}`}
+        disabled={value <= TEXT_SIZE_MIN}
+        onClick={() => onChange(stepTextSize(value, -1))}
+        className="pressable flex h-11 w-12 items-center justify-center rounded-xl text-base font-extrabold text-ink-soft disabled:opacity-30"
+      >
+        A−
+      </button>
+      <span className="min-w-16 text-center text-base font-bold tabular-nums">{value}%</span>
+      <button
+        type="button"
+        aria-label={`Larger text: ${label}`}
+        disabled={value >= TEXT_SIZE_MAX}
+        onClick={() => onChange(stepTextSize(value, 1))}
+        className="pressable flex h-11 w-12 items-center justify-center rounded-xl text-xl font-extrabold text-ink-soft disabled:opacity-30"
+      >
+        A+
+      </button>
+    </div>
+  )
+}
+
+const TEXT_SIZE_TABS: { view: CalendarViewKind; label: string }[] = [
+  { view: 'home', label: 'Home' },
+  { view: 'day', label: 'Day' },
+  { view: 'week', label: 'Week' },
+  { view: 'month', label: 'Month' },
+  { view: 'agenda', label: 'Agenda' },
+  { view: 'chores', label: 'Chores' },
+  { view: 'lists', label: 'Lists' }
+]
+
+function TextSizeSection() {
+  const { data: settings } = useSettings()
+  const mutation = useSettingsMutation()
+  if (!settings) return null
+  const sizes = settings.textSize ?? DEFAULT_SETTINGS.textSize
+  return (
+    <div>
+      <FieldLabel>Text size</FieldLabel>
+      <div className="flex items-center gap-3 rounded-2xl bg-paper-deep/50 p-4">
+        <span className="flex-1 text-base font-semibold text-ink-soft">Everything (header included)</span>
+        <TextSizeStepper
+          label="everything"
+          value={sizes.global}
+          onChange={(global) => mutation.mutate({ textSize: { ...sizes, global } })}
+        />
+      </div>
+      <div className="mt-2 flex flex-col gap-1 rounded-2xl bg-paper-deep/50 p-4">
+        {TEXT_SIZE_TABS.map(({ view, label }) => {
+          const overridden = sizes.tabs[view] !== undefined
+          return (
+            <div key={view} className="flex items-center gap-3">
+              <span className="flex-1 text-base font-semibold text-ink-soft">
+                {label}
+                {!overridden && <span className="ml-2 text-sm text-ink-faint">same as everything</span>}
+              </span>
+              {overridden && (
+                <button
+                  type="button"
+                  onClick={() => mutation.mutate({ textSize: withTabTextSize(sizes, view, sizes.global) })}
+                  className="pressable rounded-xl px-3 py-2 text-sm font-bold text-ink-faint"
+                >
+                  Reset
+                </button>
+              )}
+              <TextSizeStepper
+                label={label}
+                value={tabTextSize(sizes, view)}
+                onChange={(pct) => mutation.mutate({ textSize: withTabTextSize(sizes, view, pct) })}
+              />
+            </div>
+          )
+        })}
+      </div>
+      <p className="mt-2 text-sm font-semibold text-ink-faint">
+        Home tiles can be sized one by one too: tap the pencil on Home, then A− / A+ on a tile.
+      </p>
+    </div>
+  )
+}
+
 function GeneralTab() {
   const { data: settings } = useSettings()
   const mutation = useSettingsMutation()
@@ -1164,6 +1265,7 @@ function GeneralTab() {
           </p>
         )}
       </div>
+      <TextSizeSection />
       <WeatherSection />
       <ScreensaverSection />
       <SleepSection />

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TEXT_SIZE_MAX, TEXT_SIZE_MIN } from '../textSize'
 
 const isoInstant = z.string().refine((s) => !Number.isNaN(Date.parse(s)), 'invalid ISO datetime')
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'invalid ISO date')
@@ -82,6 +83,9 @@ export const occurrenceQuerySchema = z.object({
   end: isoInstant
 })
 
+const textSizePct = z.number().int().min(TEXT_SIZE_MIN).max(TEXT_SIZE_MAX)
+const viewKind = z.enum(['home', 'day', 'week', 'month', 'agenda', 'chores', 'lists'])
+
 const homeTileSchema = z.object({
   id: z.string().min(1).max(80),
   type: z.enum([
@@ -110,7 +114,8 @@ const homeTileSchema = z.object({
       listId: z.string().min(1).max(200).optional(),
       feedId: z.string().min(1).max(200).optional(),
       cameraId: z.string().min(1).max(200).optional(),
-      birdnetUrl: z.string().min(1).max(200).optional()
+      birdnetUrl: z.string().min(1).max(200).optional(),
+      textSize: textSizePct.optional()
     })
     .optional()
 })
@@ -142,9 +147,10 @@ export const settingsPatchSchema = z.object({
     .object({
       weekStartsOn: z.union([z.literal(0), z.literal(1)]).optional(),
       weekViewStart: z.enum(['rolling', 'fixed']).optional(),
-      defaultView: z.enum(['home', 'day', 'week', 'month', 'agenda', 'chores', 'lists']).optional(),
+      defaultView: viewKind.optional(),
       homeLayout: z.array(homeTileSchema).max(24).optional(),
       timeFormat: z.enum(['12h', '24h']).optional(),
+      textSize: z.object({ global: textSizePct, tabs: z.record(viewKind, textSizePct) }).optional(),
       temperatureUnit: z.enum(['f', 'c']).optional(),
       theme: z.enum(['light', 'dark', 'auto']).optional(),
       weather: z.object({ lat: z.number(), lon: z.number(), label: z.string() }).nullable().optional(),

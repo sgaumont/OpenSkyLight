@@ -114,6 +114,10 @@ if (!gotLock) {
     }
     channelTable = buildChannelTable(services)
     registerIpcHandlers(services, channelTable)
+    // every (re)loaded page gets the overall text size, including after a renderer crash
+    app.on('browser-window-created', (_event, win) => {
+      win.webContents.on('did-finish-load', () => kiosk.applyTextSize())
+    })
     createMainWindow()
     syncManager.start()
     kiosk.start()

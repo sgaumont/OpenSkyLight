@@ -3,6 +3,8 @@ import { DateTime } from 'luxon'
 import { usePushInvalidation, useSettings } from './api/hooks'
 import { useTheme } from './lib/useTheme'
 import { useUi, ZONE } from './stores/uiStore'
+import { DEFAULT_SETTINGS } from '@shared/types'
+import { tabZoom } from '@shared/textSize'
 import { HomeView } from './features/home/HomeView'
 import { Header, Fab } from './features/shell/Header'
 import { Toasts } from './features/shell/Toasts'
@@ -23,6 +25,7 @@ export default function App() {
   useTheme()
   const view = useUi((s) => s.view)
   const { data: settings } = useSettings()
+  const tabZoomValue = view === 'home' ? 1 : tabZoom(settings?.textSize ?? DEFAULT_SETTINGS.textSize, view)
 
   // Apply the configured default screen once at boot (only if the user
   // hasn't already navigated away from the initial view).
@@ -55,13 +58,17 @@ export default function App() {
     <div className="flex h-full flex-col">
       <Header />
       <main className="min-h-0 flex-1">
-        {view === 'home' && <HomeView />}
-        {view === 'week' && <WeekView />}
-        {view === 'day' && <DayView />}
-        {view === 'month' && <MonthView />}
-        {view === 'agenda' && <AgendaView />}
-        {view === 'chores' && <ChoresView />}
-        {view === 'lists' && <ListsView />}
+        {/* per-tab text size; Home applies its size per tile instead, since
+            zooming the grid would break its drag/resize pixel math */}
+        <div className="h-full" style={tabZoomValue !== 1 ? { zoom: tabZoomValue } : undefined}>
+          {view === 'home' && <HomeView />}
+          {view === 'week' && <WeekView />}
+          {view === 'day' && <DayView />}
+          {view === 'month' && <MonthView />}
+          {view === 'agenda' && <AgendaView />}
+          {view === 'chores' && <ChoresView />}
+          {view === 'lists' && <ListsView />}
+        </div>
       </main>
       {view !== 'chores' && view !== 'lists' && view !== 'home' && <Fab />}
       <EventEditor />

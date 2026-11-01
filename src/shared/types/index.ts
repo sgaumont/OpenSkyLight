@@ -170,6 +170,8 @@ export interface HomeTileConfig {
   cameraId?: string
   /** 'birdnet' tiles: the BirdNET-Go base URL on the LAN */
   birdnetUrl?: string
+  /** any tile: text size as a percent of the Home tab's size (absent = 100) */
+  textSize?: number
 }
 
 export interface CameraDto {
@@ -286,6 +288,14 @@ export interface RedemptionDto {
   status: 'pending' | 'granted'
 }
 
+/** Text sizes as whole percentages (see shared/textSize.ts). */
+export interface TextSizeSettings {
+  /** the whole app, header included (applied as the window zoom factor) */
+  global: number
+  /** absolute per-tab overrides; a missing tab follows `global` */
+  tabs: Partial<Record<CalendarViewKind, number>>
+}
+
 export interface AppSettings {
   /** 0 = Sunday, 1 = Monday */
   weekStartsOn: 0 | 1
@@ -293,6 +303,7 @@ export interface AppSettings {
   weekViewStart: 'rolling' | 'fixed'
   defaultView: CalendarViewKind
   timeFormat: '12h' | '24h'
+  textSize: TextSizeSettings
   temperatureUnit: 'f' | 'c'
   /** 'auto' = dark from sunset to sunrise (sun times from the weather location) */
   theme: 'light' | 'dark' | 'auto'
@@ -312,6 +323,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   weekViewStart: 'rolling',
   defaultView: 'home',
   timeFormat: '12h',
+  textSize: { global: 100, tabs: {} },
   temperatureUnit: 'f',
   theme: 'auto',
   weather: null,

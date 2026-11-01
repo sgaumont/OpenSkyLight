@@ -48,6 +48,49 @@ function Placeholder({ children }: { children: React.ReactNode }) {
   )
 }
 
+/**
+ * Scrolls when its content overflows (bigger text, long lists). The kiosk hides
+ * scrollbars, so the bottom edge fades out while there's more below.
+ */
+function TileScroll({
+  children,
+  className = '',
+  innerClassName = ''
+}: {
+  children: React.ReactNode
+  className?: string
+  innerClassName?: string
+}) {
+  const outer = useRef<HTMLDivElement>(null)
+  const inner = useRef<HTMLDivElement>(null)
+  const [more, setMore] = useState(false)
+  useEffect(() => {
+    const el = outer.current
+    if (!el || !inner.current) return
+    const update = (): void => setMore(el.scrollTop + el.clientHeight < el.scrollHeight - 1)
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    ro.observe(inner.current)
+    el.addEventListener('scroll', update, { passive: true })
+    update()
+    return () => {
+      ro.disconnect()
+      el.removeEventListener('scroll', update)
+    }
+  }, [])
+  return (
+    <div
+      ref={outer}
+      className={`min-h-0 overflow-y-auto overscroll-contain ${className}`}
+      style={more ? { maskImage: 'linear-gradient(to bottom, black calc(100% - 2rem), transparent)' } : undefined}
+    >
+      <div ref={inner} className={innerClassName}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 const today = (): string => DateTime.now().setZone(ZONE).toISODate()!
 
 /** How often the Today tile re-checks for events that have finished. */
@@ -71,7 +114,7 @@ export function TodayEventsTile({ compact }: TileProps) {
       {occurrences.length === 0 ? (
         <Placeholder>{all.length === 0 ? 'Nothing on the calendar today' : 'Nothing else on the calendar today'}</Placeholder>
       ) : (
-        <div className="flex min-h-0 flex-col gap-1.5 overflow-hidden">
+        <TileScroll innerClassName="flex flex-col gap-1.5">
           {occurrences.map((occ) => {
             const color = occurrenceColor(occ, peopleById, calendarsById)
             return (
@@ -86,7 +129,7 @@ export function TodayEventsTile({ compact }: TileProps) {
               </div>
             )
           })}
-        </div>
+        </TileScroll>
       )}
     </div>
   )
@@ -100,7 +143,7 @@ export function WeekAgendaTile({ compact }: TileProps) {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <TileTitle>This week</TileTitle>
-      <div className="flex min-h-0 flex-col gap-1 overflow-hidden">
+      <TileScroll innerClassName="flex flex-col gap-1">
         {days.map((day) => {
           const key = day.toISODate()!
           const occs = byDay.get(key) ?? []
@@ -133,7 +176,7 @@ export function WeekAgendaTile({ compact }: TileProps) {
           )
         })}
         {[...byDay.values()].every((v) => v.length === 0) && <Placeholder>A quiet week so far</Placeholder>}
-      </div>
+      </TileScroll>
     </div>
   )
 }
@@ -181,7 +224,7 @@ export function ChoresProgressTile({ compact }: TileProps) {
       {withChores.length === 0 ? (
         <Placeholder>No chores today</Placeholder>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col justify-center gap-2 overflow-hidden">
+        <TileScroll className="flex-1" innerClassName="flex min-h-full flex-col justify-center gap-2">
           {withChores.map((p) => {
             const mine = chores.filter((c) => c.personId === p.id)
             const done = mine.filter((c) => c.completed).length
@@ -209,7 +252,7 @@ export function ChoresProgressTile({ compact }: TileProps) {
               </div>
             )
           })}
-        </div>
+        </TileScroll>
       )}
     </div>
   )
@@ -226,7 +269,7 @@ export function StarBalancesTile({ compact }: TileProps) {
       {shown.length === 0 ? (
         <Placeholder>Add family members in Settings</Placeholder>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col justify-center gap-1.5 overflow-hidden">
+        <TileScroll className="flex-1" innerClassName="flex min-h-full flex-col justify-center gap-1.5">
           {shown.map((p) => (
             <div key={p.id} className="flex items-center gap-2">
               <span
@@ -241,7 +284,7 @@ export function StarBalancesTile({ compact }: TileProps) {
               </span>
             </div>
           ))}
-        </div>
+        </TileScroll>
       )}
     </div>
   )
@@ -262,7 +305,7 @@ export function ListTile({ tile, compact }: TileProps) {
       {unchecked.length === 0 ? (
         <Placeholder>All done!</Placeholder>
       ) : (
-        <div className="flex min-h-0 flex-col gap-1 overflow-hidden">
+        <TileScroll innerClassName="flex flex-col gap-1">
           {unchecked.slice(0, maxItems).map((item) => (
             <span key={item.id} className="flex items-center gap-2">
               <span className="h-2 w-2 shrink-0 rounded-full border-2" style={{ borderColor: list.color }} />
@@ -272,7 +315,7 @@ export function ListTile({ tile, compact }: TileProps) {
           {unchecked.length > maxItems && (
             <span className="text-xs font-extrabold text-ink-faint">+{unchecked.length - maxItems} more</span>
           )}
-        </div>
+        </TileScroll>
       )}
     </div>
   )
@@ -286,7 +329,7 @@ export function MealsTile({ compact }: TileProps) {
       {meals.length === 0 ? (
         <Placeholder>No meals planned</Placeholder>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col justify-center gap-1.5 overflow-hidden">
+        <TileScroll className="flex-1" innerClassName="flex min-h-full flex-col justify-center gap-1.5">
           {meals.map((m) => (
             <span key={m.slot} className="flex items-center gap-2">
               <span
@@ -298,7 +341,7 @@ export function MealsTile({ compact }: TileProps) {
               <span className={`truncate font-bold ${compact ? 'text-sm' : 'text-base'}`}>{m.text}</span>
             </span>
           ))}
-        </div>
+        </TileScroll>
       )}
     </div>
   )
@@ -342,7 +385,7 @@ export function NewsTile({ tile, compact }: TileProps) {
       ) : !feed ? (
         <Placeholder>Loading headlines…</Placeholder>
       ) : (
-        <div className="flex min-h-0 flex-col gap-1.5 overflow-hidden">
+        <TileScroll innerClassName="flex flex-col gap-1.5">
           {feed.items.slice(0, maxItems).map((item, i) => (
             <div key={i} className="flex items-start gap-2">
               <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-ember" />
@@ -360,7 +403,7 @@ export function NewsTile({ tile, compact }: TileProps) {
               </span>
             </div>
           ))}
-        </div>
+        </TileScroll>
       )}
     </div>
   )
@@ -480,7 +523,7 @@ export function BirdNetTile({ tile, compact }: TileProps) {
       ) : data.detections.length === 0 ? (
         <Placeholder>No detections yet</Placeholder>
       ) : (
-        <div className="flex min-h-0 flex-col gap-1.5 overflow-hidden">
+        <TileScroll innerClassName="flex flex-col gap-1.5">
           {data.detections.slice(0, maxItems).map((det) => (
             <div key={`${det.id}-${det.timestamp}`} className="flex min-w-0 items-center gap-2">
               {det.image && (
@@ -502,7 +545,7 @@ export function BirdNetTile({ tile, compact }: TileProps) {
               </span>
             </div>
           ))}
-        </div>
+        </TileScroll>
       )}
     </div>
   )

@@ -1,4 +1,5 @@
 import type { HomeTile, HomeTileConfig, HomeTileType } from './types'
+import { clampTextSize } from './textSize'
 
 /**
  * Pure grid math for the customizable home screen. Shared by the renderer
@@ -14,9 +15,10 @@ export interface TileSpec {
   defaultW: number
   defaultH: number
   allowMultiple: boolean
-  /** The only config keys this tile type may carry — the single source of
+  /** The only string config keys this tile type may carry — the single source of
    * truth that sanitizeLayout enforces (per-type, so a list tile can never
-   * smuggle a cameraId, and forgetting a key here fails visibly in tests). */
+   * smuggle a cameraId, and forgetting a key here fails visibly in tests).
+   * `textSize` is the one universal key, handled separately. */
   configKeys: (keyof HomeTileConfig)[]
 }
 
@@ -128,6 +130,11 @@ export function sanitizeLayout(raw: unknown): HomeTile[] {
           config = { ...config, [key]: value }
         }
       }
+    }
+    // every tile type may carry a text size; keep only valid non-default ones
+    const textSize = (t.config as { textSize?: unknown } | undefined)?.textSize
+    if (typeof textSize === 'number' && textSize !== 100 && clampTextSize(textSize) === textSize) {
+      config = { ...config, textSize }
     }
     out.push({
       id: t.id,

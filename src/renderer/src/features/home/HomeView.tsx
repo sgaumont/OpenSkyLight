@@ -1,6 +1,7 @@
 import { memo, useMemo, useRef, useState } from 'react'
-import type { HomeTile } from '@shared/types'
+import { DEFAULT_SETTINGS, type HomeTile, type HomeTileType } from '@shared/types'
 import { sanitizeLayout } from '@shared/home'
+import { stepTextSize, tileZoom } from '@shared/textSize'
 import { useAuthMutations, useAuthStatus, useSettings, useSettingsMutation } from '../../api/hooks'
 import { useUi } from '../../stores/uiStore'
 import { BigButton } from '../../components/ui'
@@ -12,10 +13,24 @@ import { AddTileSheet } from './AddTileSheet'
 
 // memo matters: during a drag, HomeView re-renders at pointer-event rate and
 // tile bodies (with their data hooks) must not re-execute for every move
-const TileBody = memo(function TileBody({ tile, compact }: { tile: HomeTile; compact: boolean }) {
+const TileBody = memo(function TileBody({ tile, compact, zoom }: { tile: HomeTile; compact: boolean; zoom: number }) {
   const Component = TILE_REGISTRY[tile.type].component
-  return <Component tile={tile} compact={compact} />
+  return (
+    <div className="h-full" style={zoom !== 1 ? { zoom } : undefined}>
+      <Component tile={tile} compact={compact} />
+    </div>
+  )
 })
+
+/** Edge-to-edge media tiles have no text to size (and bleed past the padding, which zoom would break). */
+const NO_TEXT_SIZE = new Set<HomeTileType>(['camera', 'photo'])
+
+function withTileTextSize(tile: HomeTile, direction: 1 | -1): HomeTile {
+  const textSize = stepTextSize(tile.config?.textSize ?? 100, direction)
+  const { textSize: _old, ...rest } = tile.config ?? {}
+  const config = textSize === 100 ? rest : { ...rest, textSize }
+  return { ...tile, config: Object.keys(config).length > 0 ? config : undefined }
+}
 
 export function HomeView() {
   const { data: settings } = useSettings()
@@ -26,6 +41,7 @@ export function HomeView() {
   const [addOpen, setAddOpen] = useState(false)
   const editing = draft !== null
   const effective = draft ?? layout
+  const textSizes = settings?.textSize ?? DEFAULT_SETTINGS.textSize
 
   const { data: auth } = useAuthStatus()
   const authMutations = useAuthMutations()
@@ -82,7 +98,9 @@ export function HomeView() {
         {settings != null &&
           grid.ready &&
           effective.map((tile) => {
-          const compact = tile.w * grid.cellW < 260 || tile.h * grid.cellH < 170
+          const zoom = NO_TEXT_SIZE.has(tile.type) ? 1 : tileZoom(textSizes, tile.config?.textSize)
+          // bigger text makes the tile effectively smaller
+          const compact = tile.w * grid.cellW < 260 * zoom || tile.h * grid.cellH < 170 * zoom
           const isActive = grid.activeTileId === tile.id
           if (!editing) {
             const navTarget = TILE_REGISTRY[tile.type].navTarget
@@ -96,7 +114,7 @@ export function HomeView() {
                 onClick={() => navTarget && setView(navTarget)}
                 className={`animate-rise rounded-card bg-card p-4 text-left shadow-card ${navTarget ? 'pressable' : 'cursor-default'} overflow-hidden`}
               >
-                <TileBody tile={tile} compact={compact} />
+                <TileBody tile={tile} compact={compact} zoom={zoom} />
               </button>
             )
           }
@@ -111,7 +129,32 @@ export function HomeView() {
                 isActive ? 'ring-4 ring-ember' : 'ring-2 ring-ember/50'
               } overflow-hidden`}
             >
-              <TileBody tile={tile} compact={compact} />
+              <TileBody tile={tile} compact={compact} zoom={zoom} />
+              {/* text size */}
+              {!NO_TEXT_SIZE.has(tile.type) && (
+                <div
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="absolute bottom-1.5 left-1.5 flex items-center rounded-full bg-ink/80 p-1 text-paper"
+                >
+                  <button
+                    type="button"
+                    aria-label={`Smaller text in ${TILE_REGISTRY[tile.type].label}`}
+                    onClick={() => setDraft(effective.map((t) => (t.id === tile.id ? withTileTextSize(t, -1) : t)))}
+                    className="pressable flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold"
+                  >
+                    A−
+                  </button>
+                  <span className="min-w-11 text-center text-sm font-bold tabular-nums">{tile.config?.textSize ?? 100}%</span>
+                  <button
+                    type="button"
+                    aria-label={`Larger text in ${TILE_REGISTRY[tile.type].label}`}
+                    onClick={() => setDraft(effective.map((t) => (t.id === tile.id ? withTileTextSize(t, 1) : t)))}
+                    className="pressable flex h-10 w-10 items-center justify-center rounded-full text-lg font-extrabold"
+                  >
+                    A+
+                  </button>
+                </div>
+              )}
               {/* remove */}
               <button
                 type="button"
