@@ -18,6 +18,9 @@ function useNow(): DateTime {
   return now
 }
 
+/** narrow layouts (the 10" kiosk at 115%+ text): slightly smaller round buttons to leave room */
+const NARROW_ICON = 'max-[1300px]:h-11 max-[1300px]:w-11'
+
 function periodLabel(
   view: CalendarViewKind,
   focusedDate: string,
@@ -55,31 +58,31 @@ export function Header() {
   const weekViewStart = settings?.weekViewStart ?? 'rolling'
   const timeFormat = settings?.timeFormat ?? '12h'
   return (
-    <header className="flex items-center gap-2 px-4 pt-5 pb-4 max-[1150px]:gap-1.5 max-[1150px]:px-3 min-[1500px]:gap-3 min-[1500px]:px-5">
+    <header className="flex items-center gap-2 px-4 pt-5 pb-4 max-[1300px]:gap-1.5 max-[1300px]:px-3 min-[1500px]:gap-3 min-[1500px]:px-5">
       {/* Today + a big clock (the header is the only clock since the home
           screen dropped its clock tile); scales down so everything still
-          fits on narrow layouts too (e.g. a 10" kiosk at 130% text ≈ 1050px) */}
+          fits on narrow layouts too (the 1440px-wide kiosk at 115–130% text ≈ 1250–1110px) */}
       <button
         type="button"
         onClick={goToday}
-        className="pressable flex shrink-0 items-center gap-3 text-left max-[1150px]:gap-2 min-[1500px]:gap-4"
+        className="pressable flex shrink-0 items-center gap-3 text-left max-[1300px]:gap-2 min-[1500px]:gap-4"
       >
         <div>
-          <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight max-[1150px]:text-[1.65rem] min-[1500px]:text-[2.6rem]">
+          <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight max-[1300px]:text-[1.65rem] min-[1500px]:text-[2.6rem]">
             {now.toFormat('cccc')}
           </div>
-          <div className="mt-1 text-base font-bold text-ink-soft max-[1150px]:text-sm min-[1500px]:text-lg">
+          <div className="mt-1 text-base font-bold text-ink-soft max-[1300px]:text-sm min-[1500px]:text-lg">
             {now.toFormat('LLLL d')}
           </div>
         </div>
         <div className="w-px self-stretch bg-ink-faint/30" />
-        <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight tabular-nums max-[1150px]:text-[1.65rem] min-[1500px]:text-[3.1rem]">
+        <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight tabular-nums max-[1300px]:text-[1.65rem] min-[1500px]:text-[3.1rem]">
           {timeFormat === '24h' ? (
             now.toFormat('HH:mm')
           ) : (
             <>
               {now.toFormat('h:mm')}
-              <span className="ml-1 text-lg font-bold text-ink-soft max-[1150px]:text-base min-[1500px]:ml-1.5 min-[1500px]:text-2xl">
+              <span className="ml-1 text-lg font-bold text-ink-soft max-[1300px]:text-base min-[1500px]:ml-1.5 min-[1500px]:text-2xl">
                 {now.toFormat('a').toLowerCase()}
               </span>
             </>
@@ -103,7 +106,7 @@ export function Header() {
                 aria-label={`${hidden ? 'Show' : 'Hide'} ${p.name}`}
                 title={p.name}
                 onClick={() => togglePerson(p.id)}
-                className={`pressable flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-extrabold ring-2 ring-paper transition-all ${
+                className={`pressable flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-extrabold ring-2 ring-paper transition-all max-[1300px]:h-10 max-[1300px]:w-10 ${
                   hidden ? 'opacity-35 grayscale' : 'shadow-card'
                 }`}
                 style={{ backgroundColor: p.color, color: textOn(p.color) }}
@@ -118,7 +121,7 @@ export function Header() {
       {/* period nav (removed from layout where it isn't meaningful — space matters here) */}
       {view !== 'lists' && view !== 'home' && (
         <div className="flex shrink-0 items-center gap-1 rounded-2xl bg-paper-deep/70 p-1">
-          <IconButton label="Previous" onClick={() => step(-1)}>
+          <IconButton label="Previous" className={NARROW_ICON} onClick={() => step(-1)}>
             <ChevronLeftIcon />
           </IconButton>
           <button
@@ -128,7 +131,7 @@ export function Header() {
           >
             {periodLabel(view, focusedDate, weekViewStart, weekStartsOn)}
           </button>
-          <IconButton label="Next" onClick={() => step(1)}>
+          <IconButton label="Next" className={NARROW_ICON} onClick={() => step(1)}>
             <ChevronRightIcon />
           </IconButton>
         </div>
@@ -147,12 +150,12 @@ export function Header() {
       />
 
       {view === 'home' && (
-        <IconButton label="Customize home screen" onClick={requestHomeEdit}>
+        <IconButton label="Customize home screen" className={NARROW_ICON} onClick={requestHomeEdit}>
           <PencilIcon size={22} />
         </IconButton>
       )}
 
-      <IconButton label="Settings" onClick={() => setSettingsOpen(true)}>
+      <IconButton label="Settings" className={NARROW_ICON} onClick={() => setSettingsOpen(true)}>
         <GearIcon size={26} />
       </IconButton>
     </header>

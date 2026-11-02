@@ -32,6 +32,7 @@ my own changes to one wall kiosk while staying mergeable with upstream.
 ## Kiosk
 
 - Device: Microsoft Surface Pro (~10" screen), Windows 10, touch-only wall display.
+  Screen 2160×1440 at 150% Windows scaling → app viewport **1440×960** (test UI at this size).
   I develop on a 55" screen, so sizes/layout/fonts can only be judged on the device.
 - **Every change gets tested on the Surface before release:** build the portable
   exe (`npm run dist` → `dist\OpenSkyLight <ver>.exe`), I run it on the device
@@ -250,7 +251,11 @@ Add unit tests where sensible.
   current temperature. Forecast fetch is now `forecast_days=6`: the Home weather tile shows
   `daily.slice(1, 6)` (tomorrow + 4, weekday labels); the header's forecast dialog stays today + 4.
 - The header already overflowed (45px) at ~1050px layout width (Surface at 130% text, Week tab,
-  4 people). Below 1150px it now uses smaller day/clock/temperature and tighter gaps (`max-[1150px]:`).
+  4 people). Below 1300px it now uses smaller day/clock/temperature and tighter gaps (`max-[1300px]:`).
+- v0.8.24: today's high/low 16 → 20px. To make room on narrow layouts (`max-[1300px]`, i.e. the
+  kiosk at 115%+ text): round header buttons 52 → 44px, avatars 44 → 40px, menu items px-2 → px-1.5.
+  Verified at the kiosk's real 1440×960 viewport incl. the widest date (Wed Dec 30 12:59 pm,
+  `Dec 30 – Jan 5`) with 4 people — fits at 100/115/130% (0px spare in that worst case at 130%).
 
 ## Wishlist (not started)
 

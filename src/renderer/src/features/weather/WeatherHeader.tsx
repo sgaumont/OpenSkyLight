@@ -39,15 +39,15 @@ export function WeatherButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="pressable flex shrink-0 items-center gap-2 rounded-2xl px-3 py-1.5 hover:bg-paper-deep/70 max-[1150px]:gap-1.5 max-[1150px]:px-2"
+        className="pressable flex shrink-0 items-center gap-2 rounded-2xl px-3 py-1.5 hover:bg-paper-deep/70 max-[1300px]:gap-1.5 max-[1300px]:px-2"
         aria-label="Weather forecast"
       >
-        <Icon size={34} className="text-ember-deep max-[1150px]:h-7 max-[1150px]:w-7" />
-        <span className="font-display text-3xl leading-none max-[1150px]:text-2xl">{weather.temperature}°</span>
+        <Icon size={34} className="text-ember-deep max-[1300px]:h-7 max-[1300px]:w-7" />
+        <span className="font-display text-3xl leading-none max-[1300px]:text-2xl">{weather.temperature}°</span>
         {/* today's expected high over low, like the weather tile — stacked to stay narrow */}
         {today && (
           <span
-            className="flex flex-col items-start gap-0.5 text-base leading-none font-bold tabular-nums"
+            className="flex flex-col items-start gap-0.5 text-xl leading-none font-bold tabular-nums"
             aria-label={`Today: high ${today.high}°, low ${today.low}°`}
           >
             <span>{today.high}°</span>
