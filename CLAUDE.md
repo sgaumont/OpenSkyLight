@@ -269,6 +269,8 @@ Add unit tests where sensible.
 - v0.8.28: the screensaver shows the header's weather bottom-right (`ScreensaverWeather` in
   `KioskOverlays.tsx`): icon, current temperature, today's high over low, white + drop-shadow like its
   clock, same 48px margin, centred on the clock digits. Hidden when no weather location is set.
+- v0.8.29: the sleep screen shows the same weather (`SleepWeather`), as faint as its clock (white/15),
+  on the clock's line just left of it (icon 24px, temp text-xl, high/low 11px stacked).
 
 ## Wishlist (not started)
 
