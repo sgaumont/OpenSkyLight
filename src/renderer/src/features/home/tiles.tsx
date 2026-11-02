@@ -345,19 +345,17 @@ export function WeatherTile({ tile }: TileProps) {
 export function ChoresProgressTile({ compact }: TileProps) {
   const { data: chores = [] } = useChoresDay(today())
   const { data: people = [] } = usePeople()
+  const peopleById = new Map(people.map((p) => [p.id, p]))
   const done = chores.filter((c) => c.completed).length
   const pct = chores.length === 0 ? 0 : Math.round((done / chores.length) * 100)
-  // chores belong to no one: show the shared progress, then who has claimed some today
-  const claimers = people
-    .map((p) => ({ person: p, count: chores.filter((c) => c.completedBy === p.id).length }))
-    .filter((x) => x.count > 0)
+  // chores belong to no one: shared progress, then every chore — still to do, or ticked in its claimer's colour
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <TileTitle>Chores today</TileTitle>
       {chores.length === 0 ? (
         <Placeholder>No chores today</Placeholder>
       ) : (
-        <TileScroll className="flex-1" innerClassName="flex flex-col gap-2">
+        <TileScroll className="flex-1" innerClassName="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <span className="block h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-paper-deep">
               <span className="block h-full rounded-full bg-[#46A758] transition-all" style={{ width: `${pct}%` }} />
@@ -366,18 +364,33 @@ export function ChoresProgressTile({ compact }: TileProps) {
               {done === chores.length ? <CheckIcon size={16} className="text-[#46A758]" /> : `${done}/${chores.length}`}
             </span>
           </div>
-          {claimers.map(({ person: p, count }) => (
-            <div key={p.id} className="flex items-center gap-2">
-              <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold"
-                style={{ backgroundColor: p.color, color: textOn(p.color) }}
-              >
-                {initials(p.name)}
-              </span>
-              {!compact && <span className="min-w-0 flex-1 truncate text-xs font-bold">{p.name}</span>}
-              <span className="shrink-0 text-xs font-extrabold text-ink-soft">{count} done</span>
-            </div>
-          ))}
+          {chores.map((c) => {
+            const claimer = c.completedBy ? peopleById.get(c.completedBy) : undefined
+            return (
+              <div key={c.choreId} className="flex items-center gap-2">
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${claimer ? '' : 'border-line'}`}
+                  style={claimer ? { borderColor: claimer.color, backgroundColor: claimer.color } : undefined}
+                >
+                  {c.completed && <CheckIcon size={12} style={{ color: claimer ? textOn(claimer.color) : undefined }} />}
+                </span>
+                <span
+                  className={`min-w-0 flex-1 text-sm leading-tight font-bold break-words ${c.completed ? 'text-ink-faint line-through' : ''}`}
+                >
+                  {c.title}
+                </span>
+                {claimer && !compact && (
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-extrabold"
+                    style={{ backgroundColor: claimer.color, color: textOn(claimer.color) }}
+                    title={claimer.name}
+                  >
+                    {initials(claimer.name)}
+                  </span>
+                )}
+              </div>
+            )
+          })}
         </TileScroll>
       )}
     </div>

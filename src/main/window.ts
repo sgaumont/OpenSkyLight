@@ -24,6 +24,15 @@ export function createMainWindow(): BrowserWindow {
   })
 
   win.once('ready-to-show', () => win.show())
+  // a page that never finishes loading must not leave an invisible app running
+  const fallback = setTimeout(() => {
+    if (win.isDestroyed() || win.isVisible()) return
+    console.error('[main] window not ready after 15s; showing it anyway')
+    win.show()
+    win.webContents.openDevTools({ mode: 'detach' })
+  }, 15_000)
+  win.once('show', () => clearTimeout(fallback))
+  win.webContents.on('did-fail-load', (_e, code, desc, url) => console.error('[main] load failed:', code, desc, url))
   // Pinch-zoom on a touchscreen must not scale the kiosk UI
   win.webContents.setVisualZoomLevelLimits(1, 1)
   // Any external link goes to the system browser, never inside the kiosk

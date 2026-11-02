@@ -280,6 +280,11 @@ Add unit tests where sensible.
   assigned chores simply become shared). Chores view = one list grouped Morning/Anytime/Evening + a family
   panel (done today, stars); home "Chores today" tile = one shared progress bar + who claimed how many;
   Settings chore editor and the phone companion lost their "Who" pickers (companion claims inline).
+- v0.8.33: home "Chores today" tile lists **every** chore (to-do = empty circle; done = ticked in the
+  claimer's colour + their initial) under the shared progress bar. Startup can no longer fail invisibly:
+  a boot error shows a dialog and appends to `userData/startup-error.log` (after startup, stray errors are
+  only logged); a window that isn't ready after 15s is shown anyway with DevTools. (On the Surface a
+  "running but no window" was a leftover instance holding the single-instance lock — end it in Task Manager.)
 
 ## Wishlist (not started)
 

@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog } from 'electron'
+import { appendFileSync } from 'fs'
 import { join } from 'path'
 import { DateTime } from 'luxon'
 import { openDatabase } from './db/client'
@@ -39,6 +40,25 @@ if (process.env.OSL_USER_DATA) {
   app.setPath('userData', process.env.OSL_USER_DATA)
 }
 
+/** Startup must never fail silently on a kiosk: log to userData/startup-error.log and say so on screen. */
+let started = false
+function reportFatal(where: string, err: unknown): void {
+  const text = err instanceof Error ? (err.stack ?? err.message) : String(err)
+  const file = join(app.getPath('userData'), 'startup-error.log')
+  try {
+    appendFileSync(file, `[${new Date().toISOString()}] v${app.getVersion()} ${where}\n${text}\n\n`)
+  } catch {
+    // nowhere to write; the dialog still shows it
+  }
+  console.error(`[main] ${where}:`, err)
+  // once running, a stray failure (network, sync) is only logged — never a dialog over the kiosk
+  if (!started && app.isReady()) {
+    dialog.showErrorBox('OpenSkyLight could not start', `${where}\n\n${text}\n\nSaved to ${file}`)
+  }
+}
+process.on('uncaughtException', (err) => reportFatal('Uncaught exception', err))
+process.on('unhandledRejection', (err) => reportFatal('Unhandled rejection', err))
+
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
   app.quit()
@@ -51,7 +71,12 @@ if (!gotLock) {
     }
   })
 
-  app.whenReady().then(() => {
+  app.whenReady().then(boot).catch((err) => {
+    reportFatal('Startup failed', err)
+    app.quit()
+  })
+
+  function boot(): void {
     const { db } = openDatabase(join(app.getPath('userData'), 'openskylight.db'))
     const deviceTz = (): string => DateTime.local().zoneName ?? 'UTC'
 
@@ -120,6 +145,7 @@ if (!gotLock) {
       win.webContents.on('did-finish-load', () => kiosk.applyTextSize())
     })
     createMainWindow()
+    started = true
     syncManager.start()
     kiosk.start()
     updater.start()
@@ -128,7 +154,7 @@ if (!gotLock) {
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
     })
-  })
+  }
 
   // A wall display should restart its UI if the renderer ever crashes
   app.on('render-process-gone', (_event, _webContents, details) => {
