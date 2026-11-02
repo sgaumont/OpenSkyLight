@@ -58,7 +58,7 @@ export function Header() {
   const weekViewStart = settings?.weekViewStart ?? 'rolling'
   const timeFormat = settings?.timeFormat ?? '12h'
   return (
-    <header className="flex items-center gap-2 px-4 pt-5 pb-4 max-[1300px]:gap-1.5 max-[1300px]:px-3 min-[1500px]:gap-3 min-[1500px]:px-5">
+    <header className="flex items-center gap-2 px-4 pt-5 pb-4 max-[1300px]:gap-1.5 max-[1300px]:px-3 max-[1150px]:gap-1 min-[1500px]:gap-3 min-[1500px]:px-5">
       {/* Today + a big clock (the header is the only clock since the home
           screen dropped its clock tile); scales down so everything still
           fits on narrow layouts too (the 1440px-wide kiosk at 115–130% text ≈ 1250–1110px) */}
@@ -76,13 +76,13 @@ export function Header() {
           </div>
         </div>
         <div className="w-px self-stretch bg-ink-faint/30" />
-        <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight tabular-nums max-[1300px]:text-[1.65rem] min-[1500px]:text-[3.1rem]">
+        <div className="font-display text-[3.5rem] leading-none font-semibold tracking-tight tabular-nums max-[1300px]:text-[3.125rem] max-[1150px]:text-[2.125rem] min-[1500px]:text-[3.75rem]">
           {timeFormat === '24h' ? (
             now.toFormat('HH:mm')
           ) : (
             <>
               {now.toFormat('h:mm')}
-              <span className="ml-1 text-lg font-bold text-ink-soft max-[1300px]:text-base min-[1500px]:ml-1.5 min-[1500px]:text-2xl">
+              <span className="ml-1 text-xl font-bold text-ink-soft max-[1300px]:text-lg max-[1150px]:text-base min-[1500px]:ml-1.5 min-[1500px]:text-2xl">
                 {now.toFormat('a').toLowerCase()}
               </span>
             </>
@@ -96,7 +96,7 @@ export function Header() {
 
       {/* person filter: compact avatar circles, never clipped (overlap when the family is large) */}
       {people.length > 0 && (
-        <div className={`flex shrink-0 items-center ${people.length >= 4 ? '-space-x-2' : 'gap-1.5'}`}>
+        <div className={`flex shrink-0 items-center ${people.length >= 4 ? '-space-x-2 max-[1150px]:-space-x-3' : 'gap-1.5'}`}>
           {people.map((p) => {
             const hidden = hiddenPeople.includes(p.id)
             return (

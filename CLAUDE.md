@@ -257,6 +257,12 @@ Add unit tests where sensible.
   Verified at the kiosk's real 1440×960 viewport incl. the widest date (Wed Dec 30 12:59 pm,
   `Dec 30 – Jan 5`) with 4 people — fits at 100/115/130% (0px spare in that worst case at 130%).
 - v0.8.25: the header high/low stack is right-aligned (`items-end`).
+- v0.8.26: clock and current temperature enlarged to the limits of the existing header height and
+  width (measured at 1440×960, widest date, 4 people): clock 52.8→56px @100% (layout ≥1300),
+  26→50px @115% (1150–1300), 26→34px @130% (<1150); temperature 30→48 / 24→40 / 24→30px; icon
+  34→48 / 28→40 / 28→34px. <1150 frees width via tighter avatar overlap (4+ people), menu px-1 and
+  header gap-1. Header heights unchanged (97/90/90px). Temperature at 100% is capped at 48px by height
+  (button padding + glyph must stay ≤ the 61px date block).
 
 ## Wishlist (not started)
 
