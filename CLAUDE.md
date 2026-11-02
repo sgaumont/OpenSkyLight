@@ -271,6 +271,8 @@ Add unit tests where sensible.
   clock, same 48px margin, centred on the clock digits. Hidden when no weather location is set.
 - v0.8.29: the sleep screen shows the same weather (`SleepWeather`), as faint as its clock (white/15),
   on the clock's line just left of it (icon 24px, temp text-xl, high/low 11px stacked).
+- v0.8.30: both moved next to the time: the screensaver weather sits just right of the time + date
+  (bottom-left, shared flex row, top-aligned 72px rows, gap-10); the sleep weather follows its clock.
 
 ## Wishlist (not started)
 
