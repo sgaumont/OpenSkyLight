@@ -285,6 +285,12 @@ Add unit tests where sensible.
   a boot error shows a dialog and appends to `userData/startup-error.log` (after startup, stray errors are
   only logged); a window that isn't ready after 15s is shown anyway with DevTools. (On the Surface a
   "running but no window" was a leftover instance holding the single-instance lock — end it in Task Manager.)
+- v0.8.34: tapping a chore on the home tile claims it in place — the same "Who did it?" popup as the
+  Chores tab (shared `useChoreClaim` + `Avatar` in `features/chores/ClaimChore.tsx`); a done one is
+  un-ticked. Rows are `role="button"` divs (the tile is itself a button) that stop propagation; the dialog
+  is portalled to body (escapes the tile's zoom) inside a stopPropagation wrapper. Tapping the tile outside a
+  chore still opens Chores. While arranging Home, tile content is `pointer-events-none` (no claims or photo
+  advances mid-drag).
 
 ## Wishlist (not started)
 

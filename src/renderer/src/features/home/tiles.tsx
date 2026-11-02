@@ -25,6 +25,7 @@ import { formatDuration } from '@shared/timer'
 import { startAlarm, stopAlarm } from '../../lib/alarm'
 import { weatherIcon } from '../weather/WeatherHeader'
 import { MealsDialog, MealStrip, SLOT_META, useMealsForRange } from '../meals/Meals'
+import { useChoreClaim } from '../chores/ClaimChore'
 import { ZONE } from '../../stores/uiStore'
 import { formatTime, initials, textOn } from '../../lib/format'
 import { occurrenceColor } from '../../lib/colors'
@@ -346,6 +347,7 @@ export function ChoresProgressTile({ compact }: TileProps) {
   const { data: chores = [] } = useChoresDay(today())
   const { data: people = [] } = usePeople()
   const peopleById = new Map(people.map((p) => [p.id, p]))
+  const { tap, dialog } = useChoreClaim(today())
   const done = chores.filter((c) => c.completed).length
   const pct = chores.length === 0 ? 0 : Math.round((done / chores.length) * 100)
   // chores belong to no one: shared progress, then every chore — still to do, or ticked in its claimer's colour
@@ -367,7 +369,17 @@ export function ChoresProgressTile({ compact }: TileProps) {
           {chores.map((c) => {
             const claimer = c.completedBy ? peopleById.get(c.completedBy) : undefined
             return (
-              <div key={c.choreId} className="flex items-center gap-2">
+              // the tile itself is a button (opens Chores), so a row can't be one: it claims instead
+              <div
+                key={c.choreId}
+                role="button"
+                aria-label={`${c.completed ? 'Uncheck' : 'Claim'} ${c.title}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  tap(c)
+                }}
+                className="pressable -mx-1 flex items-center gap-2 rounded-lg px-1 py-0.5"
+              >
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${claimer ? '' : 'border-line'}`}
                   style={claimer ? { borderColor: claimer.color, backgroundColor: claimer.color } : undefined}
@@ -393,6 +405,8 @@ export function ChoresProgressTile({ compact }: TileProps) {
           })}
         </TileScroll>
       )}
+      {/* outside the tile's zoom; taps in it must not bubble (through React) to the tile's own button */}
+      {createPortal(<div onClick={(e) => e.stopPropagation()}>{dialog}</div>, document.body)}
     </div>
   )
 }

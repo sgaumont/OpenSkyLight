@@ -151,7 +151,10 @@ export function HomeView() {
                 isActive ? 'ring-4 ring-ember' : 'ring-2 ring-ember/50'
               } overflow-hidden`}
             >
-              <TileBody tile={tile} compact={compact} zoom={zoom} />
+              {/* arranging: the tile's own taps (claim a chore, next photo) are off — drags hit the tile */}
+              <div className="pointer-events-none h-full">
+                <TileBody tile={tile} compact={compact} zoom={zoom} />
+              </div>
               {/* text size */}
               {!NO_TEXT_SIZE.has(tile.type) && (
                 <div
