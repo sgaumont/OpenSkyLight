@@ -272,6 +272,14 @@ Add unit tests where sensible.
 - v0.8.29: the sleep screen shows the same weather (`SleepWeather`), as faint as its clock (white/15),
   on the clock's line just left of it (icon 24px, temp text-xl, high/low 11px stacked).
 - v0.8.30 moved both next to the time; the user didn't like it — **reverted in v0.8.31** (layout as v0.8.29).
+- v0.8.32: **chores belong to no one.** A chore is just something that needs doing; whoever does it
+  claims it when checking it off ("Who did it?" picker), and the completion + stars go to them
+  (`chores:complete` now takes `personId`; `DayChoreDto.completedBy` replaces `personId`; `ChoreDto`/create/
+  update inputs have no person). Un-ticking takes the stars back from the claimant; a second claim on an
+  already-done chore doesn't steal it. `chores.person_id` is legacy and ignored (no migration — old
+  assigned chores simply become shared). Chores view = one list grouped Morning/Anytime/Evening + a family
+  panel (done today, stars); home "Chores today" tile = one shared progress bar + who claimed how many;
+  Settings chore editor and the phone companion lost their "Who" pickers (companion claims inline).
 
 ## Wishlist (not started)
 

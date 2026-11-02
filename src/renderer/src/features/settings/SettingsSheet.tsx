@@ -543,7 +543,6 @@ function ChoresTab() {
 
   const [editingChore, setEditingChore] = useState<ChoreDto | 'new' | null>(null)
   const [choreTitle, setChoreTitle] = useState('')
-  const [chorePerson, setChorePerson] = useState<string | null>(null)
   const [choreStars, setChoreStars] = useState(1)
   const [schedule, setSchedule] = useState<ScheduleKind>('daily')
   const [weekdays, setWeekdays] = useState<number[]>([])
@@ -557,14 +556,12 @@ function ChoresTab() {
     setEditingChore(c)
     if (c === 'new') {
       setChoreTitle('')
-      setChorePerson(people[0]?.id ?? null)
       setChoreStars(1)
       setSchedule('daily')
       setWeekdays([])
       setRoutine('any')
     } else {
       setChoreTitle(c.title)
-      setChorePerson(c.personId)
       setChoreStars(c.starsValue)
       setSchedule(scheduleOf(c.recurrence))
       setWeekdays(c.recurrence?.byWeekdays ?? [])
@@ -573,7 +570,7 @@ function ChoresTab() {
   }
 
   const saveChore = (): void => {
-    if (!choreTitle.trim() || !chorePerson) return
+    if (!choreTitle.trim()) return
     const recurrence: RecurrenceInput | null =
       schedule === 'once'
         ? null
@@ -582,7 +579,6 @@ function ChoresTab() {
           : { freq: 'weekly', byWeekdays: weekdays.length > 0 ? weekdays : [0] }
     const common = {
       title: choreTitle.trim(),
-      personId: chorePerson,
       starsValue: choreStars,
       recurrence,
       routine: routine === 'any' ? null : routine
@@ -621,35 +617,31 @@ function ChoresTab() {
       <div>
         <FieldLabel>Chores & routines</FieldLabel>
         <div className="flex flex-col gap-2">
-          {chores.map((c) => {
-            const person = peopleById.get(c.personId)
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => openChoreEditor(c)}
-                className="pressable flex items-center gap-3 rounded-2xl bg-paper-deep/50 p-3 text-left"
-              >
-                <span className="h-6 w-6 shrink-0 rounded-full" style={{ backgroundColor: person?.color ?? '#999' }} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-lg font-bold">{c.title}</span>
-                  <span className="block text-sm font-bold text-ink-faint">
-                    {person?.name ?? '—'} · {c.recurrence ? describeRecurrence(c.recurrence) : 'One time'}
-                    {c.routine ? ` · ${c.routine}` : ''}
-                  </span>
+          {chores.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => openChoreEditor(c)}
+              className="pressable flex items-center gap-3 rounded-2xl bg-paper-deep/50 p-3 text-left"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-lg font-bold">{c.title}</span>
+                <span className="block text-sm font-bold text-ink-faint">
+                  {c.recurrence ? describeRecurrence(c.recurrence) : 'One time'}
+                  {c.routine ? ` · ${c.routine}` : ''}
                 </span>
-                {c.starsValue > 0 && <span className="text-base font-extrabold text-ember-deep">★ {c.starsValue}</span>}
-              </button>
-            )
-          })}
-          <BigButton variant="ghost" onClick={() => openChoreEditor('new')} disabled={people.length === 0}>
+              </span>
+              {c.starsValue > 0 && <span className="text-base font-extrabold text-ember-deep">★ {c.starsValue}</span>}
+            </button>
+          ))}
+          <BigButton variant="ghost" onClick={() => openChoreEditor('new')}>
             <span className="flex items-center justify-center gap-2">
               <PlusIcon size={20} /> Add chore
             </span>
           </BigButton>
-          {people.length === 0 && (
-            <p className="text-sm font-semibold text-ink-faint">Add family members first — chores belong to a person.</p>
-          )}
+          <p className="text-sm font-semibold text-ink-faint">
+            Chores aren't assigned — whoever does one claims it (and its stars) when checking it off.
+          </p>
         </div>
       </div>
 
@@ -695,27 +687,6 @@ function ChoresTab() {
           <div>
             <FieldLabel>Chore</FieldLabel>
             <OskInput value={choreTitle} onChange={setChoreTitle} placeholder="e.g. Make your bed" autoFocus={editingChore === 'new'} />
-          </div>
-          <div>
-            <FieldLabel>Who</FieldLabel>
-            <div className="flex flex-wrap gap-2">
-              {people.map((p) => {
-                const on = chorePerson === p.id
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setChorePerson(p.id)}
-                    className={`pressable rounded-full border-2 px-4 py-2 text-base font-bold ${
-                      on ? 'border-transparent' : 'border-line bg-card text-ink-soft'
-                    }`}
-                    style={on ? { backgroundColor: p.color, color: textOn(p.color) } : undefined}
-                  >
-                    {p.name}
-                  </button>
-                )
-              })}
-            </div>
           </div>
           <div className="flex items-end gap-6">
             <div>
@@ -782,7 +753,7 @@ function ChoresTab() {
             <BigButton variant="ghost" onClick={() => setEditingChore(null)}>
               Cancel
             </BigButton>
-            <BigButton onClick={saveChore} disabled={!choreTitle.trim() || !chorePerson}>
+            <BigButton onClick={saveChore} disabled={!choreTitle.trim()}>
               Save
             </BigButton>
           </div>

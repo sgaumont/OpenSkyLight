@@ -45,7 +45,7 @@ export const TILE_REGISTRY: Record<HomeTileType, TileMeta> = {
   },
   choresProgress: {
     label: 'Chores progress',
-    description: "Each person's chores for today",
+    description: "Today's chores done, and who did them",
     component: ChoresProgressTile,
     navTarget: 'chores'
   },

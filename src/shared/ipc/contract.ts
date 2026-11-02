@@ -83,7 +83,7 @@ export type IpcContract = {
   'chores:update': { req: ChoreUpdateInput; res: ChoreDto }
   'chores:delete': { req: { id: string }; res: void }
   'chores:getDay': { req: { date: string }; res: DayChoreDto[] }
-  'chores:complete': { req: { choreId: string; date: string }; res: { balance: number } }
+  'chores:complete': { req: { choreId: string; date: string; personId: string }; res: { balance: number } }
   'chores:uncomplete': { req: { choreId: string; date: string }; res: { balance: number } }
 
   'stars:balances': { req: void; res: StarBalanceDto[] }

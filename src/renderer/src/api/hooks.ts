@@ -189,7 +189,7 @@ export function useChoreMutations() {
     ),
     remove: useInvalidatingMutation((input: { id: string }) => ipcInvoke('chores:delete', input), defKeys),
     complete: useInvalidatingMutation(
-      (input: { choreId: string; date: string }) => ipcInvoke('chores:complete', input),
+      (input: { choreId: string; date: string; personId: string }) => ipcInvoke('chores:complete', input),
       checkKeys
     ),
     uncomplete: useInvalidatingMutation(

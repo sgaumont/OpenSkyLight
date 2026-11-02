@@ -220,11 +220,11 @@ export interface MealSlotDto {
 
 export type ChoreRoutine = 'morning' | 'evening' | null
 
+/** A chore belongs to no one: whoever does it claims it when checking it off. */
 export interface ChoreDto {
   id: string
   title: string
   icon: string | null
-  personId: string
   starsValue: number
   /** null = one-time chore on anchorDate */
   recurrence: RecurrenceInput | null
@@ -237,7 +237,6 @@ export interface ChoreDto {
 
 export interface ChoreCreateInput {
   title: string
-  personId: string
   starsValue: number
   recurrence?: RecurrenceInput | null
   anchorDate?: string
@@ -247,7 +246,6 @@ export interface ChoreCreateInput {
 export interface ChoreUpdateInput {
   id: string
   title?: string
-  personId?: string
   starsValue?: number
   recurrence?: RecurrenceInput | null
   anchorDate?: string
@@ -259,10 +257,11 @@ export interface DayChoreDto {
   choreId: string
   title: string
   icon: string | null
-  personId: string
   starsValue: number
   routine: ChoreRoutine
   completed: boolean
+  /** who claimed it by checking it off; null while it's still to do */
+  completedBy: string | null
 }
 
 export interface StarBalanceDto {

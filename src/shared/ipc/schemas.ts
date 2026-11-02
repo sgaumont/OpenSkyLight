@@ -194,7 +194,6 @@ const routine = z.enum(['morning', 'evening']).nullable()
 
 export const choreCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),
-  personId: id,
   starsValue: z.number().int().min(0).max(99),
   recurrence: recurrenceSchema.nullish(),
   anchorDate: isoDate.optional(),
@@ -204,7 +203,6 @@ export const choreCreateSchema = z.object({
 export const choreUpdateSchema = z.object({
   id,
   title: z.string().trim().min(1).max(120).optional(),
-  personId: id.optional(),
   starsValue: z.number().int().min(0).max(99).optional(),
   recurrence: recurrenceSchema.nullable().optional(),
   anchorDate: isoDate.optional(),
@@ -214,6 +212,7 @@ export const choreUpdateSchema = z.object({
 
 export const choreDaySchema = z.object({ date: isoDate })
 export const choreCheckSchema = z.object({ choreId: id, date: isoDate })
+export const choreCompleteSchema = choreCheckSchema.extend({ personId: id })
 
 export const rewardCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),

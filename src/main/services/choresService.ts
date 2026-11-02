@@ -1,7 +1,7 @@
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
-import { choreCompletions, chores, starLedger } from '../db/schema'
+import { choreCompletions, chores, people, starLedger } from '../db/schema'
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
 import { buildRRuleString, parseRRuleString } from '@shared/recurrence/build'
@@ -18,7 +18,6 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       id: row.id,
       title: row.title,
       icon: row.icon,
-      personId: row.personId!,
       starsValue: row.starsValue,
       recurrence: row.scheduleRrule ? parseRRuleString(row.scheduleRrule, zone) : null,
       anchorDate: row.dueDate ?? DateTime.fromISO(row.createdAt).setZone(zone).toISODate()!,
@@ -46,7 +45,6 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       .values({
         id,
         title: input.title,
-        personId: input.personId,
         starsValue: input.starsValue,
         scheduleRrule: input.recurrence ? buildRRuleString(input.recurrence, zone) : null,
         dueDate: anchor,
@@ -63,7 +61,6 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     const zone = deviceTz()
     const patch: Partial<typeof chores.$inferInsert> = {}
     if (input.title !== undefined) patch.title = input.title
-    if (input.personId !== undefined) patch.personId = input.personId
     if (input.starsValue !== undefined) patch.starsValue = input.starsValue
     if (input.recurrence !== undefined) {
       patch.scheduleRrule = input.recurrence ? buildRRuleString(input.recurrence, zone) : null
@@ -122,20 +119,26 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       .where(and(isNull(chores.deletedAt), eq(chores.active, true)))
       .orderBy(asc(chores.sortOrder), asc(chores.createdAt))
       .all()
-    const done = new Set(
-      db.select().from(choreCompletions).where(eq(choreCompletions.dueDate, date)).all().map((c) => c.choreId)
+    const claimedBy = new Map(
+      db
+        .select()
+        .from(choreCompletions)
+        .where(eq(choreCompletions.dueDate, date))
+        .all()
+        .map((c) => [c.choreId, c.personId])
     )
     const routineOrder = { morning: 0, null: 1, evening: 2 } as Record<string, number>
+    // chores belong to no one (person_id is legacy and ignored); every due chore is listed once
     return rows
-      .filter((row) => row.personId && isDueOn(row, date))
+      .filter((row) => isDueOn(row, date))
       .map((row) => ({
         choreId: row.id,
         title: row.title,
         icon: row.icon,
-        personId: row.personId!,
         starsValue: row.starsValue,
         routine: row.routine,
-        completed: done.has(row.id)
+        completed: claimedBy.has(row.id),
+        completedBy: claimedBy.get(row.id) ?? null
       }))
       .sort((a, b) => routineOrder[String(a.routine)] - routineOrder[String(b.routine)])
   }
@@ -153,9 +156,12 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     return [...totals.entries()].map(([personId, balance]) => ({ personId, balance }))
   }
 
-  function complete(choreId: string, date: string): { balance: number } {
+  /** personId claims the chore: the completion and its stars go to them. */
+  function complete(choreId: string, date: string, personId: string): { balance: number } {
     const [chore] = db.select().from(chores).where(and(eq(chores.id, choreId), isNull(chores.deletedAt))).all()
-    if (!chore || !chore.personId) throw notFound('Chore')
+    if (!chore) throw notFound('Chore')
+    const [person] = db.select().from(people).where(and(eq(people.id, personId), isNull(people.deletedAt))).all()
+    if (!person) throw notFound('Person')
     const [existing] = db
       .select()
       .from(choreCompletions)
@@ -169,7 +175,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
           .values({
             id: completionId,
             choreId,
-            personId: chore.personId!,
+            personId,
             dueDate: date,
             completedAt: now,
             starsAwarded: chore.starsValue
@@ -179,7 +185,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
           tx.insert(starLedger)
             .values({
               id: uuidv7(),
-              personId: chore.personId!,
+              personId,
               delta: chore.starsValue,
               reason: 'chore',
               refId: completionId,
@@ -189,12 +195,14 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         }
       })
     }
-    return { balance: balanceOf(chore.personId) }
+    // already done today: someone else's claim stands, and the balance shown is the claimant's
+    return { balance: balanceOf(existing?.personId ?? personId) }
   }
 
+  /** Un-ticks the chore: the claim and its stars are taken back from whoever made it. */
   function uncomplete(choreId: string, date: string): { balance: number } {
     const [chore] = db.select().from(chores).where(eq(chores.id, choreId)).all()
-    if (!chore || !chore.personId) throw notFound('Chore')
+    if (!chore) throw notFound('Chore')
     const [completion] = db
       .select()
       .from(choreCompletions)
@@ -206,7 +214,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         tx.delete(choreCompletions).where(eq(choreCompletions.id, completion.id)).run()
       })
     }
-    return { balance: balanceOf(chore.personId) }
+    return { balance: completion ? balanceOf(completion.personId) : 0 }
   }
 
   return { list, create, update, remove, getDay, complete, uncomplete, balances, balanceOf }

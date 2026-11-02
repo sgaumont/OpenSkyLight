@@ -83,7 +83,7 @@ export function useChoreMutations() {
   return {
     create: useInvalidatingMutation((input: ChoreCreateInput) => rpc('chores:create', input), keys),
     update: useInvalidatingMutation((input: ChoreUpdateInput) => rpc('chores:update', input), keys),
-    complete: useInvalidatingMutation((input: { choreId: string; date: string }) => rpc('chores:complete', input), keys),
+    complete: useInvalidatingMutation((input: { choreId: string; date: string; personId: string }) => rpc('chores:complete', input), keys),
     uncomplete: useInvalidatingMutation(
       (input: { choreId: string; date: string }) => rpc('chores:uncomplete', input),
       keys

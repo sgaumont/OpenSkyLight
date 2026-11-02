@@ -345,41 +345,39 @@ export function WeatherTile({ tile }: TileProps) {
 export function ChoresProgressTile({ compact }: TileProps) {
   const { data: chores = [] } = useChoresDay(today())
   const { data: people = [] } = usePeople()
-  const withChores = people.filter((p) => chores.some((c) => c.personId === p.id))
+  const done = chores.filter((c) => c.completed).length
+  const pct = chores.length === 0 ? 0 : Math.round((done / chores.length) * 100)
+  // chores belong to no one: show the shared progress, then who has claimed some today
+  const claimers = people
+    .map((p) => ({ person: p, count: chores.filter((c) => c.completedBy === p.id).length }))
+    .filter((x) => x.count > 0)
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <TileTitle>Chores today</TileTitle>
-      {withChores.length === 0 ? (
+      {chores.length === 0 ? (
         <Placeholder>No chores today</Placeholder>
       ) : (
         <TileScroll className="flex-1" innerClassName="flex flex-col gap-2">
-          {withChores.map((p) => {
-            const mine = chores.filter((c) => c.personId === p.id)
-            const done = mine.filter((c) => c.completed).length
-            const pct = mine.length === 0 ? 0 : Math.round((done / mine.length) * 100)
-            return (
-              <div key={p.id} className="flex items-center gap-2">
-                <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold"
-                  style={{ backgroundColor: p.color, color: textOn(p.color) }}
-                >
-                  {initials(p.name)}
-                </span>
-                <span className="min-w-0 flex-1">
-                  {!compact && <span className="block truncate text-xs font-bold">{p.name}</span>}
-                  <span className="block h-2.5 overflow-hidden rounded-full bg-paper-deep">
-                    <span
-                      className="block h-full rounded-full transition-all"
-                      style={{ width: `${pct}%`, backgroundColor: p.color }}
-                    />
-                  </span>
-                </span>
-                <span className="shrink-0 text-xs font-extrabold text-ink-soft">
-                  {done === mine.length ? <CheckIcon size={16} className="text-[#46A758]" /> : `${done}/${mine.length}`}
-                </span>
-              </div>
-            )
-          })}
+          <div className="flex items-center gap-2">
+            <span className="block h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-paper-deep">
+              <span className="block h-full rounded-full bg-[#46A758] transition-all" style={{ width: `${pct}%` }} />
+            </span>
+            <span className="shrink-0 text-xs font-extrabold text-ink-soft">
+              {done === chores.length ? <CheckIcon size={16} className="text-[#46A758]" /> : `${done}/${chores.length}`}
+            </span>
+          </div>
+          {claimers.map(({ person: p, count }) => (
+            <div key={p.id} className="flex items-center gap-2">
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold"
+                style={{ backgroundColor: p.color, color: textOn(p.color) }}
+              >
+                {initials(p.name)}
+              </span>
+              {!compact && <span className="min-w-0 flex-1 truncate text-xs font-bold">{p.name}</span>}
+              <span className="shrink-0 text-xs font-extrabold text-ink-soft">{count} done</span>
+            </div>
+          ))}
         </TileScroll>
       )}
     </div>

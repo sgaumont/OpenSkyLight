@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { DateTime } from 'luxon'
-import type { ChoreDto, ChoreRoutine, PersonDto } from '@shared/types'
+import type { ChoreDto, ChoreRoutine } from '@shared/types'
 import { useBalances, useChoreMutations, useChores, useChoresDay, usePeople } from '../api/hooks'
 import { Card, CheckCircle, EmptyNote, GhostButton, PersonAvatar, PrimaryButton, TextInput } from '../components/ui'
 
@@ -14,57 +14,92 @@ export function ChoresPage() {
   const mutations = useChoreMutations()
   const [showForm, setShowForm] = useState(false)
   const [showManage, setShowManage] = useState(false)
+  // the chore whose "who did it?" picker is open
+  const [claiming, setClaiming] = useState<string | null>(null)
 
   const balanceOf = (personId: string): number => balances.find((b) => b.personId === personId)?.balance ?? 0
+  const done = dayChores.filter((c) => c.completed).length
 
   return (
     <div className="flex flex-col gap-4">
       {isPending && <EmptyNote>Loading…</EmptyNote>}
       {!isPending && dayChores.length === 0 && <EmptyNote>No chores today.</EmptyNote>}
 
-      {people
-        .filter((p) => dayChores.some((c) => c.personId === p.id))
-        .map((person) => {
-          const theirs = dayChores.filter((c) => c.personId === person.id)
-          const done = theirs.filter((c) => c.completed).length
-          return (
-            <Card key={person.id}>
-              <div className="mb-1 flex items-center gap-2.5">
-                <PersonAvatar name={person.name} color={person.color} />
-                <h2 className="flex-1 truncate font-display text-xl font-semibold">{person.name}</h2>
-                <span className="text-sm font-extrabold text-ink-faint">
-                  {done}/{theirs.length} · ★ {balanceOf(person.id)}
-                </span>
-              </div>
-              {theirs.map((chore) => (
-                <div key={chore.choreId} className="flex items-center border-b border-line/60 last:border-0">
+      {dayChores.length > 0 && (
+        <Card>
+          <div className="mb-1 flex items-center gap-2.5">
+            <h2 className="flex-1 truncate font-display text-xl font-semibold">Today</h2>
+            <span className="text-sm font-extrabold text-ink-faint">
+              {done}/{dayChores.length} done
+            </span>
+          </div>
+          {dayChores.map((chore) => {
+            const claimer = people.find((p) => p.id === chore.completedBy)
+            return (
+              <div key={chore.choreId} className="border-b border-line/60 last:border-0">
+                <div className="flex items-center">
                   <CheckCircle
                     checked={chore.completed}
-                    color={person.color}
-                    onTap={() =>
-                      chore.completed
-                        ? mutations.uncomplete.mutate({ choreId: chore.choreId, date: today })
-                        : mutations.complete.mutate({ choreId: chore.choreId, date: today })
-                    }
+                    color={claimer?.color ?? '#999'}
+                    onTap={() => {
+                      if (chore.completed) mutations.uncomplete.mutate({ choreId: chore.choreId, date: today })
+                      else setClaiming(claiming === chore.choreId ? null : chore.choreId)
+                    }}
                     label={`${chore.completed ? 'Uncheck' : 'Check off'} ${chore.title}`}
                   />
-                  <span
-                    className={`min-w-0 flex-1 truncate py-2 text-base font-semibold ${chore.completed ? 'text-ink-faint line-through' : ''}`}
-                  >
-                    {chore.title}
+                  <span className="min-w-0 flex-1 py-2">
+                    <span
+                      className={`block truncate text-base font-semibold ${chore.completed ? 'text-ink-faint line-through' : ''}`}
+                    >
+                      {chore.title}
+                    </span>
+                    {claimer && <span className="block truncate text-xs font-extrabold text-ink-faint">{claimer.name}</span>}
                   </span>
                   {chore.starsValue > 0 && (
                     <span className="shrink-0 text-sm font-extrabold text-ink-faint">★ {chore.starsValue}</span>
                   )}
                 </div>
-              ))}
-            </Card>
-          )
-        })}
+                {claiming === chore.choreId && !chore.completed && (
+                  <div className="flex flex-wrap items-center gap-2 pb-2.5">
+                    <span className="text-sm font-extrabold text-ink-faint">Who did it?</span>
+                    {people.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setClaiming(null)
+                          mutations.complete.mutate({ choreId: chore.choreId, date: today, personId: p.id })
+                        }}
+                        className="pressable flex items-center gap-1.5 rounded-full bg-paper-deep py-1 pr-3 pl-1 text-sm font-extrabold text-ink-soft"
+                      >
+                        <PersonAvatar name={p.name} color={p.color} size="sm" />
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </Card>
+      )}
+
+      {people.length > 0 && (
+        <Card>
+          {people.map((p) => (
+            <div key={p.id} className="flex items-center gap-2.5 py-1">
+              <PersonAvatar name={p.name} color={p.color} />
+              <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
+              <span className="text-sm font-extrabold text-ink-faint">
+                {dayChores.filter((c) => c.completedBy === p.id).length} today · ★ {balanceOf(p.id)}
+              </span>
+            </div>
+          ))}
+        </Card>
+      )}
 
       {showForm ? (
         <NewChoreForm
-          people={people}
           onCreate={(input) => {
             mutations.create.mutate(input)
             setShowForm(false)
@@ -78,20 +113,17 @@ export function ChoresPage() {
       <GhostButton onClick={() => setShowManage((v) => !v)}>
         {showManage ? 'Hide all chores' : 'Manage all chores'}
       </GhostButton>
-      {showManage && <ManageChores people={people} />}
+      {showManage && <ManageChores />}
     </div>
   )
 }
 
 function NewChoreForm({
-  people,
   onCreate,
   onCancel
 }: {
-  people: PersonDto[]
   onCreate: (input: {
     title: string
-    personId: string
     starsValue: number
     recurrence: { freq: 'daily' | 'weekly'; byWeekdays?: number[] } | null
     anchorDate: string
@@ -100,16 +132,14 @@ function NewChoreForm({
   onCancel: () => void
 }) {
   const [title, setTitle] = useState('')
-  const [personId, setPersonId] = useState(people[0]?.id ?? '')
   const [stars, setStars] = useState(1)
   const [repeat, setRepeat] = useState<Repeat>('daily')
   const today = DateTime.now()
 
   const submit = (): void => {
-    if (!title.trim() || !personId) return
+    if (!title.trim()) return
     onCreate({
       title: title.trim(),
-      personId,
       starsValue: stars,
       // rrule convention: 0 = Monday … 6 = Sunday; luxon weekday is 1–7
       recurrence:
@@ -133,21 +163,6 @@ function NewChoreForm({
         }}
       >
         <TextInput value={title} onChange={setTitle} placeholder="Chore (e.g. Feed the dog)" autoFocus />
-        <div className="flex flex-wrap gap-2">
-          {people.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setPersonId(p.id)}
-              className={`pressable flex items-center gap-1.5 rounded-full py-1 pr-3 pl-1 text-sm font-extrabold ${
-                personId === p.id ? 'bg-ember text-white' : 'bg-paper-deep text-ink-soft'
-              }`}
-            >
-              <PersonAvatar name={p.name} color={p.color} size="sm" />
-              {p.name}
-            </button>
-          ))}
-        </div>
         <div className="flex items-center gap-3">
           <div className="flex overflow-hidden rounded-xl bg-paper-deep">
             {(['once', 'daily', 'weekly'] as const).map((r) => (
@@ -182,7 +197,7 @@ function NewChoreForm({
           </div>
         </div>
         <div className="flex gap-2">
-          <PrimaryButton type="submit" disabled={!title.trim() || !personId}>
+          <PrimaryButton type="submit" disabled={!title.trim()}>
             Add chore
           </PrimaryButton>
           <GhostButton onClick={onCancel}>Cancel</GhostButton>
@@ -192,19 +207,19 @@ function NewChoreForm({
   )
 }
 
-function ManageChores({ people }: { people: PersonDto[] }) {
+function ManageChores() {
   const { data: chores = [] } = useChores()
   if (chores.length === 0) return <EmptyNote>No chores defined yet.</EmptyNote>
   return (
     <div className="flex flex-col gap-3">
       {chores.map((chore) => (
-        <ManageChoreRow key={chore.id} chore={chore} person={people.find((p) => p.id === chore.personId)} />
+        <ManageChoreRow key={chore.id} chore={chore} />
       ))}
     </div>
   )
 }
 
-function ManageChoreRow({ chore, person }: { chore: ChoreDto; person: PersonDto | undefined }) {
+function ManageChoreRow({ chore }: { chore: ChoreDto }) {
   const mutations = useChoreMutations()
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(chore.title)
@@ -212,7 +227,6 @@ function ManageChoreRow({ chore, person }: { chore: ChoreDto; person: PersonDto 
   return (
     <Card className={chore.active ? '' : 'opacity-60'}>
       <div className="flex items-center gap-2.5">
-        {person && <PersonAvatar name={person.name} color={person.color} size="sm" />}
         {editing ? (
           <form
             className="flex min-w-0 flex-1 gap-2"
