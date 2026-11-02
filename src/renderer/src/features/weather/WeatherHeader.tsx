@@ -47,7 +47,7 @@ export function WeatherButton() {
         {/* today's expected high over low, like the weather tile — stacked to stay narrow */}
         {today && (
           <span
-            className="flex flex-col items-start gap-0.5 text-xl leading-none font-bold tabular-nums"
+            className="flex flex-col items-end gap-0.5 text-xl leading-none font-bold tabular-nums"
             aria-label={`Today: high ${today.high}°, low ${today.low}°`}
           >
             <span>{today.high}°</span>

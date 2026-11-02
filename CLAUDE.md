@@ -256,6 +256,7 @@ Add unit tests where sensible.
   kiosk at 115%+ text): round header buttons 52 → 44px, avatars 44 → 40px, menu items px-2 → px-1.5.
   Verified at the kiosk's real 1440×960 viewport incl. the widest date (Wed Dec 30 12:59 pm,
   `Dec 30 – Jan 5`) with 4 people — fits at 100/115/130% (0px spare in that worst case at 130%).
+- v0.8.25: the header high/low stack is right-aligned (`items-end`).
 
 ## Wishlist (not started)
 
