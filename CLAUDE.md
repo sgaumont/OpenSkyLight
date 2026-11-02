@@ -263,6 +263,9 @@ Add unit tests where sensible.
   34→48 / 28→40 / 28→34px. <1150 frees width via tighter avatar overlap (4+ people), menu px-1 and
   header gap-1. Header heights unchanged (97/90/90px). Temperature at 100% is capped at 48px by height
   (button padding + glyph must stay ≤ the 61px date block).
+- v0.8.27: the kiosk always runs **100% text** (layout 1440px), so the 100% bucket is maxed: clock 60px
+  (= date-block height), weather button py-0.5 (py-1.5 below 1300px) so temperature and icon reach 56px.
+  Worst case (widest date, Week, 4 people) still fits with 12px spare; header height unchanged (97px).
 
 ## Wishlist (not started)
 

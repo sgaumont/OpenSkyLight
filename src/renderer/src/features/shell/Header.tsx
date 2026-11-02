@@ -76,7 +76,7 @@ export function Header() {
           </div>
         </div>
         <div className="w-px self-stretch bg-ink-faint/30" />
-        <div className="font-display text-[3.5rem] leading-none font-semibold tracking-tight tabular-nums max-[1300px]:text-[3.125rem] max-[1150px]:text-[2.125rem] min-[1500px]:text-[3.75rem]">
+        <div className="font-display text-[3.75rem] leading-none font-semibold tracking-tight tabular-nums max-[1300px]:text-[3.125rem] max-[1150px]:text-[2.125rem] min-[1500px]:text-[4rem]">
           {timeFormat === '24h' ? (
             now.toFormat('HH:mm')
           ) : (
