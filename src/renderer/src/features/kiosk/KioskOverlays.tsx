@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
-import { useSettings } from '../../api/hooks'
+import { useSettings, useWeather } from '../../api/hooks'
+import { weatherIcon } from '../weather/WeatherHeader'
 import { ZONE } from '../../stores/uiStore'
 import { useKioskState } from '../../stores/kioskStore'
 import { guardInput } from '@shared/inputGuard'
@@ -83,6 +84,34 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
         </div>
         <div className="mt-1 text-2xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
       </div>
+      <ScreensaverWeather />
+    </div>
+  )
+}
+
+/**
+ * The header's weather — icon, current temperature, today's high over low — in the
+ * screensaver's white-on-photo style, bottom-right. Raised by the date line's height
+ * (mt-1 + text-2xl line) so it lines up with the clock digits on the left.
+ */
+function ScreensaverWeather() {
+  const { data: weather } = useWeather()
+  if (!weather) return null
+  const Icon = weatherIcon(weather.code, weather.isDay)
+  const today = weather.daily[0]
+  return (
+    <div className="absolute right-12 bottom-[4.75rem] flex items-center gap-4 text-white/90 drop-shadow-lg select-none">
+      <Icon className="h-[72px] w-[72px]" />
+      <span className="font-display text-7xl leading-none font-semibold">{weather.temperature}°</span>
+      {today && (
+        <span
+          className="flex flex-col items-end gap-1 text-3xl leading-none font-bold tabular-nums"
+          aria-label={`Today: high ${today.high}°, low ${today.low}°`}
+        >
+          <span>{today.high}°</span>
+          <span className="text-white/60">{today.low}°</span>
+        </span>
+      )}
     </div>
   )
 }

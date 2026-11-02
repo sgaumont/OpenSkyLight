@@ -266,6 +266,9 @@ Add unit tests where sensible.
 - v0.8.27: the kiosk always runs **100% text** (layout 1440px), so the 100% bucket is maxed: clock 60px
   (= date-block height), weather button py-0.5 (py-1.5 below 1300px) so temperature and icon reach 56px.
   Worst case (widest date, Week, 4 people) still fits with 12px spare; header height unchanged (97px).
+- v0.8.28: the screensaver shows the header's weather bottom-right (`ScreensaverWeather` in
+  `KioskOverlays.tsx`): icon, current temperature, today's high over low, white + drop-shadow like its
+  clock, same 48px margin, centred on the clock digits. Hidden when no weather location is set.
 
 ## Wishlist (not started)
 
