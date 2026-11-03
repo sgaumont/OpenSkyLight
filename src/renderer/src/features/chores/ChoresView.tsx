@@ -8,6 +8,7 @@ import { CheckIcon, MoonIcon, SunIcon } from '../../components/icons'
 import { BigButton } from '../../components/ui'
 import { RewardsDialog } from './RewardsDialog'
 import { Avatar, useChoreClaim } from './ClaimChore'
+import { claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
 
 function StarBadge({ count }: { count: number }) {
   return (
@@ -18,18 +19,26 @@ function StarBadge({ count }: { count: number }) {
   )
 }
 
-/** A chore belongs to no one: an open circle until someone claims it, then their colour and name. */
+/**
+ * A chore belongs to no one: an open circle until someone claims it, then their colour and name.
+ * One done more than once a day shows today's count, and who did it.
+ */
 function ChoreRow({
   chore,
-  claimer,
+  peopleById,
   canCheck,
   onTap
 }: {
   chore: DayChoreDto
-  claimer: PersonDto | undefined
+  peopleById: Map<string, PersonDto>
   canCheck: boolean
   onTap: () => void
 }) {
+  const counted = isCounted(chore)
+  // the colour is the latest doer's (the only one, for a plain chore)
+  const claimer = peopleById.get((counted ? chore.claims.at(-1) : chore.completedBy) ?? '')
+  // a counted chore part-way through: an outline in the latest doer's colour
+  const partial = counted && !chore.completed && claimer !== undefined
   return (
     <button
       type="button"
@@ -43,22 +52,46 @@ function ChoreRow({
         className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[3px] transition-colors ${
           claimer ? '' : 'border-line'
         }`}
-        style={claimer ? { borderColor: claimer.color, backgroundColor: claimer.color } : undefined}
+        style={
+          claimer
+            ? { borderColor: claimer.color, backgroundColor: partial ? 'transparent' : claimer.color }
+            : undefined
+        }
       >
-        {chore.completed && (
-          <CheckIcon size={24} className="animate-pop" style={{ color: claimer ? textOn(claimer.color) : undefined }} />
+        {counted && countOf(chore) > 0 ? (
+          <span
+            className="text-base font-extrabold"
+            style={{ color: claimer ? (partial ? claimer.color : textOn(claimer.color)) : undefined }}
+          >
+            {countOf(chore)}
+          </span>
+        ) : (
+          chore.completed && (
+            <CheckIcon size={24} className="animate-pop" style={{ color: claimer ? textOn(claimer.color) : undefined }} />
+          )
         )}
       </span>
       <span className="min-w-0 flex-1">
         <span className={`block truncate text-lg font-bold ${chore.completed ? 'text-ink-faint line-through' : ''}`}>
           {chore.title}
         </span>
-        {chore.completed && (
-          <span className="block truncate text-sm font-bold" style={{ color: claimer?.color }}>
-            {claimer ? `Done by ${claimer.name}` : 'Done'}
-          </span>
-        )}
+        {counted
+          ? chore.claims.length > 0 && (
+              <span className="block truncate text-sm font-bold" style={{ color: claimer?.color }}>
+                {claimSummary(chore.claims, (id) => peopleById.get(id)?.name)}
+              </span>
+            )
+          : chore.completed && (
+              <span className="block truncate text-sm font-bold" style={{ color: claimer?.color }}>
+                {claimer ? `Done by ${claimer.name}` : 'Done'}
+              </span>
+            )}
       </span>
+      {counted && (
+        <span className="shrink-0 rounded-full bg-paper-deep px-2.5 py-1 text-sm font-extrabold text-ink-soft" data-count>
+          {countLabel(chore)}
+        </span>
+      )}
       {chore.starsValue > 0 && <StarBadge count={chore.starsValue} />}
     </button>
   )
@@ -114,6 +147,7 @@ function EachChoreRow({
                 {done ? <CheckIcon size={20} className="animate-pop" /> : initials(p.name)}
               </span>
               {p.name}
+              {isCounted(chore) && <span className="font-extrabold opacity-80">{countLabel(chore, p.id)}</span>}
             </button>
           )
         })}
@@ -179,7 +213,8 @@ function FamilyPanel({ people, chores }: { people: PersonDto[]; chores: DayChore
   return (
     <div className="flex min-h-0 w-80 shrink-0 flex-col gap-2 overflow-y-auto rounded-card bg-paper-deep/40 p-3">
       {people.map((p) => {
-        const done = chores.filter((c) => c.completedBy === p.id || c.doneBy.includes(p.id)).length
+        // every time counts: a chore done twice is two done
+        const done = chores.reduce((n, c) => n + c.claims.filter((id) => id === p.id).length, 0)
         return (
           <div key={p.id} className="flex items-center gap-3 rounded-2xl p-1">
             <Avatar person={p} />
@@ -273,7 +308,7 @@ export function ChoresView() {
                       <ChoreRow
                         key={c.choreId}
                         chore={c}
-                        claimer={c.completedBy ? peopleById.get(c.completedBy) : undefined}
+                        peopleById={peopleById}
                         canCheck={canCheck}
                         onTap={() => tap(c)}
                       />

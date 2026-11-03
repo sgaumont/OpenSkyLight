@@ -17,10 +17,18 @@ function HistoryDay({ date, label, people }: { date: string; label: string; peop
   const { data: chores = [], isPending } = useChoresDay(date)
   const { data: checklists = [] } = useChecklistsDay(date)
   const all: DayChoreDto[] = [...checklists.flatMap((cl) => cl.items), ...chores]
-  const doneBy = (c: DayChoreDto): string[] =>
-    c.mode === 'each' ? c.doneBy : c.completedBy ? [c.completedBy] : []
+  // one entry per chore they did, "×2" when they did it more than once that day
   const rows = people
-    .map((p) => ({ person: p, titles: all.filter((c) => doneBy(c).includes(p.id)).map((c) => c.title) }))
+    .map((p) => {
+      const did = all
+        .map((c) => ({ title: c.title, n: c.claims.filter((id) => id === p.id).length }))
+        .filter((d) => d.n > 0)
+      return {
+        person: p,
+        count: did.reduce((sum, d) => sum + d.n, 0),
+        titles: did.map((d) => (d.n > 1 ? `${d.title} ×${d.n}` : d.title))
+      }
+    })
     .filter((r) => r.titles.length > 0)
   return (
     <section>
@@ -29,12 +37,12 @@ function HistoryDay({ date, label, people }: { date: string; label: string; peop
         <p className="text-base font-semibold text-ink-faint">No chores done</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {rows.map(({ person, titles }) => (
+          {rows.map(({ person, count, titles }) => (
             <div key={person.id} className="flex items-start gap-2.5">
               <Avatar person={person} size="h-9 w-9 text-xs" />
               <div className="min-w-0 flex-1">
                 <div className="text-base font-bold">
-                  {person.name} <span className="text-ink-faint">· {titles.length}</span>
+                  {person.name} <span className="text-ink-faint">· {count}</span>
                 </div>
                 <div className="text-sm font-semibold break-words text-ink-soft">{titles.join(', ')}</div>
               </div>

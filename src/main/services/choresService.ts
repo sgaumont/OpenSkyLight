@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, lt } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, lt } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
 import { checklistUnlocks, choreChecklists, choreCompletions, chores, people, starLedger } from '../db/schema'
@@ -46,6 +46,11 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     return row.dueDate ?? DateTime.fromISO(row.createdAt).setZone(deviceTz()).toISODate()!
   }
 
+  /** Times a chore can be done on a day it's due; null = no limit (stored as 0). */
+  function timesOf(row: ChoreRow): number | null {
+    return row.times === 0 ? null : row.times
+  }
+
   function toDto(row: ChoreRow): ChoreDto {
     return {
       id: row.id,
@@ -58,7 +63,8 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       active: row.active,
       sortOrder: row.sortOrder,
       mode: row.mode,
-      assignees: row.mode === 'each' ? parseIds(row.assignees) : []
+      assignees: row.mode === 'each' ? parseIds(row.assignees) : [],
+      times: timesOf(row)
     }
   }
 
@@ -102,7 +108,8 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         active: true,
         createdAt: isoUtc(DateTime.utc()),
         mode,
-        assignees: mode === 'each' ? JSON.stringify(input.assignees) : null
+        assignees: mode === 'each' ? JSON.stringify(input.assignees) : null,
+        times: input.times === undefined ? 1 : (input.times ?? 0)
       })
       .run()
     const [row] = db.select().from(chores).where(eq(chores.id, id)).all()
@@ -122,6 +129,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     if (input.active !== undefined) patch.active = input.active
     if (input.mode !== undefined) patch.mode = input.mode
     if (input.assignees !== undefined) patch.assignees = JSON.stringify(input.assignees)
+    if (input.times !== undefined) patch.times = input.times ?? 0
     if (input.mode === 'each' && !input.assignees?.length) throw invalid('Pick who has to do this chore')
     const result = db
       .update(chores)
@@ -174,14 +182,20 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       .select()
       .from(choreCompletions)
       .where(eq(choreCompletions.dueDate, date))
-      .orderBy(asc(choreCompletions.completedAt))
+      .orderBy(asc(choreCompletions.completedAt), asc(choreCompletions.id))
       .all()
     for (const c of rows) byChore.set(c.choreId, [...(byChore.get(c.choreId) ?? []), c.personId])
     return byChore
   }
 
-  /** A chore as shown for a day; `assignees` overrides the chore's own (checklist items). */
+  /**
+   * A chore as shown for a day; `assignees` overrides the chore's own (checklist items).
+   * `done` = who did it each time that day, oldest first. It counts as done once it's been
+   * done `times` times (per person for 'each'), or once at all when there's no limit.
+   */
   function dayChore(row: ChoreRow, done: string[], live: Set<string>, assignees?: string[]): DayChoreDto {
+    const times = assignees ? 1 : timesOf(row)
+    const needed = times ?? 1
     if (row.mode === 'anyone' && !assignees) {
       return {
         choreId: row.id,
@@ -189,15 +203,17 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         icon: row.icon,
         starsValue: row.starsValue,
         routine: row.routine,
-        completed: done.length > 0,
+        completed: done.length >= needed,
         completedBy: done[0] ?? null,
         mode: 'anyone',
         assignees: [],
-        doneBy: []
+        doneBy: [],
+        times,
+        claims: done
       }
     }
     const who = (assignees ?? parseIds(row.assignees)).filter((p) => live.has(p))
-    const doneBy = who.filter((p) => done.includes(p))
+    const doneBy = who.filter((p) => done.filter((d) => d === p).length >= needed)
     return {
       choreId: row.id,
       title: row.title,
@@ -208,7 +224,9 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       completedBy: null,
       mode: 'each',
       assignees: who,
-      doneBy
+      doneBy,
+      times,
+      claims: done.filter((d) => who.includes(d))
     }
   }
 
@@ -288,10 +306,12 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       .from(choreCompletions)
       .where(and(eq(choreCompletions.choreId, choreId), eq(choreCompletions.dueDate, date)))
       .all()
-    const mine = existing.find((c) => c.personId === personId)
-    // 'anyone': the first claim stands, and the balance shown is the claimant's
-    if (!assignees && existing.length > 0) return { balance: balanceOf(existing[0].personId) }
-    if (mine) return { balance: balanceOf(personId) }
+    // full up for the day (checklist items: once each) — nothing more to add
+    const limit = chore.checklistId ? 1 : (timesOf(chore) ?? Infinity)
+    const mine = existing.filter((c) => c.personId === personId).length
+    // 'anyone': the claims stand, and the balance shown is the first claimant's
+    if (!assignees && existing.length >= limit) return { balance: balanceOf(existing[0].personId) }
+    if (assignees && mine >= limit) return { balance: balanceOf(personId) }
 
     const completionId = uuidv7()
     const now = isoUtc(DateTime.utc())
@@ -338,6 +358,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
    * Un-ticks the chore and takes its stars back. 'anyone': from whoever claimed it.
    * 'each': personId's tick (required) — and their checklist unlock, which no longer holds.
    */
+  /** Takes back the newest tick (that person's, for 'each'), with its stars. */
   function uncomplete(choreId: string, date: string, personId?: string): { balance: number } {
     const [chore] = db.select().from(chores).where(eq(chores.id, choreId)).all()
     if (!chore) throw notFound('Chore')
@@ -353,6 +374,9 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
           ...(perPerson ? [eq(choreCompletions.personId, personId!)] : [])
         )
       )
+      // the newest tick goes first (a chore done more than once a day loses one at a time)
+      .orderBy(desc(choreCompletions.completedAt), desc(choreCompletions.id))
+      .limit(1)
       .all()
     if (!completion) return { balance: personId ? balanceOf(personId) : 0 }
     db.transaction((tx) => {

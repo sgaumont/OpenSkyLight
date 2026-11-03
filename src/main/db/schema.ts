@@ -124,7 +124,9 @@ export const chores = sqliteTable('chores', {
   mode: text('mode', { enum: ['anyone', 'each'] }).notNull().default('anyone'),
   assignees: text('assignees'), // JSON person ids, for 'each'
   /** set = an item of that checklist (schedule and assignees come from the checklist) */
-  checklistId: text('checklist_id').references(() => choreChecklists.id)
+  checklistId: text('checklist_id').references(() => choreChecklists.id),
+  /** times it can be done on each day it's due (per person for 'each'); 0 = no limit */
+  times: integer('times').notNull().default(1)
 })
 
 export const checklistUnlocks = sqliteTable('checklist_unlocks', {

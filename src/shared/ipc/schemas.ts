@@ -194,6 +194,9 @@ const routine = z.enum(['morning', 'evening']).nullable()
 const choreMode = z.enum(['anyone', 'each'])
 const assignees = z.array(id).max(20)
 
+/** times a chore can be done on a day it's due; null = no limit */
+const choreTimes = z.number().int().min(1).max(10).nullable()
+
 export const choreCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),
   starsValue: z.number().int().min(0).max(99),
@@ -201,7 +204,8 @@ export const choreCreateSchema = z.object({
   anchorDate: isoDate.optional(),
   routine: routine.optional(),
   mode: choreMode.optional(),
-  assignees: assignees.optional()
+  assignees: assignees.optional(),
+  times: choreTimes.optional()
 })
 
 export const choreUpdateSchema = z.object({
@@ -213,7 +217,8 @@ export const choreUpdateSchema = z.object({
   routine: routine.optional(),
   active: z.boolean().optional(),
   mode: choreMode.optional(),
-  assignees: assignees.optional()
+  assignees: assignees.optional(),
+  times: choreTimes.optional()
 })
 
 export const choreDaySchema = z.object({ date: isoDate })

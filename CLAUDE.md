@@ -382,6 +382,12 @@ Add unit tests where sensible.
   `force-device-scale-factor=1.5` (index.ts, before ready) = 2160×1440 px. Desktop shortcut "OpenSkyLight (tablet
   preview)" runs `dist\win-unpacked\OpenSkyLight.exe --tablet`, so it always opens the latest `npm run dist`.
 - v0.8.64: This week tile labels its first day (tomorrow) "Tmrw" instead of "ccc d".
+- v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
+  UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
+  it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1
+  for no limit); `uncomplete` takes back the newest tick. Counted chores always open "Who did it?", which stays
+  open (count, Undo last / per-person −, Done). Tile: one circle per time up to 5, else latest + open; `2/3`/`×6`.
+  Shared helpers `src/shared/choreCount.ts`.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)

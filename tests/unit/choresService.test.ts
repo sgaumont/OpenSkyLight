@@ -294,6 +294,96 @@ describe('chores + rewards', () => {
       expect(chores.checklistsDay('2026-06-13')).toHaveLength(0)
     })
   })
+
+  describe('chores done more than once a day', () => {
+    // 2026-06-13 is a Saturday (rrule weekday 5)
+    const SAT = '2026-06-13'
+    const weekly = (extra: Partial<Parameters<ChoresService['create']>[0]> = {}) =>
+      chores.create({
+        title: 'Load of laundry',
+        starsValue: 2,
+        recurrence: { freq: 'weekly', byWeekdays: [5] },
+        anchorDate: '2026-06-01',
+        ...extra
+      })
+
+    it('new chores can be done once, as before', () => {
+      const c = weekly()
+      expect(c.times).toBe(1)
+      chores.complete(c.id, SAT, 'kid1')
+      chores.complete(c.id, SAT, 'kid2')
+      const [day] = chores.getDay(SAT)
+      expect(day.claims).toEqual(['kid1'])
+      expect(day.completed).toBe(true)
+      expect(chores.balances()).toEqual([{ personId: 'kid1', balance: 2 }])
+    })
+
+    it("'anyone' with times 3: any mix of people, stars to each, then full", () => {
+      const c = weekly({ times: 3 })
+      chores.complete(c.id, SAT, 'kid1')
+      let [day] = chores.getDay(SAT)
+      expect(day).toMatchObject({ times: 3, claims: ['kid1'], completed: false, completedBy: 'kid1' })
+      chores.complete(c.id, SAT, 'kid1')
+      chores.complete(c.id, SAT, 'kid2')
+      chores.complete(c.id, SAT, 'kid2') // a 4th is refused
+      ;[day] = chores.getDay(SAT)
+      expect(day.claims).toEqual(['kid1', 'kid1', 'kid2'])
+      expect(day.completed).toBe(true)
+      const bal = Object.fromEntries(chores.balances().map((b) => [b.personId, b.balance]))
+      expect(bal).toEqual({ kid1: 4, kid2: 2 })
+    })
+
+    it('starts again at zero on the next day it is due', () => {
+      const c = weekly({ times: 2 })
+      chores.complete(c.id, SAT, 'kid1')
+      chores.complete(c.id, SAT, 'kid1')
+      const [next] = chores.getDay('2026-06-20')
+      expect(next).toMatchObject({ claims: [], completed: false })
+    })
+
+    it('no limit: done after the first, but more keep counting', () => {
+      const c = weekly({ times: null })
+      expect(c.times).toBeNull()
+      for (let i = 0; i < 5; i++) chores.complete(c.id, SAT, i % 2 ? 'kid2' : 'kid1')
+      const [day] = chores.getDay(SAT)
+      expect(day.times).toBeNull()
+      expect(day.claims).toHaveLength(5)
+      expect(day.completed).toBe(true)
+    })
+
+    it('undo takes back the newest tick and its stars', () => {
+      const c = weekly({ times: 3 })
+      chores.complete(c.id, SAT, 'kid1')
+      chores.complete(c.id, SAT, 'kid2')
+      chores.uncomplete(c.id, SAT)
+      const [day] = chores.getDay(SAT)
+      expect(day.claims).toEqual(['kid1'])
+      expect(chores.balances().find((b) => b.personId === 'kid2')?.balance ?? 0).toBe(0)
+    })
+
+    it("'each' with times 2: everyone's own count; undo is per person", () => {
+      const c = weekly({ times: 2, mode: 'each', assignees: ['kid1', 'kid2'] })
+      chores.complete(c.id, SAT, 'kid1')
+      chores.complete(c.id, SAT, 'kid1')
+      chores.complete(c.id, SAT, 'kid1') // past their 2: refused
+      chores.complete(c.id, SAT, 'kid2')
+      let [day] = chores.getDay(SAT)
+      expect(day.claims.filter((p) => p === 'kid1')).toHaveLength(2)
+      expect(day.doneBy).toEqual(['kid1'])
+      expect(day.completed).toBe(false)
+      chores.uncomplete(c.id, SAT, 'kid1')
+      ;[day] = chores.getDay(SAT)
+      expect(day.claims).toEqual(['kid1', 'kid2'])
+      expect(day.doneBy).toEqual([])
+    })
+
+    it('times can be changed and cleared to no limit', () => {
+      const c = weekly()
+      expect(chores.update({ id: c.id, times: 4 }).times).toBe(4)
+      expect(chores.update({ id: c.id, times: null }).times).toBeNull()
+      expect(chores.update({ id: c.id, times: 1 }).times).toBe(1)
+    })
+  })
 })
 
 describe('database upgrade to per-person completions (v1 to v2)', () => {
@@ -310,7 +400,7 @@ describe('database upgrade to per-person completions (v1 to v2)', () => {
       INSERT INTO star_ledger (id, person_id, delta, reason, ref_id, created_at)
         VALUES ('s1','kid1',3,'chore','done1','2026-06-10T12:00:00Z');
     `)
-    runMigrations(sqlite)
+    runMigrations(sqlite, 2)
     expect(sqlite.pragma('user_version', { simple: true })).toBe(2)
     expect(sqlite.prepare('SELECT id, person_id FROM chore_completions').all()).toEqual([{ id: 'done1', person_id: 'kid1' }])
     expect(sqlite.prepare('SELECT mode FROM chores').get()).toEqual({ mode: 'anyone' })
@@ -323,6 +413,33 @@ describe('database upgrade to per-person completions (v1 to v2)', () => {
     expect(() =>
       sqlite.exec(`INSERT INTO chore_completions (id, chore_id, person_id, due_date, completed_at) VALUES ('dup','c1','kid2','2026-06-10','x')`)
     ).toThrow(/UNIQUE/)
+    sqlite.close()
+  })
+})
+
+describe('database upgrade to chores done more than once a day (v2 to v3)', () => {
+  it('keeps completions and stars, makes every chore once-a-day, and allows repeat ticks', () => {
+    const sqlite = new Database(':memory:')
+    sqlite.pragma('foreign_keys = ON')
+    runMigrations(sqlite, 2)
+    sqlite.exec(`
+      INSERT INTO people (id, name, color, role, sort_order, created_at) VALUES ('kid1','Emma','#46A758','child',0,'2026-01-01T00:00:00Z');
+      INSERT INTO chores (id, title, stars_value, schedule_rrule, due_date, created_at)
+        VALUES ('c1','Dishes',3,'FREQ=DAILY','2026-06-01','2026-06-01T00:00:00Z');
+      INSERT INTO chore_completions (id, chore_id, person_id, due_date, completed_at, stars_awarded)
+        VALUES ('done1','c1','kid1','2026-06-10','2026-06-10T12:00:00Z',3);
+      INSERT INTO star_ledger (id, person_id, delta, reason, ref_id, created_at)
+        VALUES ('s1','kid1',3,'chore','done1','2026-06-10T12:00:00Z');
+    `)
+    runMigrations(sqlite)
+    expect(sqlite.pragma('user_version', { simple: true })).toBe(3)
+    expect(sqlite.prepare('SELECT times FROM chores').get()).toEqual({ times: 1 })
+    expect(sqlite.prepare('SELECT id, person_id, stars_awarded FROM chore_completions').all()).toEqual([
+      { id: 'done1', person_id: 'kid1', stars_awarded: 3 }
+    ])
+    expect(sqlite.prepare('SELECT SUM(delta) AS s FROM star_ledger').get()).toEqual({ s: 3 })
+    sqlite.exec(`INSERT INTO chore_completions (id, chore_id, person_id, due_date, completed_at) VALUES ('again','c1','kid1','2026-06-10','x')`)
+    expect(sqlite.prepare('SELECT COUNT(*) AS n FROM chore_completions').get()).toEqual({ n: 2 })
     sqlite.close()
   })
 })

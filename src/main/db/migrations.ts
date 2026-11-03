@@ -237,6 +237,25 @@ const MIGRATIONS: string[] = [
   DROP TABLE chore_completions;
   ALTER TABLE chore_completions_v2 RENAME TO chore_completions;
   CREATE INDEX idx_completions_chore_date ON chore_completions(chore_id, due_date);
+  `,
+  // v3: chores that can be done more than once a day — a times cap (0 = no limit), and
+  // completions without the one-per-person-per-day rule
+  `
+  ALTER TABLE chores ADD COLUMN times INTEGER NOT NULL DEFAULT 1;
+
+  CREATE TABLE chore_completions_v3 (
+    id TEXT PRIMARY KEY,
+    chore_id TEXT NOT NULL REFERENCES chores(id),
+    person_id TEXT NOT NULL REFERENCES people(id),
+    due_date TEXT NOT NULL,
+    completed_at TEXT NOT NULL,
+    stars_awarded INTEGER NOT NULL DEFAULT 0
+  );
+  INSERT INTO chore_completions_v3 (id, chore_id, person_id, due_date, completed_at, stars_awarded)
+    SELECT id, chore_id, person_id, due_date, completed_at, stars_awarded FROM chore_completions;
+  DROP TABLE chore_completions;
+  ALTER TABLE chore_completions_v3 RENAME TO chore_completions;
+  CREATE INDEX idx_completions_chore_date ON chore_completions(chore_id, due_date);
   `
 ]
 

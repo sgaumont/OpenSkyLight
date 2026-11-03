@@ -238,6 +238,8 @@ export interface ChoreDto {
   mode: ChoreMode
   /** who has to do an 'each' chore; [] for 'anyone' */
   assignees: string[]
+  /** how many times it can be done on each day it's due (per person for 'each'); null = no limit */
+  times: number | null
 }
 
 export interface ChoreCreateInput {
@@ -248,6 +250,7 @@ export interface ChoreCreateInput {
   routine?: ChoreRoutine
   mode?: ChoreMode
   assignees?: string[]
+  times?: number | null
 }
 
 export interface ChoreUpdateInput {
@@ -260,6 +263,7 @@ export interface ChoreUpdateInput {
   active?: boolean
   mode?: ChoreMode
   assignees?: string[]
+  times?: number | null
 }
 
 export interface DayChoreDto {
@@ -275,8 +279,12 @@ export interface DayChoreDto {
   mode: ChoreMode
   /** 'each': who has to do it (current family members only) */
   assignees: string[]
-  /** 'each': who has done it so far */
+  /** 'each': who has done it as many times as it takes (once, for no limit) */
   doneBy: string[]
+  /** times per person (per chore for 'anyone') on this day; null = no limit */
+  times: number | null
+  /** who did it each time today, oldest first — a person appears once per time */
+  claims: string[]
 }
 
 /** A set of chores each assignee must finish on a day to unlock something (e.g. video game time). */

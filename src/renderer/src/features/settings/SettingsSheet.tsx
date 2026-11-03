@@ -551,6 +551,8 @@ function ChoresTab() {
   const [routine, setRoutine] = useState<'any' | 'morning' | 'evening'>('any')
   const [mode, setMode] = useState<ChoreMode>('anyone')
   const [assignees, setAssignees] = useState<string[]>([])
+  const [times, setTimes] = useState(1)
+  const [noLimit, setNoLimit] = useState(false)
 
   const [editingReward, setEditingReward] = useState<RewardDto | 'new' | null>(null)
   const [rewardTitle, setRewardTitle] = useState('')
@@ -566,6 +568,8 @@ function ChoresTab() {
       setRoutine('any')
       setMode('anyone')
       setAssignees(defaultAssignees(people))
+      setTimes(1)
+      setNoLimit(false)
     } else {
       setChoreTitle(c.title)
       setChoreStars(c.starsValue)
@@ -574,6 +578,8 @@ function ChoresTab() {
       setRoutine(c.routine ?? 'any')
       setMode(c.mode)
       setAssignees(c.mode === 'each' ? c.assignees : defaultAssignees(people))
+      setTimes(c.times ?? 1)
+      setNoLimit(c.times === null)
     }
   }
 
@@ -587,7 +593,9 @@ function ChoresTab() {
       recurrence: toRecurrence(schedule, weekdays),
       routine: routine === 'any' ? null : routine,
       mode,
-      ...(mode === 'each' ? { assignees } : {})
+      ...(mode === 'each' ? { assignees } : {}),
+      // only weekly and one-time chores can be done more than once on their day
+      times: schedule === 'daily' ? 1 : noLimit ? null : times
     }
     if (editingChore === 'new') choreMutations.create.mutate(common)
     else if (editingChore) {
@@ -641,6 +649,7 @@ function ChoresTab() {
                     ? `Everyone: ${c.assignees.map((id) => peopleById.get(id)?.name).filter(Boolean).join(', ')} · `
                     : ''}
                   {c.recurrence ? describeRecurrence(c.recurrence) : 'One time'}
+                  {c.times === null ? ' · no limit' : c.times > 1 ? ` · ${c.times}×` : ''}
                   {c.routine ? ` · ${c.routine}` : ''}
                 </span>
               </span>
@@ -739,6 +748,24 @@ function ChoresTab() {
             </div>
           </div>
           <ScheduleField schedule={schedule} weekdays={weekdays} onSchedule={setSchedule} onWeekdays={setWeekdays} />
+          {schedule !== 'daily' && (
+            <div>
+              <FieldLabel>{mode === 'each' ? 'Times that day, each' : 'Times that day'}</FieldLabel>
+              <div className="flex items-center gap-4">
+                {!noLimit && <Stepper value={times} onChange={setTimes} min={1} max={10} />}
+                <button
+                  type="button"
+                  aria-pressed={noLimit}
+                  onClick={() => setNoLimit(!noLimit)}
+                  className={`pressable min-h-12 rounded-full px-5 text-lg font-bold ${
+                    noLimit ? 'bg-ember text-white' : 'bg-paper-deep text-ink-soft'
+                  }`}
+                >
+                  No limit
+                </button>
+              </div>
+            </div>
+          )}
           <div className="mt-1 flex gap-3">
             {editingChore !== 'new' && editingChore && (
               <BigButton

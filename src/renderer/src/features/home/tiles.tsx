@@ -33,6 +33,7 @@ import { formatTime, initials, textOn } from '../../lib/format'
 import { occurrenceColor } from '../../lib/colors'
 import { CheckIcon } from '../../components/icons'
 import { sortDayChores } from '@shared/choreOrder'
+import { canAddMore, countLabel, countOf, isCounted } from '@shared/choreCount'
 
 export interface TileProps {
   tile: HomeTile
@@ -360,6 +361,24 @@ function MiniAvatar({ person }: { person: PersonDto }) {
 
 const UNLOCK_MARK = { pending: '⏳', approved: '✓' } as const
 
+/** Most circles a counted chore shows; past that it shows the latest doer (+ an open one) and its count. */
+const MAX_COUNT_CIRCLES = 5
+
+/**
+ * An 'anyone' chore's circles, as who filled each (undefined = still open). A plain chore is
+ * one circle; a counted one is one per time (with a cap: e.g. 3/3 → three) or, with no
+ * limit, one per time so far plus an open one.
+ */
+function anyoneSlots(c: DayChoreDto): (string | undefined)[] {
+  if (!isCounted(c)) return [c.completedBy ?? undefined]
+  if (c.times !== null && c.times <= MAX_COUNT_CIRCLES) {
+    return Array.from({ length: c.times }, (_, i) => c.claims[i])
+  }
+  const open = canAddMore(c) ? [undefined] : []
+  const slots = [...c.claims, ...open]
+  return slots.length <= MAX_COUNT_CIRCLES ? slots : [c.claims.at(-1), ...open]
+}
+
 export function ChoresProgressTile() {
   // a tile left up overnight must move on to the new day's chores
   const todayKey = useTodayKey()
@@ -371,24 +390,33 @@ export function ChoresProgressTile() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const all = [...checklists.flatMap((cl) => cl.items), ...chores]
   // every title starts at the same x: the circle column fits the most circles any row has (20px each, 2px gaps)
-  const maxCircles = Math.max(1, ...all.map((c) => (c.mode === 'each' ? c.assignees.length : 1)))
+  const maxCircles = Math.max(1, ...all.map((c) => (c.mode === 'each' ? c.assignees.length : anyoneSlots(c).length)))
   const circleWidth = maxCircles * 22 - 2
   const sorted = sortDayChores(chores)
   const done = all.filter((c) => c.completed).length
   const pct = all.length === 0 ? 0 : Math.round((done / all.length) * 100)
 
   // the tile itself is a button (opens Chores), so a row can't be one: it opens "Who did it?" instead
-  /** A filled circle with the doer's initial once done; an empty outline (faint initial when we know whose) until then. */
-  const circle = (key: string, done: PersonDto | undefined, owner?: PersonDto) => (
+  /**
+   * A filled circle with the doer's initial once done; an empty outline (faint initial when we
+   * know whose) until then; `partial` (part-way through a count) outlines it in their colour.
+   */
+  const circle = (key: string, done: PersonDto | undefined, owner?: PersonDto, partial?: boolean) => (
     <span
       key={key}
-      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${done ? '' : 'border-line'}`}
-      style={done ? { borderColor: done.color, backgroundColor: done.color } : undefined}
+      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${done || partial ? '' : 'border-line'}`}
+      style={
+        done
+          ? { borderColor: done.color, backgroundColor: done.color }
+          : partial && owner
+            ? { borderColor: owner.color }
+            : undefined
+      }
     >
       {(done ?? owner) && (
         <span
-          className={`text-[10px] leading-none font-extrabold ${done ? '' : 'text-ink-faint'}`}
-          style={done ? { color: textOn(done.color) } : undefined}
+          className={`text-[10px] leading-none font-extrabold ${done || partial ? '' : 'text-ink-faint'}`}
+          style={done ? { color: textOn(done.color) } : partial && owner ? { color: owner.color } : undefined}
         >
           {initials((done ?? owner)!.name)}
         </span>
@@ -408,23 +436,32 @@ export function ChoresProgressTile() {
       }}
       className="pressable -mx-1 flex items-center gap-2 rounded-lg px-1 py-0.5"
     >
-      {/* one circle per person who has to do it; a single circle for an anyone chore */}
+      {/* one circle per person who has to do it; one per time for an anyone chore (a plain one: one) */}
       <span
         className="flex shrink-0 gap-0.5"
         style={{ minWidth: circleWidth }}
-        data-circles={c.mode === 'each' ? c.assignees.length : 1}
+        data-circles={c.mode === 'each' ? c.assignees.length : anyoneSlots(c).length}
       >
         {c.mode === 'each'
           ? c.assignees.map((id) => {
               const p = peopleById.get(id)
-              return circle(id, c.doneBy.includes(id) ? p : undefined, p)
+              return circle(id, c.doneBy.includes(id) ? p : undefined, p, countOf(c, id) > 0)
             })
-          : circle('claim', c.completedBy ? peopleById.get(c.completedBy) : undefined)}
+          : anyoneSlots(c).map((id, i) => circle(`claim${i}`, id ? peopleById.get(id) : undefined))}
       </span>
       <span
         className={`min-w-0 flex-1 text-sm leading-tight font-bold break-words ${c.completed ? 'text-ink-faint line-through' : ''}`}
       >
         {c.title}
+        {isCounted(c) && (
+          <span className="ml-1.5 inline-block text-xs font-extrabold text-ink-faint" data-count>
+            {c.mode === 'each'
+              ? c.assignees
+                  .map((id) => `${initials(peopleById.get(id)?.name ?? '?')} ${countLabel(c, id)}`)
+                  .join(' · ')
+              : countLabel(c)}
+          </span>
+        )}
       </span>
     </div>
   )

@@ -18,6 +18,7 @@ import { Card, CheckCircle, EmptyNote, GhostButton, PersonAvatar, PrimaryButton,
 import { sortDayChores } from '@shared/choreOrder'
 import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type ScheduleKind } from '@shared/choreSchedule'
 import { describeRecurrence } from '@shared/recurrence/build'
+import { canAddMore, claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
 
 /** Per-person "N today · ★ N" card below the chores: hidden for now (the Stars card covers it). */
 const SHOW_FAMILY_SUMMARY = false
@@ -89,39 +90,70 @@ function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode
   )
 }
 
-/** "Who did it?" for a chore anyone can do: one big button per family member. */
+/**
+ * "Who did it?" for a chore anyone can do: one big button per family member. A chore done
+ * more than once a day stays open to count — each tap adds one; "Undo last" (or, for an
+ * Everyone chore, a person's −) takes one back.
+ */
 function ClaimSheet({
   chore,
   people,
   onPick,
+  onUndo,
   onClose
 }: {
   chore: DayChoreDto
   people: PersonDto[]
   onPick: (personId: string) => void
+  onUndo: (personId?: string) => void
   onClose: () => void
 }) {
+  const counted = isCounted(chore)
+  const each = chore.mode === 'each'
+  const candidates = each ? people.filter((p) => chore.assignees.includes(p.id)) : people
+  const nameOf = (id: string): string | undefined => people.find((p) => p.id === id)?.name
+  const last = chore.claims.at(-1)
   return (
     <Sheet onClose={onClose}>
       <h2 className="truncate font-display text-xl font-semibold">{chore.title}</h2>
       <p className="mb-3 text-sm font-extrabold text-ink-faint">
         Who did it?{chore.starsValue > 0 ? ` · ★ ${chore.starsValue}` : ''}
+        {counted && !each && ` · today ${countLabel(chore)}`}
+        {counted && !each && chore.claims.length > 0 && ` · ${claimSummary(chore.claims, nameOf)}`}
       </p>
       <div className="mb-3 flex flex-col gap-2">
-        {people.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => onPick(p.id)}
-            className="pressable flex min-h-14 items-center gap-3 rounded-2xl bg-paper-deep px-3 text-left text-lg font-extrabold"
-          >
-            <PersonAvatar name={p.name} color={p.color} />
-            {p.name}
-          </button>
-        ))}
+        {candidates.map((p) => {
+          const full = counted && !canAddMore(chore, each ? p.id : undefined)
+          return (
+            <div key={p.id} className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onPick(p.id)}
+                disabled={full}
+                className="pressable flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl bg-paper-deep px-3 text-left text-lg font-extrabold disabled:opacity-40"
+              >
+                <PersonAvatar name={p.name} color={p.color} />
+                <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                {counted && each && <span className="shrink-0 text-base text-ink-soft">{countLabel(chore, p.id)}</span>}
+              </button>
+              {counted && each && (
+                <button
+                  type="button"
+                  aria-label={`One less for ${p.name}`}
+                  onClick={() => onUndo(p.id)}
+                  disabled={countOf(chore, p.id) === 0}
+                  className={STEP_BUTTON}
+                >
+                  −
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
-      <div className="flex [&>*]:flex-1">
-        <GhostButton onClick={onClose}>Cancel</GhostButton>
+      <div className="flex gap-2 [&>*]:flex-1">
+        {counted && !each && last && <GhostButton onClick={() => onUndo()}>Undo last ({nameOf(last) ?? 'Someone'})</GhostButton>}
+        {counted ? <PrimaryButton onClick={onClose}>Done</PrimaryButton> : <GhostButton onClick={onClose}>Cancel</GhostButton>}
       </div>
     </Sheet>
   )
@@ -176,9 +208,23 @@ function EditStarsSheet({ person, current, onClose }: { person: PersonDto; curre
   )
 }
 
-/** An "everyone" chore: one button per person; a tap ticks or un-ticks just them. */
-function EachChoreRow({ chore, people, date }: { chore: DayChoreDto; people: PersonDto[]; date: string }) {
+/**
+ * An "everyone" chore: one button per person; a tap ticks or un-ticks just them. One done more
+ * than once a day shows each person's count, and a tap opens the counting sheet (`onCount`).
+ */
+function EachChoreRow({
+  chore,
+  people,
+  date,
+  onCount
+}: {
+  chore: DayChoreDto
+  people: PersonDto[]
+  date: string
+  onCount?: () => void
+}) {
   const mutations = useChoreMutations()
+  const counted = isCounted(chore)
   return (
     <div className="border-b border-line/60 py-2 last:border-0">
       <div className="flex items-center gap-2">
@@ -198,9 +244,11 @@ function EachChoreRow({ chore, people, date }: { chore: DayChoreDto; people: Per
               type="button"
               aria-pressed={done}
               onClick={() =>
-                done
-                  ? mutations.uncomplete.mutate({ choreId: chore.choreId, date, personId: id })
-                  : mutations.complete.mutate({ choreId: chore.choreId, date, personId: id })
+                counted && onCount
+                  ? onCount()
+                  : done
+                    ? mutations.uncomplete.mutate({ choreId: chore.choreId, date, personId: id })
+                    : mutations.complete.mutate({ choreId: chore.choreId, date, personId: id })
               }
               className={`pressable flex items-center gap-1.5 rounded-full py-1 pr-3 pl-1 text-sm font-extrabold ${
                 done ? 'text-white' : 'bg-paper-deep text-ink-soft'
@@ -210,6 +258,7 @@ function EachChoreRow({ chore, people, date }: { chore: DayChoreDto; people: Per
               <PersonAvatar name={p.name} color={p.color} size="sm" />
               {done ? '✓ ' : ''}
               {p.name}
+              {counted && <span className="opacity-80">{countLabel(chore, id)}</span>}
             </button>
           )
         })}
@@ -229,8 +278,10 @@ export function ChoresPage() {
   const mutations = useChoreMutations()
   const [showManage, setShowManage] = useState(false)
   const [editingChore, setEditingChore] = useState<ChoreDto | 'new' | null>(null)
-  // the chore whose "who did it?" picker is open
-  const [claiming, setClaiming] = useState<DayChoreDto | null>(null)
+  // the chore whose "who did it?" picker is open — as it is now, so a counting sheet shows each tick
+  const [claimingId, setClaimingId] = useState<string | null>(null)
+  const claiming = dayChores.find((c) => c.choreId === claimingId) ?? null
+  const nameOf = (id: string): string | undefined => people.find((p) => p.id === id)?.name
 
   const balanceOf = (personId: string): number => balances.find((b) => b.personId === personId)?.balance ?? 0
   const done = dayChores.filter((c) => c.completed).length
@@ -269,12 +320,24 @@ export function ChoresPage() {
             </span>
           </div>
           {sortDayChores(dayChores).map((chore) => {
-            if (chore.mode === 'each') return <EachChoreRow key={chore.choreId} chore={chore} people={people} date={today} />
-            const claimer = people.find((p) => p.id === chore.completedBy)
-            // done: a tap un-ticks it; to do: a tap asks who did it
+            if (chore.mode === 'each') {
+              return (
+                <EachChoreRow
+                  key={chore.choreId}
+                  chore={chore}
+                  people={people}
+                  date={today}
+                  onCount={() => setClaimingId(chore.choreId)}
+                />
+              )
+            }
+            const counted = isCounted(chore)
+            // the latest doer's colour (the only one, for a plain chore)
+            const claimer = people.find((p) => p.id === (counted ? chore.claims.at(-1) : chore.completedBy))
+            // a plain chore: done → a tap un-ticks it; to do → asks who did it. A counted one always asks.
             const tap = () => {
-              if (chore.completed) mutations.uncomplete.mutate({ choreId: chore.choreId, date: today })
-              else setClaiming(chore)
+              if (!counted && chore.completed) mutations.uncomplete.mutate({ choreId: chore.choreId, date: today })
+              else setClaimingId(chore.choreId)
             }
             return (
               <div key={chore.choreId} className="border-b border-line/60 last:border-0">
@@ -291,8 +354,19 @@ export function ChoresPage() {
                     >
                       {chore.title}
                     </span>
-                    {claimer && <span className="block truncate text-xs font-extrabold text-ink-faint">{claimer.name}</span>}
+                    {counted
+                      ? chore.claims.length > 0 && (
+                          <span className="block truncate text-xs font-extrabold text-ink-faint">
+                            {claimSummary(chore.claims, nameOf)}
+                          </span>
+                        )
+                      : claimer && <span className="block truncate text-xs font-extrabold text-ink-faint">{claimer.name}</span>}
                   </span>
+                  {counted && (
+                    <span className="mr-2 shrink-0 rounded-full bg-paper-deep px-2 py-0.5 text-sm font-extrabold text-ink-soft">
+                      {countLabel(chore)}
+                    </span>
+                  )}
                   {chore.starsValue > 0 && (
                     <span className="shrink-0 text-sm font-extrabold text-ink-faint">★ {chore.starsValue}</span>
                   )}
@@ -307,11 +381,15 @@ export function ChoresPage() {
         <ClaimSheet
           chore={claiming}
           people={people}
-          onClose={() => setClaiming(null)}
+          onClose={() => setClaimingId(null)}
           onPick={(personId) => {
-            setClaiming(null)
+            // a counting sheet stays open for the next one
+            if (!isCounted(claiming)) setClaimingId(null)
             mutations.complete.mutate({ choreId: claiming.choreId, date: today, personId })
           }}
+          onUndo={(personId) =>
+            mutations.uncomplete.mutate({ choreId: claiming.choreId, date: today, ...(personId ? { personId } : {}) })
+          }
         />
       )}
 
@@ -490,6 +568,8 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
   const [schedule, setSchedule] = useState<ScheduleKind>(isNew ? 'daily' : scheduleOf(chore.recurrence))
   const [weekdays, setWeekdays] = useState<number[]>(isNew ? [todayWeekday] : (chore.recurrence?.byWeekdays ?? [todayWeekday]))
   const [routine, setRoutine] = useState<'any' | 'morning' | 'evening'>(isNew ? 'any' : (chore.routine ?? 'any'))
+  const [times, setTimes] = useState(isNew ? 1 : (chore.times ?? 1))
+  const [noLimit, setNoLimit] = useState(!isNew && chore.times === null)
   const valid = title.trim() !== '' && (mode === 'anyone' || assignees.length > 0)
   const busy = mutations.create.isPending || mutations.update.isPending || mutations.remove.isPending
   const error = mutations.create.error ?? mutations.update.error ?? mutations.remove.error
@@ -502,7 +582,9 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
       recurrence: toRecurrence(schedule, weekdays),
       routine: routine === 'any' ? null : routine,
       mode,
-      ...(mode === 'each' ? { assignees } : {})
+      ...(mode === 'each' ? { assignees } : {}),
+      // only weekly and one-time chores can be done more than once on their day
+      times: schedule === 'daily' ? 1 : noLimit ? null : times
     }
     if (isNew) {
       mutations.create.mutate({ ...common, anchorDate: today.toISODate()! }, { onSuccess: onClose })
@@ -576,6 +658,46 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
           </div>
         </div>
         <ScheduleField schedule={schedule} weekdays={weekdays} onSchedule={setSchedule} onWeekdays={setWeekdays} />
+        {schedule !== 'daily' && (
+          <div>
+            <FieldLabel>{mode === 'each' ? 'Times that day, each' : 'Times that day'}</FieldLabel>
+            <div className="flex items-center gap-3">
+              {!noLimit && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    aria-label="Fewer times"
+                    onClick={() => setTimes((n) => Math.max(1, n - 1))}
+                    className={STEP_BUTTON}
+                  >
+                    −
+                  </button>
+                  <span className="min-w-11 text-center text-base font-extrabold tabular-nums" data-times>
+                    {times}×
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="More times"
+                    onClick={() => setTimes((n) => Math.min(10, n + 1))}
+                    className={STEP_BUTTON}
+                  >
+                    +
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                aria-pressed={noLimit}
+                onClick={() => setNoLimit(!noLimit)}
+                className={`pressable min-h-10 rounded-full px-4 text-sm font-extrabold ${
+                  noLimit ? 'bg-ember text-white' : 'bg-paper-deep text-ink-soft'
+                }`}
+              >
+                No limit
+              </button>
+            </div>
+          </div>
+        )}
         {error && <p className="text-sm font-bold text-ember-deep">{error.message}</p>}
         <div className="flex gap-2 [&>*]:flex-1">
           <GhostButton onClick={onClose}>Cancel</GhostButton>
@@ -751,6 +873,7 @@ function ManageChores({ people, onEditChore }: { people: PersonDto[]; onEditChor
                   {c.active ? '' : 'Paused · '}
                   {c.mode === 'each' ? `Everyone: ${names(c.assignees)} · ` : ''}
                   {repeats(c.recurrence)}
+                  {c.times === null ? ' · no limit' : c.times > 1 ? ` · ${c.times}×` : ''}
                   {c.routine ? ` · ${c.routine}` : ''}
                 </span>
               </span>
