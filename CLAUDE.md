@@ -339,6 +339,8 @@ Add unit tests where sensible.
 - v0.8.46: the star circles are as tall as the date + clock block (60px; 48px below 1300px, 64px from 1500px)
   with a ★ above the number, and show **on Home only** — with the period nav, the worst case (Wednesday,
   12:59, "Dec 30 – Jan 5", −12° with high/low) ran the header ~70px past 1440 and pushed Lists off-screen.
+- v0.8.47: header's person-filter circles hidden (`SHOW_PERSON_FILTER = false` in `Header.tsx`) — events aren't
+  assigned to people here. `hiddenPeople` isn't persisted, so nothing can stay filtered out.
 
 ## Wishlist (not started)
 

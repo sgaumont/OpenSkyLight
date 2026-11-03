@@ -18,6 +18,9 @@ function useNow(): DateTime {
   return now
 }
 
+/** Person filter circles: hidden for now — this family doesn't assign events to people. */
+const SHOW_PERSON_FILTER = false
+
 /** narrow layouts (the 10" kiosk at 115%+ text): slightly smaller round buttons to leave room */
 const NARROW_ICON = 'max-[1300px]:h-11 max-[1300px]:w-11'
 
@@ -126,7 +129,7 @@ export function Header() {
       <div className="flex-1" />
 
       {/* person filter: compact avatar circles, never clipped (overlap when the family is large) */}
-      {people.length > 0 && (
+      {SHOW_PERSON_FILTER && people.length > 0 && (
         <div className={`flex shrink-0 items-center ${people.length >= 4 ? '-space-x-2 max-[1150px]:-space-x-3' : 'gap-1.5'}`}>
           {people.map((p) => {
             const hidden = hiddenPeople.includes(p.id)
