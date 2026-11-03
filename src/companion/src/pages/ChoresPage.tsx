@@ -10,28 +10,53 @@ type Repeat = 'once' | 'daily' | 'weekly'
 /** Per-person "N today · ★ N" card below the chores: hidden for now (the Stars card covers it). */
 const SHOW_FAMILY_SUMMARY = false
 
-/** Each child's star balance; tap one to correct it. */
+const STEP_BUTTON =
+  'pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-deep text-2xl font-extrabold text-ink-soft disabled:opacity-30'
+
+/** Each child's star balance with − / + (one star a tap); tap the name to type a new total. */
 function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id: string) => number }) {
   const kids = people.filter((p) => p.role === 'child')
   const shown = kids.length > 0 ? kids : people
   const [editing, setEditing] = useState<PersonDto | null>(null)
+  const adjust = useAdjustStars()
   if (shown.length === 0) return null
   return (
     <>
       <Card>
         <h2 className="mb-1 font-display text-xl font-semibold">Stars</h2>
-        {shown.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => setEditing(p)}
-            className="pressable flex w-full items-center gap-2.5 border-b border-line/60 py-2 text-left last:border-0"
-          >
-            <PersonAvatar name={p.name} color={p.color} />
-            <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
-            <span className="text-lg font-extrabold text-ember-deep tabular-nums">★ {balanceOf(p.id)}</span>
-          </button>
-        ))}
+        {shown.map((p) => {
+          const stars = balanceOf(p.id)
+          return (
+            <div key={p.id} className="flex items-center gap-2 border-b border-line/60 py-2 last:border-0">
+              <button
+                type="button"
+                onClick={() => setEditing(p)}
+                className="pressable flex min-w-0 flex-1 items-center gap-2.5 text-left"
+              >
+                <PersonAvatar name={p.name} color={p.color} />
+                <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
+              </button>
+              <button
+                type="button"
+                aria-label={`One star less for ${p.name}`}
+                disabled={stars <= 0}
+                onClick={() => adjust.mutate({ personId: p.id, delta: -1 })}
+                className={STEP_BUTTON}
+              >
+                −
+              </button>
+              <span className="min-w-14 text-center text-lg font-extrabold text-ember-deep tabular-nums">★ {stars}</span>
+              <button
+                type="button"
+                aria-label={`One star more for ${p.name}`}
+                onClick={() => adjust.mutate({ personId: p.id, delta: 1 })}
+                className={STEP_BUTTON}
+              >
+                +
+              </button>
+            </div>
+          )
+        })}
       </Card>
       {editing && <EditStarsSheet person={editing} current={balanceOf(editing.id)} onClose={() => setEditing(null)} />}
     </>

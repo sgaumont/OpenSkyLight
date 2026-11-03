@@ -356,6 +356,8 @@ Add unit tests where sensible.
 - v0.8.54: companion tabs are Chores · Lists · Meals — no Agenda (`AgendaPage.tsx` kept, unused).
 - v0.8.55: "Add a tile" no longer offers Clock, Camera or Birds (`pickable: false` in `tileRegistry.tsx`); one
   already on the home screen keeps working and can still be removed.
+- v0.8.56: companion Stars card rows are name · − · ★ N · + (each tap `stars:adjust` ±1; − disabled at 0);
+  tapping the name still opens the type-a-total sheet.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)
