@@ -4,16 +4,15 @@ import { getToken, setUnauthorizedHandler } from './api/client'
 import { ListsPage } from './pages/ListsPage'
 import { MealsPage } from './pages/MealsPage'
 import { ChoresPage } from './pages/ChoresPage'
-import { AgendaPage } from './pages/AgendaPage'
 import { PairScreen } from './pages/PairScreen'
 
-type TabId = 'lists' | 'meals' | 'chores' | 'agenda'
+// no Agenda tab (pages/AgendaPage.tsx is kept, unused, in case it comes back)
+type TabId = 'lists' | 'meals' | 'chores'
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'chores', label: 'Chores', icon: '★' },
   { id: 'lists', label: 'Lists', icon: '✓' },
-  { id: 'meals', label: 'Meals', icon: '🍽' },
-  { id: 'agenda', label: 'Agenda', icon: '▤' }
+  { id: 'meals', label: 'Meals', icon: '🍽' }
 ]
 
 export default function App() {
@@ -39,7 +38,6 @@ export default function App() {
           {tab === 'lists' && <ListsPage />}
           {tab === 'meals' && <MealsPage />}
           {tab === 'chores' && <ChoresPage />}
-          {tab === 'agenda' && <AgendaPage />}
         </div>
       </main>
 
