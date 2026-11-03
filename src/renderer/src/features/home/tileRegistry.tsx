@@ -46,8 +46,8 @@ export const TILE_REGISTRY: Record<HomeTileType, TileMeta> = {
   choresProgress: {
     label: 'Chores progress',
     description: "Today's chores, and who did the finished ones",
-    component: ChoresProgressTile,
-    navTarget: 'chores'
+    // tapping claims a chore in place; the tile itself goes nowhere
+    component: ChoresProgressTile
   },
   starBalances: {
     label: 'Star balances',

@@ -331,6 +331,8 @@ Add unit tests where sensible.
 - v0.8.42: home chores tile titled "Today's chores".
 - v0.8.43: header menu is Home · Week · Month · Lists — no Chores button. The Chores view stays (tap the
   "Today's chores" home tile to open it; it keeps its own text size in Settings).
+- v0.8.44: tapping the "Today's chores" tile no longer opens the Chores view (no `navTarget`); tapping a chore
+  still claims it. The Chores view is now reached only from the Star balances tile.
 
 ## Wishlist (not started)
 
