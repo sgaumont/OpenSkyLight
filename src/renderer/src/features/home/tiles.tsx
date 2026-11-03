@@ -31,6 +31,7 @@ import { ZONE } from '../../stores/uiStore'
 import { formatTime, initials, textOn } from '../../lib/format'
 import { occurrenceColor } from '../../lib/colors'
 import { CheckIcon } from '../../components/icons'
+import { sortDayChores } from '@shared/choreOrder'
 
 export interface TileProps {
   tile: HomeTile
@@ -368,10 +369,7 @@ export function ChoresProgressTile() {
   // every title starts at the same x: the circle column fits the most circles any row has (20px each, 2px gaps)
   const maxCircles = Math.max(1, ...all.map((c) => (c.mode === 'each' ? c.assignees.length : 1)))
   const circleWidth = maxCircles * 22 - 2
-  // multi-person chores first, then alphabetical within each kind
-  const sorted = [...chores].sort(
-    (a, b) => Number(b.mode === 'each') - Number(a.mode === 'each') || a.title.localeCompare(b.title)
-  )
+  const sorted = sortDayChores(chores)
   const done = all.filter((c) => c.completed).length
   const pct = all.length === 0 ? 0 : Math.round((done / all.length) * 100)
 

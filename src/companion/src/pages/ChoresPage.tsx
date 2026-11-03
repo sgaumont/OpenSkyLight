@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import type { ChoreDto, ChoreRoutine, DayChoreDto, PersonDto } from '@shared/types'
 import { useBalances, useChecklistsDay, useChoreMutations, useChores, useChoresDay, usePeople } from '../api/hooks'
 import { Card, CheckCircle, EmptyNote, GhostButton, PersonAvatar, PrimaryButton, TextInput } from '../components/ui'
+import { sortDayChores } from '@shared/choreOrder'
 
 type Repeat = 'once' | 'daily' | 'weekly'
 
@@ -95,7 +96,7 @@ export function ChoresPage() {
               {done}/{dayChores.length} done
             </span>
           </div>
-          {dayChores.map((chore) => {
+          {sortDayChores(dayChores).map((chore) => {
             if (chore.mode === 'each') return <EachChoreRow key={chore.choreId} chore={chore} people={people} date={today} />
             const claimer = people.find((p) => p.id === chore.completedBy)
             return (

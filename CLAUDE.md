@@ -342,6 +342,8 @@ Add unit tests where sensible.
 - v0.8.47: header's person-filter circles hidden (`SHOW_PERSON_FILTER = false` in `Header.tsx`) — events aren't
   assigned to people here. `hiddenPeople` isn't persisted, so nothing can stay filtered out.
 - v0.8.48: phone companion tabs are Chores · Lists · Meals · Agenda, and it opens on Chores.
+- v0.8.49: companion's Today chores use the home tile's order — `sortDayChores` (`src/shared/choreOrder.ts`,
+  Everyone chores first, then A–Z), shared by both so they can't drift.
 
 ## Wishlist (not started)
 
