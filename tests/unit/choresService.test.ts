@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import Database from 'better-sqlite3'
 import { openDatabase, type DbHandle } from '../../src/main/db/client'
+import { runMigrations } from '../../src/main/db/migrations'
 import { createChoresService, type ChoresService } from '../../src/main/services/choresService'
 import { createRewardsService, type RewardsService } from '../../src/main/services/rewardsService'
 
@@ -132,5 +134,171 @@ describe('chores + rewards', () => {
     chores.complete(chore.id, '2026-06-10', 'kid2')
     expect(chores.balanceOf('kid2')).toBe(1)
     expect(chores.balanceOf('kid1')).toBe(0)
+  })
+
+  describe('chores everyone has to do', () => {
+    it('each assignee ticks it separately and earns their own stars', () => {
+      const chore = chores.create({
+        title: 'Make bed',
+        starsValue: 2,
+        recurrence: { freq: 'daily' },
+        anchorDate: '2026-06-01',
+        mode: 'each',
+        assignees: ['kid1', 'kid2']
+      })
+      expect(chores.getDay('2026-06-10')[0]).toMatchObject({ mode: 'each', assignees: ['kid1', 'kid2'], doneBy: [], completed: false })
+      expect(chores.complete(chore.id, '2026-06-10', 'kid1').balance).toBe(2)
+      expect(chores.getDay('2026-06-10')[0]).toMatchObject({ doneBy: ['kid1'], completed: false })
+      expect(chores.complete(chore.id, '2026-06-10', 'kid2').balance).toBe(2)
+      expect(chores.complete(chore.id, '2026-06-10', 'kid2').balance).toBe(2) // idempotent per person
+      expect(chores.getDay('2026-06-10')[0]).toMatchObject({ doneBy: ['kid1', 'kid2'], completed: true })
+      expect(chores.uncomplete(chore.id, '2026-06-10', 'kid1').balance).toBe(0)
+      expect(chores.balanceOf('kid2')).toBe(2) // only kid1's tick was removed
+      expect(chores.getDay('2026-06-10')[0].doneBy).toEqual(['kid2'])
+    })
+
+    it("refuses a tick from someone who isn't on the chore, and an un-tick that doesn't say whose", () => {
+      const chore = chores.create({
+        title: 'Read',
+        starsValue: 1,
+        recurrence: { freq: 'daily' },
+        anchorDate: '2026-06-01',
+        mode: 'each',
+        assignees: ['kid1']
+      })
+      expect(() => chores.complete(chore.id, '2026-06-10', 'kid2')).toThrow(/isn't on this chore/)
+      chores.complete(chore.id, '2026-06-10', 'kid1')
+      expect(() => chores.uncomplete(chore.id, '2026-06-10')).toThrow()
+    })
+
+    it('needs at least one person', () => {
+      expect(() => chores.create({ title: 'Read', starsValue: 1, mode: 'each', assignees: [] })).toThrow(/Pick who/)
+    })
+
+    it('a removed family member drops off the chore', () => {
+      chores.create({
+        title: 'Read',
+        starsValue: 1,
+        recurrence: { freq: 'daily' },
+        anchorDate: '2026-06-01',
+        mode: 'each',
+        assignees: ['kid1', 'kid2']
+      })
+      handle.sqlite.prepare("UPDATE people SET deleted_at = '2026-06-05T00:00:00Z' WHERE id = 'kid2'").run()
+      expect(chores.getDay('2026-06-10')[0].assignees).toEqual(['kid1'])
+    })
+  })
+
+  describe('checklists', () => {
+    // 2026-06-13 is a Saturday; byWeekdays 5 = Sat, 6 = Sun
+    const weekend = { freq: 'weekly' as const, byWeekdays: [5, 6] }
+    const make = () =>
+      chores.createChecklist({
+        title: 'Video game time',
+        assignees: ['kid1', 'kid2'],
+        recurrence: weekend,
+        anchorDate: '2026-06-01',
+        items: [{ title: 'Go outside' }, { title: 'Read for 15' }, { title: 'Something artistic' }]
+      })
+
+    it('shows on its days only, with per-person progress, and its items stay out of the chore list', () => {
+      const list = make()
+      expect(list.items.map((i) => i.title)).toEqual(['Go outside', 'Read for 15', 'Something artistic'])
+      expect(chores.checklistsDay('2026-06-12')).toHaveLength(0) // Friday
+      const [sat] = chores.checklistsDay('2026-06-13')
+      expect(sat.people).toEqual([
+        { personId: 'kid1', done: 0, total: 3, unlock: 'locked' },
+        { personId: 'kid2', done: 0, total: 3, unlock: 'locked' }
+      ])
+      expect(chores.getDay('2026-06-13')).toHaveLength(0)
+      expect(chores.list()).toHaveLength(0)
+    })
+
+    it('finishing every item unlocks it pending a parent, who signs off', () => {
+      const list = make()
+      const [a, b, c] = list.items
+      chores.complete(a.id, '2026-06-13', 'kid1')
+      expect(chores.complete(b.id, '2026-06-13', 'kid1').unlocked).toBeUndefined()
+      expect(chores.complete(c.id, '2026-06-13', 'kid1').unlocked).toBe('Video game time')
+      expect(chores.balanceOf('kid1')).toBe(0) // items earn no stars: the prize is the unlock
+      expect(chores.checklistsDay('2026-06-13')[0].people[0]).toMatchObject({ done: 3, unlock: 'pending' })
+      expect(chores.checklistsDay('2026-06-13')[0].people[1]).toMatchObject({ done: 0, unlock: 'locked' })
+      expect(chores.pendingUnlocks('2026-06-13')).toEqual([
+        { checklistId: list.id, title: 'Video game time', personId: 'kid1', date: '2026-06-13' }
+      ])
+      chores.approveUnlock(list.id, 'kid1', '2026-06-13')
+      expect(chores.pendingUnlocks('2026-06-13')).toHaveLength(0)
+      expect(chores.checklistsDay('2026-06-13')[0].people[0].unlock).toBe('approved')
+      expect(() => chores.approveUnlock(list.id, 'kid1', '2026-06-13')).toThrow() // nothing left to approve
+    })
+
+    it('resets every day: Sunday starts locked again', () => {
+      const list = make()
+      for (const item of list.items) chores.complete(item.id, '2026-06-13', 'kid1')
+      chores.approveUnlock(list.id, 'kid1', '2026-06-13')
+      expect(chores.checklistsDay('2026-06-14')[0].people[0]).toMatchObject({ done: 0, unlock: 'locked' })
+    })
+
+    it('un-ticking an item takes the unlock back, even after sign-off', () => {
+      const list = make()
+      for (const item of list.items) chores.complete(item.id, '2026-06-13', 'kid1')
+      chores.approveUnlock(list.id, 'kid1', '2026-06-13')
+      chores.uncomplete(list.items[1].id, '2026-06-13', 'kid1')
+      expect(chores.checklistsDay('2026-06-13')[0].people[0]).toMatchObject({ done: 2, unlock: 'locked' })
+    })
+
+    it('editing keeps ticks on kept items, adds and removes items', () => {
+      const list = make()
+      chores.complete(list.items[0].id, '2026-06-13', 'kid1')
+      const edited = chores.updateChecklist({
+        id: list.id,
+        title: 'Screen time',
+        assignees: ['kid1'],
+        recurrence: weekend,
+        items: [{ id: list.items[0].id, title: 'Play outside' }, { title: 'Tidy up' }]
+      })
+      expect(edited.items.map((i) => i.title)).toEqual(['Play outside', 'Tidy up'])
+      const [sat] = chores.checklistsDay('2026-06-13')
+      expect(sat.title).toBe('Screen time')
+      expect(sat.people).toEqual([{ personId: 'kid1', done: 1, total: 2, unlock: 'locked' }])
+    })
+
+    it('deleting a checklist removes it and its items', () => {
+      const list = make()
+      chores.removeChecklist(list.id)
+      expect(chores.checklists()).toHaveLength(0)
+      expect(chores.checklistsDay('2026-06-13')).toHaveLength(0)
+    })
+  })
+})
+
+describe('database upgrade to per-person completions (v1 to v2)', () => {
+  it('keeps existing chores, completions and stars; old chores become shared', () => {
+    const sqlite = new Database(':memory:')
+    sqlite.pragma('foreign_keys = ON')
+    runMigrations(sqlite, 1)
+    sqlite.exec(`
+      INSERT INTO people (id, name, color, role, sort_order, created_at) VALUES ('kid1','Emma','#46A758','child',0,'2026-01-01T00:00:00Z');
+      INSERT INTO chores (id, title, person_id, stars_value, schedule_rrule, due_date, created_at)
+        VALUES ('c1','Dishes','kid1',3,'FREQ=DAILY','2026-06-01','2026-06-01T00:00:00Z');
+      INSERT INTO chore_completions (id, chore_id, person_id, due_date, completed_at, stars_awarded)
+        VALUES ('done1','c1','kid1','2026-06-10','2026-06-10T12:00:00Z',3);
+      INSERT INTO star_ledger (id, person_id, delta, reason, ref_id, created_at)
+        VALUES ('s1','kid1',3,'chore','done1','2026-06-10T12:00:00Z');
+    `)
+    runMigrations(sqlite)
+    expect(sqlite.pragma('user_version', { simple: true })).toBe(2)
+    expect(sqlite.prepare('SELECT id, person_id FROM chore_completions').all()).toEqual([{ id: 'done1', person_id: 'kid1' }])
+    expect(sqlite.prepare('SELECT mode FROM chores').get()).toEqual({ mode: 'anyone' })
+    expect(sqlite.prepare('SELECT SUM(delta) AS s FROM star_ledger').get()).toEqual({ s: 3 })
+    // two people may now each complete the same chore on the same day, but not twice
+    sqlite.exec(`
+      INSERT INTO people (id, name, color, role, sort_order, created_at) VALUES ('kid2','Noah','#0091FF','child',1,'2026-01-01T00:00:00Z');
+      INSERT INTO chore_completions (id, chore_id, person_id, due_date, completed_at) VALUES ('done2','c1','kid2','2026-06-10','x');
+    `)
+    expect(() =>
+      sqlite.exec(`INSERT INTO chore_completions (id, chore_id, person_id, due_date, completed_at) VALUES ('dup','c1','kid2','2026-06-10','x')`)
+    ).toThrow(/UNIQUE/)
+    sqlite.close()
   })
 })

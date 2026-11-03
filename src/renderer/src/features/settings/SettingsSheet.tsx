@@ -3,9 +3,9 @@ import type {
   CalendarDto,
   CalendarViewKind,
   ChoreDto,
+  ChoreMode,
   PersonDto,
   PersonRole,
-  RecurrenceInput,
   RewardDto
 } from '@shared/types'
 import { DEFAULT_SETTINGS, PERSON_COLORS } from '@shared/types'
@@ -48,6 +48,17 @@ import { useUi } from '../../stores/uiStore'
 import { BigButton, Dialog, FieldLabel, SegmentedControl, Sheet, Toggle } from '../../components/ui'
 import { OskInput } from '../../components/Osk'
 import { PlusIcon } from '../../components/icons'
+import {
+  ChecklistsSection,
+  defaultAssignees,
+  PeoplePicker,
+  PendingUnlocks,
+  ScheduleField,
+  scheduleOf,
+  toRecurrence,
+  usePendingUnlockCount,
+  type ScheduleKind
+} from '../chores/ChoreSettings'
 import { initials, textOn } from '../../lib/format'
 import QRCode from 'qrcode'
 
@@ -524,14 +535,6 @@ function Stepper({ value, onChange, min = 0, max = 99 }: { value: number; onChan
   )
 }
 
-const WEEKDAY_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-type ScheduleKind = 'daily' | 'weekly' | 'once'
-
-function scheduleOf(recurrence: RecurrenceInput | null): ScheduleKind {
-  if (!recurrence) return 'once'
-  return recurrence.freq === 'weekly' ? 'weekly' : 'daily'
-}
-
 function ChoresTab() {
   const { data: people = [] } = usePeople()
   const { data: chores = [] } = useChores()
@@ -540,6 +543,7 @@ function ChoresTab() {
   const choreMutations = useChoreMutations()
   const rewardMutations = useRewardMutations()
   const peopleById = new Map(people.map((p) => [p.id, p]))
+  const pendingUnlocks = usePendingUnlockCount()
 
   const [editingChore, setEditingChore] = useState<ChoreDto | 'new' | null>(null)
   const [choreTitle, setChoreTitle] = useState('')
@@ -547,6 +551,8 @@ function ChoresTab() {
   const [schedule, setSchedule] = useState<ScheduleKind>('daily')
   const [weekdays, setWeekdays] = useState<number[]>([])
   const [routine, setRoutine] = useState<'any' | 'morning' | 'evening'>('any')
+  const [mode, setMode] = useState<ChoreMode>('anyone')
+  const [assignees, setAssignees] = useState<string[]>([])
 
   const [editingReward, setEditingReward] = useState<RewardDto | 'new' | null>(null)
   const [rewardTitle, setRewardTitle] = useState('')
@@ -560,28 +566,30 @@ function ChoresTab() {
       setSchedule('daily')
       setWeekdays([])
       setRoutine('any')
+      setMode('anyone')
+      setAssignees(defaultAssignees(people))
     } else {
       setChoreTitle(c.title)
       setChoreStars(c.starsValue)
       setSchedule(scheduleOf(c.recurrence))
       setWeekdays(c.recurrence?.byWeekdays ?? [])
       setRoutine(c.routine ?? 'any')
+      setMode(c.mode)
+      setAssignees(c.mode === 'each' ? c.assignees : defaultAssignees(people))
     }
   }
 
+  const choreValid = choreTitle.trim() !== '' && (mode === 'anyone' || assignees.length > 0)
+
   const saveChore = (): void => {
-    if (!choreTitle.trim()) return
-    const recurrence: RecurrenceInput | null =
-      schedule === 'once'
-        ? null
-        : schedule === 'daily'
-          ? { freq: 'daily' }
-          : { freq: 'weekly', byWeekdays: weekdays.length > 0 ? weekdays : [0] }
+    if (!choreValid) return
     const common = {
       title: choreTitle.trim(),
       starsValue: choreStars,
-      recurrence,
-      routine: routine === 'any' ? null : routine
+      recurrence: toRecurrence(schedule, weekdays),
+      routine: routine === 'any' ? null : routine,
+      mode,
+      ...(mode === 'each' ? { assignees } : {})
     }
     if (editingChore === 'new') choreMutations.create.mutate(common)
     else if (editingChore) choreMutations.update.mutate({ id: editingChore.id, ...common })
@@ -597,10 +605,11 @@ function ChoresTab() {
 
   return (
     <div className="flex flex-col gap-6">
-      {redemptions.length > 0 && (
+      {(redemptions.length > 0 || pendingUnlocks > 0) && (
         <div>
           <FieldLabel>Waiting for approval</FieldLabel>
           <div className="flex flex-col gap-2">
+            <PendingUnlocks />
             {redemptions.map((r) => (
               <div key={r.id} className="flex items-center gap-3 rounded-2xl bg-sun-soft p-3">
                 <span className="min-w-0 flex-1 truncate text-lg font-bold">
@@ -627,6 +636,9 @@ function ChoresTab() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-lg font-bold">{c.title}</span>
                 <span className="block text-sm font-bold text-ink-faint">
+                  {c.mode === 'each'
+                    ? `Everyone: ${c.assignees.map((id) => peopleById.get(id)?.name).filter(Boolean).join(', ')} · `
+                    : ''}
                   {c.recurrence ? describeRecurrence(c.recurrence) : 'One time'}
                   {c.routine ? ` · ${c.routine}` : ''}
                 </span>
@@ -640,10 +652,13 @@ function ChoresTab() {
             </span>
           </BigButton>
           <p className="text-sm font-semibold text-ink-faint">
-            Chores aren't assigned — whoever does one claims it (and its stars) when checking it off.
+            "Whoever does it" chores aren't assigned: the first to finish claims it (and its stars). "Everyone"
+            chores need a tick from each person picked.
           </p>
         </div>
       </div>
+
+      <ChecklistsSection />
 
       <div>
         <FieldLabel>Rewards</FieldLabel>
@@ -688,6 +703,22 @@ function ChoresTab() {
             <FieldLabel>Chore</FieldLabel>
             <OskInput value={choreTitle} onChange={setChoreTitle} placeholder="e.g. Make your bed" autoFocus={editingChore === 'new'} />
           </div>
+          <div>
+            <FieldLabel>Who does it</FieldLabel>
+            <SegmentedControl
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'anyone', label: 'Whoever does it' },
+                { value: 'each', label: 'Everyone' }
+              ]}
+            />
+            {mode === 'each' && (
+              <div className="mt-3">
+                <PeoplePicker people={people} selected={assignees} onChange={setAssignees} />
+              </div>
+            )}
+          </div>
           <div className="flex items-end gap-6">
             <div>
               <FieldLabel>Stars</FieldLabel>
@@ -706,37 +737,7 @@ function ChoresTab() {
               />
             </div>
           </div>
-          <div>
-            <FieldLabel>Repeats</FieldLabel>
-            <SegmentedControl
-              value={schedule}
-              onChange={setSchedule}
-              options={[
-                { value: 'daily', label: 'Every day' },
-                { value: 'weekly', label: 'Weekly' },
-                { value: 'once', label: 'One time' }
-              ]}
-            />
-            {schedule === 'weekly' && (
-              <div className="mt-3 flex gap-2">
-                {WEEKDAY_SHORT.map((label, i) => {
-                  const on = weekdays.includes(i)
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setWeekdays(on ? weekdays.filter((d) => d !== i) : [...weekdays, i])}
-                      className={`pressable flex h-11 w-11 items-center justify-center rounded-full text-base font-extrabold ${
-                        on ? 'bg-ember text-white' : 'bg-paper-deep text-ink-soft'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          <ScheduleField schedule={schedule} weekdays={weekdays} onSchedule={setSchedule} onWeekdays={setWeekdays} />
           <div className="mt-1 flex gap-3">
             {editingChore !== 'new' && editingChore && (
               <BigButton
@@ -753,7 +754,7 @@ function ChoresTab() {
             <BigButton variant="ghost" onClick={() => setEditingChore(null)}>
               Cancel
             </BigButton>
-            <BigButton onClick={saveChore} disabled={!choreTitle.trim()}>
+            <BigButton onClick={saveChore} disabled={!choreValid}>
               Save
             </BigButton>
           </div>

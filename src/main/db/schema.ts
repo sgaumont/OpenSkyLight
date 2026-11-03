@@ -96,6 +96,17 @@ export const syncOutbox = sqliteTable('sync_outbox', {
   createdAt: text('created_at').notNull()
 })
 
+export const choreChecklists = sqliteTable('chore_checklists', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  assignees: text('assignees').notNull().default('[]'), // JSON person ids
+  scheduleRrule: text('schedule_rrule'),
+  dueDate: text('due_date'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+  deletedAt: text('deleted_at')
+})
+
 export const chores = sqliteTable('chores', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
@@ -108,7 +119,22 @@ export const chores = sqliteTable('chores', {
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: text('created_at').notNull(),
-  deletedAt: text('deleted_at')
+  deletedAt: text('deleted_at'),
+  /** 'anyone' = first to do it claims it; 'each' = every assignee does it */
+  mode: text('mode', { enum: ['anyone', 'each'] }).notNull().default('anyone'),
+  assignees: text('assignees'), // JSON person ids, for 'each'
+  /** set = an item of that checklist (schedule and assignees come from the checklist) */
+  checklistId: text('checklist_id').references(() => choreChecklists.id)
+})
+
+export const checklistUnlocks = sqliteTable('checklist_unlocks', {
+  id: text('id').primaryKey(),
+  checklistId: text('checklist_id').notNull().references(() => choreChecklists.id),
+  personId: text('person_id').notNull().references(() => people.id),
+  dueDate: text('due_date').notNull(),
+  status: text('status', { enum: ['pending', 'approved'] }).notNull().default('pending'),
+  unlockedAt: text('unlocked_at').notNull(),
+  approvedAt: text('approved_at')
 })
 
 export const choreCompletions = sqliteTable(

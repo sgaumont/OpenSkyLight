@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { DateTime } from 'luxon'
-import type { DayChoreDto, PersonDto } from '@shared/types'
-import { useBalances, useChoresDay, usePeople } from '../../api/hooks'
+import type { DayChecklistDto, DayChoreDto, PersonDto, UnlockState } from '@shared/types'
+import { useBalances, useChecklistsDay, useChoresDay, usePeople } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
-import { isToday, textOn } from '../../lib/format'
+import { initials, isToday, textOn } from '../../lib/format'
 import { CheckIcon, MoonIcon, SunIcon } from '../../components/icons'
 import { BigButton } from '../../components/ui'
 import { RewardsDialog } from './RewardsDialog'
@@ -64,12 +64,122 @@ function ChoreRow({
   )
 }
 
+/** An 'each' chore: one pill per person; tapping a pill ticks (or un-ticks) just them. */
+function EachChoreRow({
+  chore,
+  peopleById,
+  canCheck,
+  onToggle
+}: {
+  chore: DayChoreDto
+  peopleById: Map<string, PersonDto>
+  canCheck: boolean
+  onToggle: (person: PersonDto) => void
+}) {
+  return (
+    <div className={`flex flex-col gap-2.5 rounded-2xl bg-card p-3 shadow-card ${chore.completed ? 'opacity-75' : ''}`}>
+      <div className="flex items-center gap-3">
+        <span
+          className={`min-w-0 flex-1 truncate text-lg font-bold ${chore.completed ? 'text-ink-faint line-through' : ''}`}
+        >
+          {chore.title}
+        </span>
+        {chore.starsValue > 0 && <StarBadge count={chore.starsValue} />}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {chore.assignees.map((id) => {
+          const p = peopleById.get(id)
+          if (!p) return null
+          const done = chore.doneBy.includes(id)
+          return (
+            <button
+              key={id}
+              type="button"
+              disabled={!canCheck}
+              aria-pressed={done}
+              aria-label={`${p.name}: ${chore.title}`}
+              onClick={() => onToggle(p)}
+              className={`pressable flex min-h-11 items-center gap-2 rounded-full py-1 pr-3.5 pl-1 text-base font-bold disabled:opacity-60 ${
+                done ? 'shadow-card' : 'bg-paper-deep text-ink-soft'
+              }`}
+              style={done ? { backgroundColor: p.color, color: textOn(p.color) } : undefined}
+            >
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-extrabold"
+                style={{
+                  backgroundColor: done ? 'rgba(255,255,255,0.28)' : p.color,
+                  color: done ? 'inherit' : textOn(p.color)
+                }}
+              >
+                {done ? <CheckIcon size={20} className="animate-pop" /> : initials(p.name)}
+              </span>
+              {p.name}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const UNLOCK_LABEL: Record<UnlockState, string> = {
+  locked: '',
+  pending: 'Waiting for a parent',
+  approved: 'Unlocked!'
+}
+
+/** A checklist: each person's progress toward the prize, then its items. */
+function ChecklistCard({
+  checklist,
+  peopleById,
+  canCheck,
+  onToggle
+}: {
+  checklist: DayChecklistDto
+  peopleById: Map<string, PersonDto>
+  canCheck: boolean
+  onToggle: (chore: DayChoreDto, person: PersonDto) => void
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-card bg-paper-deep/40 p-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1">
+        <div className="font-display text-2xl">🎮 {checklist.title}</div>
+        {checklist.people.map((s) => {
+          const p = peopleById.get(s.personId)
+          if (!p) return null
+          return (
+            <span
+              key={s.personId}
+              data-unlock={s.unlock}
+              className={`flex items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm font-extrabold ${
+                s.unlock === 'approved'
+                  ? 'bg-[#46A758] text-white'
+                  : s.unlock === 'pending'
+                    ? 'bg-sun-soft text-ember-deep'
+                    : 'bg-card text-ink-soft'
+              }`}
+            >
+              <Avatar person={p} size="h-7 w-7 text-[10px]" />
+              {p.name} · {s.unlock === 'locked' ? `${s.done}/${s.total}` : UNLOCK_LABEL[s.unlock]}
+            </span>
+          )
+        })}
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-2">
+        {checklist.items.map((c) => (
+          <EachChoreRow key={c.choreId} chore={c} peopleById={peopleById} canCheck={canCheck} onToggle={(p) => onToggle(c, p)} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function FamilyPanel({ people, chores }: { people: PersonDto[]; chores: DayChoreDto[] }) {
   const { data: balances = [] } = useBalances()
   return (
     <div className="flex min-h-0 w-80 shrink-0 flex-col gap-2 overflow-y-auto rounded-card bg-paper-deep/40 p-3">
       {people.map((p) => {
-        const done = chores.filter((c) => c.completedBy === p.id).length
+        const done = chores.filter((c) => c.completedBy === p.id || c.doneBy.includes(p.id)).length
         return (
           <div key={p.id} className="flex items-center gap-3 rounded-2xl p-1">
             <Avatar person={p} />
@@ -91,7 +201,8 @@ export function ChoresView() {
   const setSettingsOpen = useUi((s) => s.setSettingsOpen)
   const { data: people = [] } = usePeople()
   const { data: chores = [] } = useChoresDay(focusedDate)
-  const { tap, dialog } = useChoreClaim(focusedDate)
+  const { data: checklists = [] } = useChecklistsDay(focusedDate)
+  const { tap, toggle, dialog } = useChoreClaim(focusedDate)
   const [rewardsOpen, setRewardsOpen] = useState(false)
   const day = DateTime.fromISO(focusedDate, { zone: ZONE })
   // checking off chores for other days is allowed only for today and the past
@@ -124,7 +235,7 @@ export function ChoresView() {
         </BigButton>
       </div>
 
-      {chores.length === 0 ? (
+      {chores.length === 0 && checklists.length === 0 ? (
         <div className="animate-rise mt-16 flex flex-col items-center gap-4 text-center">
           <div className="font-display text-3xl text-ink-faint">No chores for this day</div>
           <p className="max-w-md text-base font-semibold text-ink-soft">
@@ -137,6 +248,9 @@ export function ChoresView() {
       ) : (
         <div className="animate-rise flex min-h-0 flex-1 gap-4">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-y-auto">
+            {checklists.map((cl) => (
+              <ChecklistCard key={cl.checklistId} checklist={cl} peopleById={peopleById} canCheck={canCheck} onToggle={toggle} />
+            ))}
             {groups.map((g) => (
               <div key={g.key} className="flex flex-col gap-2">
                 {g.label && (
@@ -146,20 +260,32 @@ export function ChoresView() {
                   </div>
                 )}
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-2">
-                  {g.items.map((c) => (
-                    <ChoreRow
-                      key={c.choreId}
-                      chore={c}
-                      claimer={c.completedBy ? peopleById.get(c.completedBy) : undefined}
-                      canCheck={canCheck}
-                      onTap={() => tap(c)}
-                    />
-                  ))}
+                  {g.items.map((c) =>
+                    c.mode === 'each' ? (
+                      <EachChoreRow
+                        key={c.choreId}
+                        chore={c}
+                        peopleById={peopleById}
+                        canCheck={canCheck}
+                        onToggle={(p) => toggle(c, p)}
+                      />
+                    ) : (
+                      <ChoreRow
+                        key={c.choreId}
+                        chore={c}
+                        claimer={c.completedBy ? peopleById.get(c.completedBy) : undefined}
+                        canCheck={canCheck}
+                        onTap={() => tap(c)}
+                      />
+                    )
+                  )}
                 </div>
               </div>
             ))}
           </div>
-          {visiblePeople.length > 0 && <FamilyPanel people={visiblePeople} chores={chores} />}
+          {visiblePeople.length > 0 && (
+            <FamilyPanel people={visiblePeople} chores={[...chores, ...checklists.flatMap((cl) => cl.items)]} />
+          )}
         </div>
       )}
 

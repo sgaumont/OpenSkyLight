@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import mpegts from 'mpegts.js'
-import type { HomeTile } from '@shared/types'
+import type { DayChoreDto, HomeTile, PersonDto } from '@shared/types'
 import { presetById } from '@shared/rss'
 import { agendaRange, dayRange, eachDay } from '@shared/dates'
 import { withoutEnded } from '@shared/occurrences'
@@ -11,6 +11,7 @@ import { HOME_GRID_SCALE } from '@shared/home'
 import { ipcInvoke } from '../../api/client'
 import {
   useBalances,
+  useChecklistsDay,
   useChoresDay,
   useLists,
   useMeals,
@@ -343,18 +344,74 @@ export function WeatherTile({ tile }: TileProps) {
   )
 }
 
+function MiniAvatar({ person }: { person: PersonDto }) {
+  return (
+    <span
+      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-extrabold"
+      style={{ backgroundColor: person.color, color: textOn(person.color) }}
+      title={person.name}
+    >
+      {initials(person.name)}
+    </span>
+  )
+}
+
+const UNLOCK_MARK = { pending: '⏳', approved: '✓' } as const
+
 export function ChoresProgressTile({ compact }: TileProps) {
   const { data: chores = [] } = useChoresDay(today())
+  const { data: checklists = [] } = useChecklistsDay(today())
   const { data: people = [] } = usePeople()
   const peopleById = new Map(people.map((p) => [p.id, p]))
   const { tap, dialog } = useChoreClaim(today())
-  const done = chores.filter((c) => c.completed).length
-  const pct = chores.length === 0 ? 0 : Math.round((done / chores.length) * 100)
-  // chores belong to no one: shared progress, then every chore — still to do, or ticked in its claimer's colour
+  const all = [...checklists.flatMap((cl) => cl.items), ...chores]
+  const done = all.filter((c) => c.completed).length
+  const pct = all.length === 0 ? 0 : Math.round((done / all.length) * 100)
+
+  // the tile itself is a button (opens Chores), so a row can't be one: it opens "Who did it?" instead
+  const row = (c: DayChoreDto) => {
+    const claimer = c.completedBy ? peopleById.get(c.completedBy) : undefined
+    const fill = claimer?.color ?? (c.completed ? '#46A758' : undefined)
+    return (
+      <div
+        key={c.choreId}
+        role="button"
+        aria-label={`${c.mode === 'anyone' && c.completed ? 'Uncheck' : 'Claim'} ${c.title}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          tap(c)
+        }}
+        className="pressable -mx-1 flex items-center gap-2 rounded-lg px-1 py-0.5"
+      >
+        <span
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${fill ? '' : 'border-line'}`}
+          style={fill ? { borderColor: fill, backgroundColor: fill } : undefined}
+        >
+          {c.completed && <CheckIcon size={12} style={{ color: textOn(fill!) }} />}
+        </span>
+        <span
+          className={`min-w-0 flex-1 text-sm leading-tight font-bold break-words ${c.completed ? 'text-ink-faint line-through' : ''}`}
+        >
+          {c.title}
+        </span>
+        {!compact && claimer && <MiniAvatar person={claimer} />}
+        {!compact && c.mode === 'each' && (
+          <span className="flex shrink-0 gap-0.5">
+            {c.doneBy.map((id) => {
+              const p = peopleById.get(id)
+              return p ? <MiniAvatar key={id} person={p} /> : null
+            })}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  // chores belong to no one: shared progress, then checklists, then every chore — still to do or ticked
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <TileTitle>Chores today</TileTitle>
-      {chores.length === 0 ? (
+      {all.length === 0 ? (
         <Placeholder>No chores today</Placeholder>
       ) : (
         <TileScroll className="flex-1" innerClassName="flex flex-col gap-1.5">
@@ -363,46 +420,33 @@ export function ChoresProgressTile({ compact }: TileProps) {
               <span className="block h-full rounded-full bg-[#46A758] transition-all" style={{ width: `${pct}%` }} />
             </span>
             <span className="shrink-0 text-xs font-extrabold text-ink-soft">
-              {done === chores.length ? <CheckIcon size={16} className="text-[#46A758]" /> : `${done}/${chores.length}`}
+              {done === all.length ? <CheckIcon size={16} className="text-[#46A758]" /> : `${done}/${all.length}`}
             </span>
           </div>
-          {chores.map((c) => {
-            const claimer = c.completedBy ? peopleById.get(c.completedBy) : undefined
-            return (
-              // the tile itself is a button (opens Chores), so a row can't be one: it claims instead
-              <div
-                key={c.choreId}
-                role="button"
-                aria-label={`${c.completed ? 'Uncheck' : 'Claim'} ${c.title}`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  tap(c)
-                }}
-                className="pressable -mx-1 flex items-center gap-2 rounded-lg px-1 py-0.5"
-              >
-                <span
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${claimer ? '' : 'border-line'}`}
-                  style={claimer ? { borderColor: claimer.color, backgroundColor: claimer.color } : undefined}
-                >
-                  {c.completed && <CheckIcon size={12} style={{ color: claimer ? textOn(claimer.color) : undefined }} />}
-                </span>
-                <span
-                  className={`min-w-0 flex-1 text-sm leading-tight font-bold break-words ${c.completed ? 'text-ink-faint line-through' : ''}`}
-                >
-                  {c.title}
-                </span>
-                {claimer && !compact && (
-                  <span
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-extrabold"
-                    style={{ backgroundColor: claimer.color, color: textOn(claimer.color) }}
-                    title={claimer.name}
-                  >
-                    {initials(claimer.name)}
-                  </span>
-                )}
+          {checklists.map((cl) => (
+            <Fragment key={cl.checklistId}>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-xs font-extrabold tracking-wide text-ink-faint uppercase">🎮 {cl.title}</span>
+                {cl.people.map((s) => {
+                  const p = peopleById.get(s.personId)
+                  if (!p) return null
+                  return (
+                    <span
+                      key={s.personId}
+                      data-unlock={s.unlock}
+                      className={`flex items-center gap-1 text-xs font-extrabold ${s.unlock === 'approved' ? 'text-[#46A758]' : 'text-ink-soft'}`}
+                    >
+                      <MiniAvatar person={p} />
+                      {s.unlock === 'locked' ? `${s.done}/${s.total}` : UNLOCK_MARK[s.unlock]}
+                    </span>
+                  )
+                })}
               </div>
-            )
-          })}
+              {cl.items.map(row)}
+            </Fragment>
+          ))}
+          {checklists.length > 0 && chores.length > 0 && <div className="mt-0.5 border-t border-line/60" />}
+          {chores.map(row)}
         </TileScroll>
       )}
       {/* outside the tile's zoom; taps in it must not bubble (through React) to the tile's own button */}

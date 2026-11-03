@@ -175,9 +175,45 @@ export function useBalances() {
   return useQuery({ queryKey: ['balances'], queryFn: () => ipcInvoke('stars:balances', undefined) })
 }
 
+export function useChecklists() {
+  return useQuery({ queryKey: ['checklists'], queryFn: () => ipcInvoke('chores:checklists', undefined) })
+}
+
+export function useChecklistsDay(date: string) {
+  return useQuery({
+    queryKey: ['checklistsDay', date],
+    queryFn: () => ipcInvoke('chores:checklistsDay', { date }),
+    placeholderData: (prev) => prev
+  })
+}
+
+export function usePendingUnlocks(date: string) {
+  return useQuery({ queryKey: ['pendingUnlocks', date], queryFn: () => ipcInvoke('chores:pendingUnlocks', { date }) })
+}
+
+export function useChecklistMutations() {
+  const keys = [['checklists'], ['checklistsDay'], ['pendingUnlocks']]
+  return {
+    create: useInvalidatingMutation(
+      (input: Parameters<typeof ipcInvoke<'chores:checklistCreate'>>[1]) => ipcInvoke('chores:checklistCreate', input),
+      keys
+    ),
+    update: useInvalidatingMutation(
+      (input: Parameters<typeof ipcInvoke<'chores:checklistUpdate'>>[1]) => ipcInvoke('chores:checklistUpdate', input),
+      keys
+    ),
+    remove: useInvalidatingMutation((input: { id: string }) => ipcInvoke('chores:checklistDelete', input), keys),
+    approve: useInvalidatingMutation(
+      (input: { checklistId: string; personId: string; date: string }) => ipcInvoke('chores:approveUnlock', input),
+      keys
+    )
+  }
+}
+
 export function useChoreMutations() {
   const defKeys = [['chores'], ['choresDay']]
-  const checkKeys = [['choresDay'], ['balances']]
+  // a tick can finish (or undo) a checklist, so its views refresh too
+  const checkKeys = [['choresDay'], ['balances'], ['checklistsDay'], ['pendingUnlocks']]
   return {
     create: useInvalidatingMutation(
       (input: Parameters<typeof ipcInvoke<'chores:create'>>[1]) => ipcInvoke('chores:create', input),
@@ -193,7 +229,7 @@ export function useChoreMutations() {
       checkKeys
     ),
     uncomplete: useInvalidatingMutation(
-      (input: { choreId: string; date: string }) => ipcInvoke('chores:uncomplete', input),
+      (input: { choreId: string; date: string; personId?: string }) => ipcInvoke('chores:uncomplete', input),
       checkKeys
     )
   }
@@ -332,8 +368,9 @@ export function usePushInvalidation(): void {
       if (domain === 'calendars') void queryClient.invalidateQueries({ queryKey: ['occurrences'] })
       if (domain === 'chores') {
         // chore day views and star balances key off their own roots
-        void queryClient.invalidateQueries({ queryKey: ['choresDay'] })
-        void queryClient.invalidateQueries({ queryKey: ['balances'] })
+        for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks']) {
+          void queryClient.invalidateQueries({ queryKey: [key] })
+        }
       }
     })
     const offStatus = window.osl.on('push:syncStatus', () => {

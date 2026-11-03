@@ -219,6 +219,8 @@ export interface MealSlotDto {
 }
 
 export type ChoreRoutine = 'morning' | 'evening' | null
+/** 'anyone' = whoever does it first claims it; 'each' = every assignee has to do it */
+export type ChoreMode = 'anyone' | 'each'
 
 /** A chore belongs to no one: whoever does it claims it when checking it off. */
 export interface ChoreDto {
@@ -233,6 +235,9 @@ export interface ChoreDto {
   routine: ChoreRoutine
   active: boolean
   sortOrder: number
+  mode: ChoreMode
+  /** who has to do an 'each' chore; [] for 'anyone' */
+  assignees: string[]
 }
 
 export interface ChoreCreateInput {
@@ -241,6 +246,8 @@ export interface ChoreCreateInput {
   recurrence?: RecurrenceInput | null
   anchorDate?: string
   routine?: ChoreRoutine
+  mode?: ChoreMode
+  assignees?: string[]
 }
 
 export interface ChoreUpdateInput {
@@ -251,6 +258,8 @@ export interface ChoreUpdateInput {
   anchorDate?: string
   routine?: ChoreRoutine
   active?: boolean
+  mode?: ChoreMode
+  assignees?: string[]
 }
 
 export interface DayChoreDto {
@@ -259,9 +268,52 @@ export interface DayChoreDto {
   icon: string | null
   starsValue: number
   routine: ChoreRoutine
+  /** 'anyone': claimed; 'each': every assignee has done it */
   completed: boolean
-  /** who claimed it by checking it off; null while it's still to do */
+  /** who claimed an 'anyone' chore; null while it's still to do (and always for 'each') */
   completedBy: string | null
+  mode: ChoreMode
+  /** 'each': who has to do it (current family members only) */
+  assignees: string[]
+  /** 'each': who has done it so far */
+  doneBy: string[]
+}
+
+/** A set of chores each assignee must finish on a day to unlock something (e.g. video game time). */
+export interface ChecklistDto {
+  id: string
+  title: string
+  assignees: string[]
+  /** null = one day only, on anchorDate */
+  recurrence: RecurrenceInput | null
+  anchorDate: string
+  items: { id: string; title: string }[]
+}
+
+export interface ChecklistInput {
+  title: string
+  assignees: string[]
+  recurrence: RecurrenceInput | null
+  anchorDate?: string
+  /** the full item list: an id keeps (and renames) that item, no id adds one, missing ids are removed */
+  items: { id?: string; title: string }[]
+}
+
+/** locked = items left; pending = all done, waiting for a parent; approved = unlocked */
+export type UnlockState = 'locked' | 'pending' | 'approved'
+
+export interface DayChecklistDto {
+  checklistId: string
+  title: string
+  items: DayChoreDto[]
+  people: { personId: string; done: number; total: number; unlock: UnlockState }[]
+}
+
+export interface PendingUnlockDto {
+  checklistId: string
+  title: string
+  personId: string
+  date: string
 }
 
 export interface StarBalanceDto {

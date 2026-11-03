@@ -3,9 +3,12 @@ import type {
   CalendarCreateInput,
   CalendarDto,
   CalendarUpdateInput,
+  ChecklistDto,
+  ChecklistInput,
   ChoreCreateInput,
   ChoreDto,
   ChoreUpdateInput,
+  DayChecklistDto,
   DayChoreDto,
   EventCreateInput,
   EventDeleteInput,
@@ -17,6 +20,7 @@ import type {
   MealSlotDto,
   MealSlotKind,
   OccurrenceDto,
+  PendingUnlockDto,
   PersonCreateInput,
   PersonDto,
   PersonUpdateInput,
@@ -83,8 +87,16 @@ export type IpcContract = {
   'chores:update': { req: ChoreUpdateInput; res: ChoreDto }
   'chores:delete': { req: { id: string }; res: void }
   'chores:getDay': { req: { date: string }; res: DayChoreDto[] }
-  'chores:complete': { req: { choreId: string; date: string; personId: string }; res: { balance: number } }
-  'chores:uncomplete': { req: { choreId: string; date: string }; res: { balance: number } }
+  /** unlocked = the checklist title when this tick finished one for that person */
+  'chores:complete': { req: { choreId: string; date: string; personId: string }; res: { balance: number; unlocked?: string } }
+  'chores:uncomplete': { req: { choreId: string; date: string; personId?: string }; res: { balance: number } }
+  'chores:checklists': { req: void; res: ChecklistDto[] }
+  'chores:checklistCreate': { req: ChecklistInput; res: ChecklistDto }
+  'chores:checklistUpdate': { req: ChecklistInput & { id: string }; res: ChecklistDto }
+  'chores:checklistDelete': { req: { id: string }; res: void }
+  'chores:checklistsDay': { req: { date: string }; res: DayChecklistDto[] }
+  'chores:pendingUnlocks': { req: { date: string }; res: PendingUnlockDto[] }
+  'chores:approveUnlock': { req: { checklistId: string; personId: string; date: string }; res: void }
 
   'stars:balances': { req: void; res: StarBalanceDto[] }
 

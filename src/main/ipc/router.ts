@@ -70,6 +70,10 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
   'chores:create',
   'chores:update',
   'chores:delete',
+  'chores:checklistCreate',
+  'chores:checklistUpdate',
+  'chores:checklistDelete',
+  'chores:approveUnlock',
   'rewards:create',
   'rewards:update',
   'rewards:delete',
@@ -110,7 +114,11 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'chores:update': 'chores',
   'chores:delete': 'chores',
   'chores:complete': 'chores',
-  'chores:uncomplete': 'chores'
+  'chores:uncomplete': 'chores',
+  'chores:checklistCreate': 'chores',
+  'chores:checklistUpdate': 'chores',
+  'chores:checklistDelete': 'chores',
+  'chores:approveUnlock': 'chores'
 }
 
 export function broadcast(channel: string, payload: unknown): void {
@@ -251,7 +259,18 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('chores:delete', s.idSchema, (req) => services.chores.remove(req.id))
   handle('chores:getDay', s.choreDaySchema, (req) => services.chores.getDay(req.date))
   handle('chores:complete', s.choreCompleteSchema, (req) => services.chores.complete(req.choreId, req.date, req.personId))
-  handle('chores:uncomplete', s.choreCheckSchema, (req) => services.chores.uncomplete(req.choreId, req.date))
+  handle('chores:uncomplete', s.choreUncompleteSchema, (req) =>
+    services.chores.uncomplete(req.choreId, req.date, req.personId)
+  )
+  handle('chores:checklists', null, () => services.chores.checklists())
+  handle('chores:checklistCreate', s.checklistCreateSchema, (req) => services.chores.createChecklist(req))
+  handle('chores:checklistUpdate', s.checklistUpdateSchema, (req) => services.chores.updateChecklist(req))
+  handle('chores:checklistDelete', s.idSchema, (req) => services.chores.removeChecklist(req.id))
+  handle('chores:checklistsDay', s.choreDaySchema, (req) => services.chores.checklistsDay(req.date))
+  handle('chores:pendingUnlocks', s.choreDaySchema, (req) => services.chores.pendingUnlocks(req.date))
+  handle('chores:approveUnlock', s.unlockApproveSchema, (req) =>
+    services.chores.approveUnlock(req.checklistId, req.personId, req.date)
+  )
 
   handle('stars:balances', null, () => services.chores.balances())
 

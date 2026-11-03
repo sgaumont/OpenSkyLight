@@ -1,14 +1,59 @@
 import { useState } from 'react'
 import { DateTime } from 'luxon'
-import type { ChoreDto, ChoreRoutine } from '@shared/types'
-import { useBalances, useChoreMutations, useChores, useChoresDay, usePeople } from '../api/hooks'
+import type { ChoreDto, ChoreRoutine, DayChoreDto, PersonDto } from '@shared/types'
+import { useBalances, useChecklistsDay, useChoreMutations, useChores, useChoresDay, usePeople } from '../api/hooks'
 import { Card, CheckCircle, EmptyNote, GhostButton, PersonAvatar, PrimaryButton, TextInput } from '../components/ui'
 
 type Repeat = 'once' | 'daily' | 'weekly'
 
+/** An "everyone" chore: one button per person; a tap ticks or un-ticks just them. */
+function EachChoreRow({ chore, people, date }: { chore: DayChoreDto; people: PersonDto[]; date: string }) {
+  const mutations = useChoreMutations()
+  return (
+    <div className="border-b border-line/60 py-2 last:border-0">
+      <div className="flex items-center gap-2">
+        <span className={`min-w-0 flex-1 truncate text-base font-semibold ${chore.completed ? 'text-ink-faint line-through' : ''}`}>
+          {chore.title}
+        </span>
+        {chore.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint">★ {chore.starsValue}</span>}
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-2">
+        {chore.assignees.map((id) => {
+          const p = people.find((x) => x.id === id)
+          if (!p) return null
+          const done = chore.doneBy.includes(id)
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={done}
+              onClick={() =>
+                done
+                  ? mutations.uncomplete.mutate({ choreId: chore.choreId, date, personId: id })
+                  : mutations.complete.mutate({ choreId: chore.choreId, date, personId: id })
+              }
+              className={`pressable flex items-center gap-1.5 rounded-full py-1 pr-3 pl-1 text-sm font-extrabold ${
+                done ? 'text-white' : 'bg-paper-deep text-ink-soft'
+              }`}
+              style={done ? { backgroundColor: p.color } : undefined}
+            >
+              <PersonAvatar name={p.name} color={p.color} size="sm" />
+              {done ? '✓ ' : ''}
+              {p.name}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const UNLOCK_TEXT = { pending: 'waiting for a parent', approved: 'unlocked!' } as const
+
 export function ChoresPage() {
   const today = DateTime.now().toISODate()!
   const { data: dayChores = [], isPending } = useChoresDay(today)
+  const { data: checklists = [] } = useChecklistsDay(today)
   const { data: people = [] } = usePeople()
   const { data: balances = [] } = useBalances()
   const mutations = useChoreMutations()
@@ -23,7 +68,24 @@ export function ChoresPage() {
   return (
     <div className="flex flex-col gap-4">
       {isPending && <EmptyNote>Loading…</EmptyNote>}
-      {!isPending && dayChores.length === 0 && <EmptyNote>No chores today.</EmptyNote>}
+      {!isPending && dayChores.length === 0 && checklists.length === 0 && <EmptyNote>No chores today.</EmptyNote>}
+
+      {checklists.map((cl) => (
+        <Card key={cl.checklistId}>
+          <h2 className="font-display text-xl font-semibold">🎮 {cl.title}</h2>
+          <div className="mb-1 text-sm font-extrabold text-ink-faint">
+            {cl.people
+              .map((s) => {
+                const name = people.find((p) => p.id === s.personId)?.name ?? '?'
+                return `${name} ${s.unlock === 'locked' ? `${s.done}/${s.total}` : UNLOCK_TEXT[s.unlock]}`
+              })
+              .join(' · ')}
+          </div>
+          {cl.items.map((item) => (
+            <EachChoreRow key={item.choreId} chore={item} people={people} date={today} />
+          ))}
+        </Card>
+      ))}
 
       {dayChores.length > 0 && (
         <Card>
@@ -34,6 +96,7 @@ export function ChoresPage() {
             </span>
           </div>
           {dayChores.map((chore) => {
+            if (chore.mode === 'each') return <EachChoreRow key={chore.choreId} chore={chore} people={people} date={today} />
             const claimer = people.find((p) => p.id === chore.completedBy)
             return (
               <div key={chore.choreId} className="border-b border-line/60 last:border-0">

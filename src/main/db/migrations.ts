@@ -193,12 +193,57 @@ const MIGRATIONS: string[] = [
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+  `,
+  // v2: chores everyone must do (mode 'each' + assignees), checklists that unlock a prize per
+  // person once a parent signs off, and completions keyed per person (was one per chore per day)
+  `
+  CREATE TABLE chore_checklists (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    assignees TEXT NOT NULL DEFAULT '[]',
+    schedule_rrule TEXT,
+    due_date TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
+
+  ALTER TABLE chores ADD COLUMN mode TEXT NOT NULL DEFAULT 'anyone';
+  ALTER TABLE chores ADD COLUMN assignees TEXT;
+  ALTER TABLE chores ADD COLUMN checklist_id TEXT REFERENCES chore_checklists(id);
+
+  CREATE TABLE checklist_unlocks (
+    id TEXT PRIMARY KEY,
+    checklist_id TEXT NOT NULL REFERENCES chore_checklists(id),
+    person_id TEXT NOT NULL REFERENCES people(id),
+    due_date TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    unlocked_at TEXT NOT NULL,
+    approved_at TEXT,
+    UNIQUE (checklist_id, person_id, due_date)
+  );
+
+  CREATE TABLE chore_completions_v2 (
+    id TEXT PRIMARY KEY,
+    chore_id TEXT NOT NULL REFERENCES chores(id),
+    person_id TEXT NOT NULL REFERENCES people(id),
+    due_date TEXT NOT NULL,
+    completed_at TEXT NOT NULL,
+    stars_awarded INTEGER NOT NULL DEFAULT 0,
+    UNIQUE (chore_id, due_date, person_id)
+  );
+  INSERT INTO chore_completions_v2 (id, chore_id, person_id, due_date, completed_at, stars_awarded)
+    SELECT id, chore_id, person_id, due_date, completed_at, stars_awarded FROM chore_completions;
+  DROP TABLE chore_completions;
+  ALTER TABLE chore_completions_v2 RENAME TO chore_completions;
+  CREATE INDEX idx_completions_chore_date ON chore_completions(chore_id, due_date);
   `
 ]
 
-export function runMigrations(sqlite: DatabaseType.Database): void {
+/** `upTo` stops at that version — for tests that upgrade a database from an older schema. */
+export function runMigrations(sqlite: DatabaseType.Database, upTo = MIGRATIONS.length): void {
   const current = sqlite.pragma('user_version', { simple: true }) as number
-  for (let v = current; v < MIGRATIONS.length; v++) {
+  for (let v = current; v < upTo; v++) {
     sqlite.transaction(() => {
       sqlite.exec(MIGRATIONS[v])
       sqlite.pragma(`user_version = ${v + 1}`)

@@ -26,6 +26,10 @@ export function useChoresDay(date: string) {
   return useQuery({ queryKey: ['choresDay', date], queryFn: () => rpc('chores:getDay', { date }), ...LIVE })
 }
 
+export function useChecklistsDay(date: string) {
+  return useQuery({ queryKey: ['checklistsDay', date], queryFn: () => rpc('chores:checklistsDay', { date }), ...LIVE })
+}
+
 export function useChores() {
   return useQuery({ queryKey: ['chores'], queryFn: () => rpc('chores:list', undefined), ...LIVE })
 }
@@ -79,13 +83,13 @@ export function useMealMutations() {
 }
 
 export function useChoreMutations() {
-  const keys = [['choresDay'], ['chores'], ['balances']]
+  const keys = [['choresDay'], ['chores'], ['balances'], ['checklistsDay']]
   return {
     create: useInvalidatingMutation((input: ChoreCreateInput) => rpc('chores:create', input), keys),
     update: useInvalidatingMutation((input: ChoreUpdateInput) => rpc('chores:update', input), keys),
     complete: useInvalidatingMutation((input: { choreId: string; date: string; personId: string }) => rpc('chores:complete', input), keys),
     uncomplete: useInvalidatingMutation(
-      (input: { choreId: string; date: string }) => rpc('chores:uncomplete', input),
+      (input: { choreId: string; date: string; personId?: string }) => rpc('chores:uncomplete', input),
       keys
     )
   }

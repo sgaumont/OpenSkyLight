@@ -191,13 +191,17 @@ export const icsAddSchema = z.object({
 })
 
 const routine = z.enum(['morning', 'evening']).nullable()
+const choreMode = z.enum(['anyone', 'each'])
+const assignees = z.array(id).max(20)
 
 export const choreCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),
   starsValue: z.number().int().min(0).max(99),
   recurrence: recurrenceSchema.nullish(),
   anchorDate: isoDate.optional(),
-  routine: routine.optional()
+  routine: routine.optional(),
+  mode: choreMode.optional(),
+  assignees: assignees.optional()
 })
 
 export const choreUpdateSchema = z.object({
@@ -207,12 +211,27 @@ export const choreUpdateSchema = z.object({
   recurrence: recurrenceSchema.nullable().optional(),
   anchorDate: isoDate.optional(),
   routine: routine.optional(),
-  active: z.boolean().optional()
+  active: z.boolean().optional(),
+  mode: choreMode.optional(),
+  assignees: assignees.optional()
 })
 
 export const choreDaySchema = z.object({ date: isoDate })
 export const choreCheckSchema = z.object({ choreId: id, date: isoDate })
 export const choreCompleteSchema = choreCheckSchema.extend({ personId: id })
+/** personId says whose tick to remove on an 'each' chore; ignored for 'anyone' */
+export const choreUncompleteSchema = choreCheckSchema.extend({ personId: id.optional() })
+
+const checklistFields = {
+  title: z.string().trim().min(1).max(120),
+  assignees: assignees.min(1),
+  recurrence: recurrenceSchema.nullable(),
+  anchorDate: isoDate.optional(),
+  items: z.array(z.object({ id: id.optional(), title: z.string().trim().min(1).max(120) })).min(1).max(20)
+}
+export const checklistCreateSchema = z.object(checklistFields)
+export const checklistUpdateSchema = z.object({ id, ...checklistFields })
+export const unlockApproveSchema = z.object({ checklistId: id, personId: id, date: isoDate })
 
 export const rewardCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),
