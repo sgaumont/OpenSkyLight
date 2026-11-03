@@ -5,11 +5,15 @@ export function createMainWindow(): BrowserWindow {
   const isDev = !!process.env['ELECTRON_RENDERER_URL']
   // Dev runs windowed by default; production runs kiosk fullscreen.
   // Override with --kiosk (force kiosk in dev) or --windowed (force windowed in prod).
-  const windowed = process.argv.includes('--windowed') || (isDev && !process.argv.includes('--kiosk'))
+  // --tablet: a fixed window the Surface kiosk's size (1440×960 CSS px; index.ts sets its 150% scaling).
+  const tablet = process.argv.includes('--tablet')
+  const windowed = tablet || process.argv.includes('--windowed') || (isDev && !process.argv.includes('--kiosk'))
 
   const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: tablet ? 1440 : 1280,
+    height: tablet ? 960 : 800,
+    useContentSize: tablet,
+    resizable: !tablet,
     show: false,
     fullscreen: !windowed,
     kiosk: !windowed,

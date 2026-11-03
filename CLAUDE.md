@@ -378,6 +378,9 @@ Add unit tests where sensible.
   you" Approve card. `COMPANION_CHANNELS` gained chores:delete + the checklist/unlock channels (a paired phone is
   trusted: pairing needs the kiosk PIN). Schedule helpers moved to `src/shared/choreSchedule.ts`; `anchorOnSave`
   re-anchors a repeating chore switched to One time to today (kiosk too — it used to never show again).
+- v0.8.63: `--tablet` launch flag previews the Surface on a dev PC — fixed 1440×960 content window +
+  `force-device-scale-factor=1.5` (index.ts, before ready) = 2160×1440 px. Desktop shortcut "OpenSkyLight (tablet
+  preview)" runs `dist\win-unpacked\OpenSkyLight.exe --tablet`, so it always opens the latest `npm run dist`.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)

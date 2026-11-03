@@ -42,6 +42,9 @@ if (process.env.OSL_USER_DATA) {
   app.setPath('userData', process.env.OSL_USER_DATA)
 }
 
+// --tablet previews the Surface kiosk on a dev PC: 150% scaling, so its 1440×960 window is 2160×1440 pixels
+if (process.argv.includes('--tablet')) app.commandLine.appendSwitch('force-device-scale-factor', '1.5')
+
 /** Startup must never fail silently on a kiosk: log to userData/startup-error.log and say so on screen. */
 let started = false
 function reportFatal(where: string, err: unknown): void {
