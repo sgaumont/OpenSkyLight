@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
 import type { EditScope, EventPatch, OccurrenceDto, RecurrenceInput } from '@shared/types'
 import { describeRecurrence } from '@shared/recurrence/build'
@@ -9,6 +9,7 @@ import { OskInput } from '../../components/Osk'
 import { DateField, TimeField } from '../../components/DateTimePickers'
 import { initials, textOn } from '../../lib/format'
 import { useWeekStartsOn } from './useCalendarData'
+import { useParentGate } from '../../components/ParentGate'
 
 const WEEKDAY_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -55,15 +56,47 @@ function formTimes(form: FormState): { start: string; end: string } {
   return { start: start.toUTC().toISO()!, end: end.toUTC().toISO()! }
 }
 
+/**
+ * Changing events is for parents: a new event asks for the PIN before the editor opens;
+ * an existing one opens for anyone to read, and Save / Delete ask for the PIN.
+ * Closing the editor locks again if it was unlocked here.
+ */
 export function EventEditor() {
   const editor = useUi((s) => s.editor)
   const closeEditor = useUi((s) => s.closeEditor)
-  if (editor.mode === 'closed') return null
-  const key = editor.mode === 'create' ? `create-${editor.date}` : `edit-${editor.occurrence.key}`
-  return <EditorSheet key={key} editor={editor} onClose={closeEditor} />
+  const gate = useParentGate()
+  const key =
+    editor.mode === 'closed' ? null : editor.mode === 'create' ? `create-${editor.date}` : `edit-${editor.occurrence.key}`
+  const [allowedKey, setAllowedKey] = useState<string | null>(null)
+
+  // key stands in for the editor state as the dependency
+  useEffect(() => {
+    if (editor.mode !== 'create' || !key) return
+    gate.guard(() => setAllowedKey(key), closeEditor)
+  }, [key])
+
+  const close = (): void => {
+    gate.relock()
+    closeEditor()
+  }
+  const shown = editor.mode === 'closed' || (editor.mode === 'create' && allowedKey !== key) ? null : editor
+  return (
+    <>
+      {shown && <EditorSheet key={key} editor={shown} onClose={close} guard={gate.guard} />}
+      {gate.dialog}
+    </>
+  )
 }
 
-function EditorSheet({ editor, onClose }: { editor: Exclude<EditorState, { mode: 'closed' }>; onClose: () => void }) {
+function EditorSheet({
+  editor,
+  onClose,
+  guard
+}: {
+  editor: Exclude<EditorState, { mode: 'closed' }>
+  onClose: () => void
+  guard: (action: () => void) => void
+}) {
   const { data: people = [] } = usePeople()
   const { data: calendars = [] } = useCalendars()
   const { data: settings } = useSettings()
@@ -182,13 +215,18 @@ function EditorSheet({ editor, onClose }: { editor: Exclude<EditorState, { mode:
 
   const onSaveTap = (): void => {
     if (!valid) return
-    if (editor.mode === 'edit' && isRecurringSeries) setScopeAsk('save')
-    else save()
+    // a new event was already unlocked to open the editor
+    guard(() => {
+      if (editor.mode === 'edit' && isRecurringSeries) setScopeAsk('save')
+      else save()
+    })
   }
 
   const onDeleteTap = (): void => {
-    if (isRecurringSeries) setScopeAsk('delete')
-    else setConfirmDelete(true)
+    guard(() => {
+      if (isRecurringSeries) setScopeAsk('delete')
+      else setConfirmDelete(true)
+    })
   }
 
   const recurOptions: { value: string; label: string }[] = [

@@ -316,6 +316,11 @@ Add unit tests where sensible.
   once done, an outline with a faint initial until then; replaces the right-hand mini initials). Plain chores
   are sorted multi-person first, then A–Z within each kind (checklist items keep their checklist order). The
   circle column is as wide as the most circles any row has, so every title starts at the same x.
+- v0.8.40: **changing events needs the parent PIN** (when one is set). `events:create/update/delete` are in
+  `PARENT_GATED`. The editor (`EventEditor.tsx`) uses the new `useParentGate()` (`components/ParentGate.tsx`:
+  reads `auth:getStatus` fresh, prompts with `PinDialog` only when locked, runs the action after a valid PIN):
+  a new event asks before the editor opens (cancel = no editor); an existing event still opens for anyone to
+  read, and Save / Delete ask first. Closing the editor re-locks if the gate unlocked it.
 
 ## Wishlist (not started)
 
