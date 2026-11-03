@@ -10,15 +10,15 @@ import { PairScreen } from './pages/PairScreen'
 type TabId = 'lists' | 'meals' | 'chores' | 'agenda'
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
+  { id: 'chores', label: 'Chores', icon: '★' },
   { id: 'lists', label: 'Lists', icon: '✓' },
   { id: 'meals', label: 'Meals', icon: '🍽' },
-  { id: 'chores', label: 'Chores', icon: '★' },
   { id: 'agenda', label: 'Agenda', icon: '▤' }
 ]
 
 export default function App() {
   const [paired, setPaired] = useState(() => getToken() !== null)
-  const [tab, setTab] = useState<TabId>('lists')
+  const [tab, setTab] = useState<TabId>('chores')
 
   useEffect(() => {
     // any 401 (unpaired on the kiosk, evicted storage) drops back to pairing
