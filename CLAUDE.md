@@ -344,6 +344,7 @@ Add unit tests where sensible.
 - v0.8.48: phone companion tabs are Chores · Lists · Meals · Agenda, and it opens on Chores.
 - v0.8.49: companion's Today chores use the home tile's order — `sortDayChores` (`src/shared/choreOrder.ts`,
   Everyone chores first, then A–Z), shared by both so they can't drift.
+- v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)
 
