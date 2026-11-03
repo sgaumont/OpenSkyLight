@@ -89,6 +89,20 @@ describe('chores + rewards', () => {
     expect(() => rewards.adjust('nobody', 3)).toThrow()
   })
 
+  it('purging old completions keeps every star and the ledger', () => {
+    const chore = chores.create({ title: 'Dishes', starsValue: 4, recurrence: { freq: 'daily' } })
+    for (const d of ['2026-06-08', '2026-06-09', '2026-06-10', '2026-06-11']) chores.complete(chore.id, d, 'kid1')
+    rewards.adjust('kid1', -1)
+    const ledger = () => handle.sqlite.prepare('SELECT COUNT(*) AS n FROM star_ledger').get() as { n: number }
+    expect(ledger().n).toBe(5)
+
+    expect(chores.purgeCompletionsBefore('2026-06-10')).toBe(2)
+    expect(chores.balanceOf('kid1')).toBe(15)
+    expect(ledger().n).toBe(5)
+    const kept = handle.sqlite.prepare('SELECT due_date FROM chore_completions ORDER BY due_date').all()
+    expect(kept).toEqual([{ due_date: '2026-06-10' }, { due_date: '2026-06-11' }])
+  })
+
   it('refuses redemptions the balance cannot cover', () => {
     const reward = rewards.create({ title: 'Bike', costStars: 100 })
     expect(() => rewards.redeem(reward.id, 'kid1')).toThrow(/Not enough stars/)

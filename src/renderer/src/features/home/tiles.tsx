@@ -27,6 +27,7 @@ import { startAlarm, stopAlarm } from '../../lib/alarm'
 import { weatherIcon } from '../weather/WeatherHeader'
 import { MealsDialog, MealStrip, SLOT_META, useMealsForRange } from '../meals/Meals'
 import { useChoreClaim } from '../chores/ClaimChore'
+import { ChoreHistoryDialog } from '../chores/ChoreHistory'
 import { ZONE } from '../../stores/uiStore'
 import { formatTime, initials, textOn } from '../../lib/format'
 import { occurrenceColor } from '../../lib/colors'
@@ -365,6 +366,7 @@ export function ChoresProgressTile() {
   const { data: people = [] } = usePeople()
   const peopleById = new Map(people.map((p) => [p.id, p]))
   const { tap, dialog } = useChoreClaim(today())
+  const [historyOpen, setHistoryOpen] = useState(false)
   const all = [...checklists.flatMap((cl) => cl.items), ...chores]
   // every title starts at the same x: the circle column fits the most circles any row has (20px each, 2px gaps)
   const maxCircles = Math.max(1, ...all.map((c) => (c.mode === 'each' ? c.assignees.length : 1)))
@@ -428,7 +430,18 @@ export function ChoresProgressTile() {
   // chores belong to no one: shared progress, then checklists, then every chore — still to do or ticked
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <TileTitle>Today's chores</TileTitle>
+      {/* the title opens the last few days' history (a div: the tile itself is a button) */}
+      <div
+        role="button"
+        aria-label="Chore history"
+        onClick={(e) => {
+          e.stopPropagation()
+          setHistoryOpen(true)
+        }}
+        className="pressable -mx-1 self-start rounded-lg px-1"
+      >
+        <TileTitle>Today's chores ›</TileTitle>
+      </div>
       {all.length === 0 ? (
         <Placeholder>No chores today</Placeholder>
       ) : (
@@ -468,7 +481,13 @@ export function ChoresProgressTile() {
         </TileScroll>
       )}
       {/* outside the tile's zoom; taps in it must not bubble (through React) to the tile's own button */}
-      {createPortal(<div onClick={(e) => e.stopPropagation()}>{dialog}</div>, document.body)}
+      {createPortal(
+        <div onClick={(e) => e.stopPropagation()}>
+          {dialog}
+          <ChoreHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} />
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { join } from 'path'
 import { DateTime } from 'luxon'
 import { openDatabase } from './db/client'
 import { calendars } from './db/schema'
+import { choreHistoryCutoff } from '@shared/choreHistory'
 import { createSettingsService, migrateHomeGrid } from './services/settingsService'
 import { createPeopleService } from './services/peopleService'
 import { createCalendarService } from './services/calendarService'
@@ -155,6 +156,12 @@ if (!gotLock) {
     started = true
     syncManager.start()
     kiosk.start()
+    // chore completions are only kept for the few days the history shows
+    const purgeChoreHistory = (): void => {
+      choresService.purgeCompletionsBefore(choreHistoryCutoff(DateTime.now().setZone(deviceTz()).toISODate()!, deviceTz()))
+    }
+    purgeChoreHistory()
+    setInterval(purgeChoreHistory, 60 * 60_000).unref()
     updater.start()
     companion.applySettings()
 

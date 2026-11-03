@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, lt } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
 import { checklistUnlocks, choreChecklists, choreCompletions, chores, people, starLedger } from '../db/schema'
@@ -524,6 +524,14 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     if (result.changes === 0) throw notFound('Unlock')
   }
 
+  /**
+   * Drop completions due before `date` (the chore history only goes back a few days).
+   * Stars live in the ledger, so balances are untouched. Returns how many rows went.
+   */
+  function purgeCompletionsBefore(date: string): number {
+    return db.delete(choreCompletions).where(lt(choreCompletions.dueDate, date)).run().changes
+  }
+
   return {
     list,
     create,
@@ -540,7 +548,8 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     removeChecklist,
     checklistsDay,
     pendingUnlocks,
-    approveUnlock
+    approveUnlock,
+    purgeCompletionsBefore
   }
 }
 

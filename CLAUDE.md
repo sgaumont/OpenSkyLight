@@ -360,6 +360,12 @@ Add unit tests where sensible.
   tapping the name still opens the type-a-total sheet.
 - v0.8.57: **balances may go negative** — `rewards.adjust` no longer refuses below 0, the − button is never
   disabled, and the sheet accepts a negative total. Redeeming a reward still needs enough stars.
+- v0.8.58: **3-day chore history.** Tapping the home tile's title ("Today's chores ›", a `role="button"` div)
+  opens `ChoreHistoryDialog` (`features/chores/ChoreHistory.tsx`): today, yesterday, the day before — each
+  person with the chores they ticked (from `chores:getDay` + `checklistsDay` per date). Window is
+  `CHORE_HISTORY_DAYS` in `src/shared/choreHistory.ts`. Main purges `chore_completions` due before the oldest
+  day shown at boot and hourly (`chores.purgeCompletionsBefore`); `star_ledger` is never touched, so balances
+  and their log are unchanged (test covers it). Older days can no longer be un-ticked — they aren't shown.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)
