@@ -23,6 +23,8 @@ export interface TileMeta {
   component: ComponentType<TileProps>
   /** view-mode tap navigates here */
   navTarget?: CalendarViewKind
+  /** false = not offered in "Add a tile" (one already on the home screen keeps working) */
+  pickable?: false
 }
 
 export const TILE_REGISTRY: Record<HomeTileType, TileMeta> = {
@@ -70,7 +72,8 @@ export const TILE_REGISTRY: Record<HomeTileType, TileMeta> = {
   clock: {
     label: 'Clock',
     description: 'Time and date',
-    component: ClockTile
+    component: ClockTile,
+    pickable: false
   },
   photo: {
     label: 'Photo',
@@ -85,12 +88,14 @@ export const TILE_REGISTRY: Record<HomeTileType, TileMeta> = {
   camera: {
     label: 'Camera',
     description: 'Live view from an IP camera (RTSP)',
-    component: CameraTile
+    component: CameraTile,
+    pickable: false
   },
   birdnet: {
     label: 'Birds',
     description: 'Recent detections from your BirdNET-Go',
-    component: BirdNetTile
+    component: BirdNetTile,
+    pickable: false
   },
   timer: {
     label: 'Timers',

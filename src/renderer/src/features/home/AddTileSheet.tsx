@@ -12,7 +12,7 @@ import { OskInput } from '../../components/Osk'
 import { XIcon } from '../../components/icons'
 import { TILE_REGISTRY } from './tileRegistry'
 
-const TILE_TYPES = Object.keys(TILE_REGISTRY) as HomeTileType[]
+const TILE_TYPES = (Object.keys(TILE_REGISTRY) as HomeTileType[]).filter((t) => TILE_REGISTRY[t].pickable !== false)
 type PickerStep = null | 'list' | 'news' | 'camera' | 'birdnet'
 
 export function AddTileSheet({

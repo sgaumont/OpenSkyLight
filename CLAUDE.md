@@ -354,6 +354,8 @@ Add unit tests where sensible.
   a local `Sheet` frame in `ChoresPage.tsx`. Tapping a done one still un-ticks it.
 - v0.8.53: companion Chores' per-person summary card ("N today · ★ N") hidden (`SHOW_FAMILY_SUMMARY = false`).
 - v0.8.54: companion tabs are Chores · Lists · Meals — no Agenda (`AgendaPage.tsx` kept, unused).
+- v0.8.55: "Add a tile" no longer offers Clock, Camera or Birds (`pickable: false` in `tileRegistry.tsx`); one
+  already on the home screen keeps working and can still be removed.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)
