@@ -161,4 +161,37 @@ describe('eventService', () => {
     const occs = service.getOccurrences(WINDOW)
     expect(occs[0].personIds).toEqual(['p1'])
   })
+
+  describe('all-day events saved in another time zone', () => {
+    // midnight Nov 5 → Nov 6 in Los Angeles is 2 am → 2 am in Chicago: it would cover two days
+    const NOV = { start: '2026-11-01T00:00:00Z', end: '2026-11-30T00:00:00Z' }
+    const createAnniversary = (recurrence: { freq: 'yearly' } | null) =>
+      createEventService(handle.db, () => 'America/Los_Angeles').create({
+        calendarId,
+        title: 'Anniversary',
+        start: '2026-11-05T08:00:00Z',
+        end: '2026-11-06T08:00:00Z',
+        tz: 'America/Los_Angeles',
+        allDay: true,
+        personIds: [],
+        recurrence
+      })
+
+    it('still covers just its one day in the device zone', () => {
+      createAnniversary(null)
+      const occs = createEventService(handle.db, () => CHI).getOccurrences(NOV)
+      expect(occs).toHaveLength(1)
+      expect(occs[0].start).toBe('2026-11-05T06:00:00Z')
+      expect(occs[0].end).toBe('2026-11-06T06:00:00Z')
+    })
+
+    it('every yearly occurrence stays on its day', () => {
+      createAnniversary({ freq: 'yearly' })
+      const occs = createEventService(handle.db, () => CHI).getOccurrences({
+        start: '2027-11-01T00:00:00Z',
+        end: '2027-11-30T00:00:00Z'
+      })
+      expect(occs.map((o) => [o.start, o.end])).toEqual([['2027-11-05T05:00:00Z', '2027-11-06T05:00:00Z']])
+    })
+  })
 })

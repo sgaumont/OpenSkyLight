@@ -59,7 +59,18 @@ function asExceptionLike(row: EventRow): ExceptionLike {
   }
 }
 
-export function createEventService(db: AppDb) {
+/**
+ * An all-day event's stored instants are midnights in the zone it was saved in (`tz`).
+ * Re-anchor them to midnights in `zone`, so a later change of the device's time zone
+ * never spills the event onto the neighbouring day.
+ */
+export function allDayInZone(startIso: string, endIso: string, tz: string, zone: string): { start: string; end: string } {
+  const at = (iso: string) =>
+    isoUtc(DateTime.fromISO(DateTime.fromISO(iso, { zone: 'utc' }).setZone(tz).toISODate()!, { zone }))
+  return { start: at(startIso), end: at(endIso) }
+}
+
+export function createEventService(db: AppDb, deviceTz: () => string = () => DateTime.local().zoneName ?? 'UTC') {
   const now = () => isoUtc(DateTime.utc())
   const norm = (iso: string) => isoUtc(fromIso(iso))
 
@@ -209,11 +220,16 @@ export function createEventService(db: AppDb) {
     const peopleMap = peopleFor([...rowById.keys()])
 
     const out: OccurrenceDto[] = []
+    const zone = deviceTz()
     for (const master of masters) {
       const exceptions = (exceptionsByMaster.get(master.id) ?? []).map(asExceptionLike)
       const expanded = expandOccurrences(asMasterLike(master), exceptions, windowStart, windowEnd)
       for (const occ of expanded) {
         const row = rowById.get(occ.eventId)!
+        const { start, end } = row.allDay
+          ? allDayInZone(occ.start, occ.end, row.tz, zone)
+          : { start: occ.start, end: occ.end }
+        if (start >= windowEnd || end <= windowStart) continue
         const personIds =
           peopleMap.get(occ.eventId) ?? (occ.isException ? (peopleMap.get(occ.masterId) ?? []) : [])
         out.push({
@@ -223,8 +239,8 @@ export function createEventService(db: AppDb) {
           calendarId: row.calendarId,
           title: row.title,
           location: row.location,
-          start: occ.start,
-          end: occ.end,
+          start,
+          end,
           allDay: row.allDay,
           isRecurring: master.rrule !== null,
           readOnly: readOnlyByCal.get(row.calendarId) ?? false,

@@ -321,6 +321,13 @@ Add unit tests where sensible.
   reads `auth:getStatus` fresh, prompts with `PinDialog` only when locked, runs the action after a valid PIN):
   a new event asks before the editor opens (cancel = no editor); an existing event still opens for anyone to
   read, and Save / Delete ask first. Closing the editor re-locks if the gate unlocked it.
+- v0.8.41: **all-day events can't spill onto the next day.** They're stored as midnights in the zone they were
+  synced/saved in (`events.tz`); if the device zone differs later (e.g. a Surface first set to Pacific), a
+  Nov 5 event showed on Thu 5 *and* Fri 6. `getOccurrences` now re-anchors every all-day occurrence to
+  midnights of its date in the device zone (`allDayInZone` in `eventService.ts`), so every view is safe. Boot
+  re-downloads all calendars in full when the device zone differs from the one stored under the settings key
+  `sync.deviceTz` (once on upgrade, then on any zone change), and Google sync now rewrites an all-day event
+  whose stored `tz` differs even when its etag is unchanged. Home "Chores today" tile is now titled "Chores".
 
 ## Wishlist (not started)
 

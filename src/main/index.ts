@@ -3,6 +3,7 @@ import { appendFileSync } from 'fs'
 import { join } from 'path'
 import { DateTime } from 'luxon'
 import { openDatabase } from './db/client'
+import { calendars } from './db/schema'
 import { createSettingsService, migrateHomeGrid } from './services/settingsService'
 import { createPeopleService } from './services/peopleService'
 import { createCalendarService } from './services/calendarService'
@@ -95,6 +96,12 @@ if (!gotLock) {
       onConflict: (title) => broadcast('push:syncConflict', { title })
     })
     const icsSync = createIcsSync({ db, deviceTz })
+    // all-day events are stored as midnights in the device zone: after the zone changes
+    // (or once, for data synced before this check), re-download every calendar in full
+    if (settings.getRaw('sync.deviceTz') !== deviceTz()) {
+      db.update(calendars).set({ syncToken: null, icsEtag: null, icsLastModified: null }).run()
+      settings.setRaw('sync.deviceTz', deviceTz())
+    }
     const syncManager = createSyncManager({
       db,
       auth: googleAuth,
@@ -120,7 +127,7 @@ if (!gotLock) {
       settings,
       people: createPeopleService(db),
       calendars: createCalendarService(db),
-      events: createEventService(db),
+      events: createEventService(db, deviceTz),
       googleAuth,
       googleSync,
       icsSync,

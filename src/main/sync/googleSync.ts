@@ -209,7 +209,9 @@ export function createGoogleSync(deps: { db: AppDb; auth: GoogleAuth; deviceTz: 
 
         let localId: string
         if (existing) {
-          if (existing.etag && m.etag && existing.etag === m.etag && !existing.deletedAt) return
+          // unchanged remotely — unless an all-day event was stored in another time zone
+          const sameTz = !m.allDay || existing.tz === m.tz
+          if (existing.etag && m.etag && existing.etag === m.etag && !existing.deletedAt && sameTz) return
           tx.update(events).set(fields).where(eq(events.id, existing.id)).run()
           localId = existing.id
         } else {
