@@ -372,6 +372,7 @@ Add unit tests where sensible.
   `companion/src/api/hooks.ts`, used by ChoresPage, MealsPage and the header date.
 - v0.8.60: header star circles are display-only (`div`s, no tap action). The Chores view is now reached only from
   the Star balances tile.
+- v0.8.61: weather tile is today (labelled "Today") + the next 4 days — `daily.slice(0, 5)`, was tomorrow on.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)
