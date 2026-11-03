@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
-import { usePeople, useSettings } from '../../api/hooks'
+import { useBalances, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { SegmentedControl, IconButton } from '../../components/ui'
 import { ChevronLeftIcon, ChevronRightIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
@@ -45,6 +45,8 @@ export function Header() {
   const now = useNow()
   const { data: settings } = useSettings()
   const { data: people = [] } = usePeople()
+  const { data: balances = [] } = useBalances()
+  const kids = people.filter((p) => p.role === 'child')
   const view = useUi((s) => s.view)
   const setView = useUi((s) => s.setView)
   const focusedDate = useUi((s) => s.focusedDate)
@@ -91,6 +93,30 @@ export function Header() {
       </button>
 
       <WeatherButton />
+
+      <div className="flex-1" />
+
+      {/* each child's star balance, in their colour; tap for chores and rewards */}
+      {kids.length > 0 && (
+        <div className="flex shrink-0 items-center gap-1.5">
+          {kids.map((p) => {
+            const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
+            return (
+              <button
+                key={p.id}
+                type="button"
+                aria-label={`${p.name}: ${stars} stars`}
+                title={p.name}
+                onClick={() => setView('chores')}
+                className="pressable flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-10 max-[1300px]:w-10"
+                style={{ backgroundColor: p.color, color: textOn(p.color) }}
+              >
+                {stars}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       <div className="flex-1" />
 

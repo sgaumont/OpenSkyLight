@@ -333,6 +333,9 @@ Add unit tests where sensible.
   "Today's chores" home tile to open it; it keeps its own text size in Settings).
 - v0.8.44: tapping the "Today's chores" tile no longer opens the Chores view (no `navTarget`); tapping a chore
   still claims it. The Chores view is now reached only from the Star balances tile.
+- v0.8.45: header shows each **child's star balance** as a circle in their colour (number inside, `useBalances`),
+  centred between the weather and the family filter (`flex-1` either side). Tapping one opens the Chores view
+  (Rewards) — the way in now that the menu button and the chores tile's tap are gone.
 
 ## Wishlist (not started)
 
