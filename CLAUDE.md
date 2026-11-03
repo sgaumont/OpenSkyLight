@@ -309,6 +309,9 @@ Add unit tests where sensible.
     per day). Shown as a card at the top of the Chores tab, a section of the home tile, and the companion.
   - Channels (all `chores:`): checklists, checklistCreate/Update/Delete, checklistsDay, pendingUnlocks,
     approveUnlock; `uncomplete` takes optional `personId` (required for 'each').
+- v0.8.38: home "Chores today" tile — a claimed chore's filled circle shows the claimer's initial (in their
+  colour) instead of a tick; the separate initial on the right is gone. "Everyone" chores keep the green tick
+  when all are done, with the doers' mini initials on the right.
 
 ## Wishlist (not started)
 

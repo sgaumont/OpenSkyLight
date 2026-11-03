@@ -387,14 +387,20 @@ export function ChoresProgressTile({ compact }: TileProps) {
           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${fill ? '' : 'border-line'}`}
           style={fill ? { borderColor: fill, backgroundColor: fill } : undefined}
         >
-          {c.completed && <CheckIcon size={12} style={{ color: textOn(fill!) }} />}
+          {/* a claimed chore shows who did it; an 'each' chore everyone finished gets a tick */}
+          {claimer ? (
+            <span className="text-[10px] leading-none font-extrabold" style={{ color: textOn(claimer.color) }}>
+              {initials(claimer.name)}
+            </span>
+          ) : (
+            c.completed && <CheckIcon size={12} style={{ color: textOn(fill!) }} />
+          )}
         </span>
         <span
           className={`min-w-0 flex-1 text-sm leading-tight font-bold break-words ${c.completed ? 'text-ink-faint line-through' : ''}`}
         >
           {c.title}
         </span>
-        {!compact && claimer && <MiniAvatar person={claimer} />}
         {!compact && c.mode === 'each' && (
           <span className="flex shrink-0 gap-0.5">
             {c.doneBy.map((id) => {
