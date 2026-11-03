@@ -352,6 +352,7 @@ Add unit tests where sensible.
 - v0.8.52: companion — tapping an "anyone" chore (its circle or its title) opens a "Who did it?" bottom sheet
   (`ClaimSheet`, one big button per person) instead of expanding a picker inside the list. Both sheets share
   a local `Sheet` frame in `ChoresPage.tsx`. Tapping a done one still un-ticks it.
+- v0.8.53: companion Chores' per-person summary card ("N today · ★ N") hidden (`SHOW_FAMILY_SUMMARY = false`).
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)

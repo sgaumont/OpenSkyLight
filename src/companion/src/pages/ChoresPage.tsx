@@ -7,6 +7,9 @@ import { sortDayChores } from '@shared/choreOrder'
 
 type Repeat = 'once' | 'daily' | 'weekly'
 
+/** Per-person "N today · ★ N" card below the chores: hidden for now (the Stars card covers it). */
+const SHOW_FAMILY_SUMMARY = false
+
 /** Each child's star balance; tap one to correct it. */
 function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id: string) => number }) {
   const kids = people.filter((p) => p.role === 'child')
@@ -273,7 +276,7 @@ export function ChoresPage() {
         />
       )}
 
-      {people.length > 0 && (
+      {SHOW_FAMILY_SUMMARY && people.length > 0 && (
         <Card>
           {people.map((p) => (
             <div key={p.id} className="flex items-center gap-2.5 py-1">
