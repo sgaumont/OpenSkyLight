@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DateTime } from 'luxon'
 import type {
   CalendarDto,
   CalendarViewKind,
@@ -44,21 +45,18 @@ import {
 import { PinDialog } from '../../components/PinDialog'
 import { TimeField } from '../../components/DateTimePickers'
 import { ipcInvoke } from '../../api/client'
-import { useUi } from '../../stores/uiStore'
+import { useUi, ZONE } from '../../stores/uiStore'
 import { BigButton, Dialog, FieldLabel, SegmentedControl, Sheet, Toggle } from '../../components/ui'
 import { OskInput } from '../../components/Osk'
 import { PlusIcon } from '../../components/icons'
 import {
   ChecklistsSection,
-  defaultAssignees,
   PeoplePicker,
   PendingUnlocks,
   ScheduleField,
-  scheduleOf,
-  toRecurrence,
-  usePendingUnlockCount,
-  type ScheduleKind
+  usePendingUnlockCount
 } from '../chores/ChoreSettings'
+import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type ScheduleKind } from '@shared/choreSchedule'
 import { initials, textOn } from '../../lib/format'
 import QRCode from 'qrcode'
 
@@ -592,7 +590,10 @@ function ChoresTab() {
       ...(mode === 'each' ? { assignees } : {})
     }
     if (editingChore === 'new') choreMutations.create.mutate(common)
-    else if (editingChore) choreMutations.update.mutate({ id: editingChore.id, ...common })
+    else if (editingChore) {
+      const anchorDate = anchorOnSave(editingChore.recurrence, schedule, DateTime.now().setZone(ZONE).toISODate()!)
+      choreMutations.update.mutate({ id: editingChore.id, ...common, ...(anchorDate ? { anchorDate } : {}) })
+    }
     setEditingChore(null)
   }
 

@@ -373,6 +373,11 @@ Add unit tests where sensible.
 - v0.8.60: header star circles are display-only (`div`s, no tap action). The Chores view is now reached only from
   the Star balances tile.
 - v0.8.61: weather tile is today (labelled "Today") + the next 4 days — `daily.slice(0, 5)`, was tomorrow on.
+- v0.8.62: the companion edits chores fully — `ChoreSheet` (name, Whoever/Everyone + people, stars, time of day,
+  repeats with weekdays, Pause/Resume, two-tap Delete) from + New chore or Manage; `ChecklistSheet` + a "Waiting for
+  you" Approve card. `COMPANION_CHANNELS` gained chores:delete + the checklist/unlock channels (a paired phone is
+  trusted: pairing needs the kiosk PIN). Schedule helpers moved to `src/shared/choreSchedule.ts`; `anchorOnSave`
+  re-anchors a repeating chore switched to One time to today (kiosk too — it used to never show again).
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)

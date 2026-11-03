@@ -8,6 +8,7 @@ import { pickLanAddresses } from '../../src/main/companion/lanAddress'
 import { createCompanionServer, type CompanionServer } from '../../src/main/companion/companionServer'
 import type { SettingsService } from '../../src/main/services/settingsService'
 import type { IpcResult } from '../../src/shared/ipc/contract'
+import { COMPANION_CHANNELS } from '../../src/shared/ipc/companionChannels'
 
 function settingsStub(companion = { enabled: true, port: 0 }): SettingsService {
   const store = new Map<string, string>()
@@ -153,6 +154,29 @@ describe('companionServer', () => {
         body: '{}'
       })
       expect(res.status, channel).toBe(404)
+    }
+  })
+
+  it('lets a paired phone run every chore and checklist edit, but not the kiosk admin ones', () => {
+    const chores = [...COMPANION_CHANNELS].filter((c) => c.startsWith('chores:')).sort()
+    expect(chores).toEqual([
+      'chores:approveUnlock',
+      'chores:checklistCreate',
+      'chores:checklistDelete',
+      'chores:checklistUpdate',
+      'chores:checklists',
+      'chores:checklistsDay',
+      'chores:complete',
+      'chores:create',
+      'chores:delete',
+      'chores:getDay',
+      'chores:list',
+      'chores:pendingUnlocks',
+      'chores:uncomplete',
+      'chores:update'
+    ])
+    for (const c of ['settings:set', 'auth:setPin', 'people:create', 'events:create'] as const) {
+      expect(COMPANION_CHANNELS.has(c), c).toBe(false)
     }
   })
 

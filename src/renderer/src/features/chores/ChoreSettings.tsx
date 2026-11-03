@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { DateTime } from 'luxon'
-import type { ChecklistDto, PersonDto, RecurrenceInput } from '@shared/types'
+import type { ChecklistDto, PersonDto } from '@shared/types'
+import { defaultAssignees, scheduleOf, toRecurrence, type ScheduleKind } from '@shared/choreSchedule'
 import { describeRecurrence } from '@shared/recurrence/build'
 import { useChecklistMutations, useChecklists, usePendingUnlocks, usePeople } from '../../api/hooks'
 import { ZONE } from '../../stores/uiStore'
@@ -10,18 +11,6 @@ import { OskInput } from '../../components/Osk'
 import { PlusIcon } from '../../components/icons'
 
 const WEEKDAY_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-export type ScheduleKind = 'daily' | 'weekly' | 'once'
-
-export function scheduleOf(recurrence: RecurrenceInput | null): ScheduleKind {
-  if (!recurrence) return 'once'
-  return recurrence.freq === 'weekly' ? 'weekly' : 'daily'
-}
-
-export function toRecurrence(schedule: ScheduleKind, weekdays: number[]): RecurrenceInput | null {
-  if (schedule === 'once') return null
-  if (schedule === 'daily') return { freq: 'daily' }
-  return { freq: 'weekly', byWeekdays: weekdays.length > 0 ? weekdays : [0] }
-}
 
 /** "Repeats": every day / chosen weekdays / one time. */
 export function ScheduleField({
@@ -101,12 +90,6 @@ export function PeoplePicker({
       })}
     </div>
   )
-}
-
-/** Who an "everyone" chore or checklist starts with: the kids, or everybody if there are none. */
-export function defaultAssignees(people: PersonDto[]): string[] {
-  const kids = people.filter((p) => p.role === 'child')
-  return (kids.length > 0 ? kids : people).map((p) => p.id)
 }
 
 /** Finished checklists waiting for a parent to sign off today. */

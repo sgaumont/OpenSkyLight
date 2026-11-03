@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ChoreCreateInput, ChoreUpdateInput } from '@shared/types'
+import type { ChecklistInput, ChoreCreateInput, ChoreUpdateInput } from '@shared/types'
 import { rpc } from './client'
 
 /** Phone tabs get suspended constantly — focus/reconnect refetch is the real
@@ -42,6 +42,15 @@ export function useChoresDay(date: string) {
 
 export function useChecklistsDay(date: string) {
   return useQuery({ queryKey: ['checklistsDay', date], queryFn: () => rpc('chores:checklistsDay', { date }), ...LIVE })
+}
+
+export function useChecklists() {
+  return useQuery({ queryKey: ['checklists'], queryFn: () => rpc('chores:checklists', undefined), ...LIVE })
+}
+
+/** Finished checklists waiting for a parent to sign off on `date`. */
+export function usePendingUnlocks(date: string) {
+  return useQuery({ queryKey: ['pendingUnlocks', date], queryFn: () => rpc('chores:pendingUnlocks', { date }), ...LIVE })
 }
 
 export function useChores() {
@@ -104,13 +113,27 @@ export function useAdjustStars() {
 }
 
 export function useChoreMutations() {
-  const keys = [['choresDay'], ['chores'], ['balances'], ['checklistsDay']]
+  const keys = [['choresDay'], ['chores'], ['balances'], ['checklistsDay'], ['pendingUnlocks']]
   return {
     create: useInvalidatingMutation((input: ChoreCreateInput) => rpc('chores:create', input), keys),
     update: useInvalidatingMutation((input: ChoreUpdateInput) => rpc('chores:update', input), keys),
+    remove: useInvalidatingMutation((input: { id: string }) => rpc('chores:delete', input), keys),
     complete: useInvalidatingMutation((input: { choreId: string; date: string; personId: string }) => rpc('chores:complete', input), keys),
     uncomplete: useInvalidatingMutation(
       (input: { choreId: string; date: string; personId?: string }) => rpc('chores:uncomplete', input),
+      keys
+    )
+  }
+}
+
+export function useChecklistMutations() {
+  const keys = [['checklists'], ['checklistsDay'], ['pendingUnlocks'], ['choresDay']]
+  return {
+    create: useInvalidatingMutation((input: ChecklistInput) => rpc('chores:checklistCreate', input), keys),
+    update: useInvalidatingMutation((input: ChecklistInput & { id: string }) => rpc('chores:checklistUpdate', input), keys),
+    remove: useInvalidatingMutation((input: { id: string }) => rpc('chores:checklistDelete', input), keys),
+    approve: useInvalidatingMutation(
+      (input: { checklistId: string; personId: string; date: string }) => rpc('chores:approveUnlock', input),
       keys
     )
   }
