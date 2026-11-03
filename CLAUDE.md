@@ -366,6 +366,10 @@ Add unit tests where sensible.
   `CHORE_HISTORY_DAYS` in `src/shared/choreHistory.ts`. Main purges `chore_completions` due before the oldest
   day shown at boot and hourly (`chores.purgeCompletionsBefore`); `star_ledger` is never touched, so balances
   and their log are unchanged (test covers it). Older days can no longer be un-ticked — they aren't shown.
+- v0.8.59: **chores roll over at midnight.** The home chores and meals tiles read `today()` only when they
+  happened to re-render, so a kiosk left on Home showed yesterday's ticks after midnight. They now use
+  `useTodayKey()` (re-checked every minute, like This week). The companion got the same: `useToday()` in
+  `companion/src/api/hooks.ts`, used by ChoresPage, MealsPage and the header date.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)

@@ -361,11 +361,13 @@ function MiniAvatar({ person }: { person: PersonDto }) {
 const UNLOCK_MARK = { pending: '⏳', approved: '✓' } as const
 
 export function ChoresProgressTile() {
-  const { data: chores = [] } = useChoresDay(today())
-  const { data: checklists = [] } = useChecklistsDay(today())
+  // a tile left up overnight must move on to the new day's chores
+  const todayKey = useTodayKey()
+  const { data: chores = [] } = useChoresDay(todayKey)
+  const { data: checklists = [] } = useChecklistsDay(todayKey)
   const { data: people = [] } = usePeople()
   const peopleById = new Map(people.map((p) => [p.id, p]))
-  const { tap, dialog } = useChoreClaim(today())
+  const { tap, dialog } = useChoreClaim(todayKey)
   const [historyOpen, setHistoryOpen] = useState(false)
   const all = [...checklists.flatMap((cl) => cl.items), ...chores]
   // every title starts at the same x: the circle column fits the most circles any row has (20px each, 2px gaps)
@@ -556,7 +558,8 @@ export function ListTile({ tile, compact }: TileProps) {
 }
 
 export function MealsTile({ compact }: TileProps) {
-  const { data: meals = [] } = useMeals(today(), today())
+  const todayKey = useTodayKey()
+  const { data: meals = [] } = useMeals(todayKey, todayKey)
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <TileTitle>Meals today</TileTitle>

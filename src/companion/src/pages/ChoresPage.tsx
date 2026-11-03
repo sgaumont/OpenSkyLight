@@ -1,7 +1,16 @@
 import { useState, type ReactNode } from 'react'
 import { DateTime } from 'luxon'
 import type { ChoreDto, ChoreRoutine, DayChoreDto, PersonDto } from '@shared/types'
-import { useAdjustStars, useBalances, useChecklistsDay, useChoreMutations, useChores, useChoresDay, usePeople } from '../api/hooks'
+import {
+  useAdjustStars,
+  useBalances,
+  useChecklistsDay,
+  useChoreMutations,
+  useChores,
+  useChoresDay,
+  usePeople,
+  useToday
+} from '../api/hooks'
 import { Card, CheckCircle, EmptyNote, GhostButton, PersonAvatar, PrimaryButton, TextInput } from '../components/ui'
 import { sortDayChores } from '@shared/choreOrder'
 
@@ -209,7 +218,7 @@ function EachChoreRow({ chore, people, date }: { chore: DayChoreDto; people: Per
 const UNLOCK_TEXT = { pending: 'waiting for a parent', approved: 'unlocked!' } as const
 
 export function ChoresPage() {
-  const today = DateTime.now().toISODate()!
+  const today = useToday()
   const { data: dayChores = [], isPending } = useChoresDay(today)
   const { data: checklists = [] } = useChecklistsDay(today)
   const { data: people = [] } = usePeople()

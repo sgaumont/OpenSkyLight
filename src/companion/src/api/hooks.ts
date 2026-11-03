@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import { DateTime } from 'luxon'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ChoreCreateInput, ChoreUpdateInput } from '@shared/types'
 import { rpc } from './client'
@@ -5,6 +7,18 @@ import { rpc } from './client'
 /** Phone tabs get suspended constantly — focus/reconnect refetch is the real
  * freshness mechanism; the 20s interval covers a phone left on the counter. */
 const LIVE = { refetchInterval: 20_000, refetchOnWindowFocus: true, refetchOnReconnect: true } as const
+
+const todayIso = (): string => DateTime.now().toISODate()!
+
+/** Today's date, re-checked every minute so a page left open rolls over at midnight. */
+export function useToday(): string {
+  const [today, setToday] = useState(todayIso)
+  useEffect(() => {
+    const t = setInterval(() => setToday(todayIso()), 60_000)
+    return () => clearInterval(t)
+  }, [])
+  return today
+}
 
 export function usePeople() {
   return useQuery({ queryKey: ['people'], queryFn: () => rpc('people:list', undefined), ...LIVE })

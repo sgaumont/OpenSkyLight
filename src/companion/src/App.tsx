@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import { getToken, setUnauthorizedHandler } from './api/client'
+import { useToday } from './api/hooks'
 import { ListsPage } from './pages/ListsPage'
 import { MealsPage } from './pages/MealsPage'
 import { ChoresPage } from './pages/ChoresPage'
@@ -18,6 +19,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 export default function App() {
   const [paired, setPaired] = useState(() => getToken() !== null)
   const [tab, setTab] = useState<TabId>('chores')
+  const today = useToday()
 
   useEffect(() => {
     // any 401 (unpaired on the kiosk, evicted storage) drops back to pairing
@@ -30,7 +32,7 @@ export default function App() {
     <div className="flex h-full flex-col">
       <header className="flex items-baseline gap-2 px-5 pt-5 pb-3" style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}>
         <h1 className="font-display text-2xl font-semibold">{TABS.find((t) => t.id === tab)?.label}</h1>
-        <span className="text-sm font-bold text-ink-faint">{DateTime.now().toFormat('ccc, LLL d')}</span>
+        <span className="text-sm font-bold text-ink-faint">{DateTime.fromISO(today).toFormat('ccc, LLL d')}</span>
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">

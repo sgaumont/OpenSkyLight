@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { DateTime } from 'luxon'
 import { MEAL_SLOTS, type MealSlotKind } from '@shared/types'
-import { useMealMutations, useMeals } from '../api/hooks'
+import { useMealMutations, useMeals, useToday } from '../api/hooks'
 import { Card, PrimaryButton, TextInput } from '../components/ui'
 
 const SLOT_COLORS: Record<MealSlotKind, string> = {
@@ -12,7 +12,7 @@ const SLOT_COLORS: Record<MealSlotKind, string> = {
 }
 
 export function MealsPage() {
-  const today = DateTime.now().startOf('day')
+  const today = DateTime.fromISO(useToday())
   const start = today.toISODate()!
   const end = today.plus({ days: 6 }).toISODate()!
   const { data: meals = [] } = useMeals(start, end)
