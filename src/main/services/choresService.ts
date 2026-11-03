@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
 import { checklistUnlocks, choreChecklists, choreCompletions, chores, people, starLedger } from '../db/schema'
@@ -182,7 +182,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       .select()
       .from(choreCompletions)
       .where(eq(choreCompletions.dueDate, date))
-      .orderBy(asc(choreCompletions.completedAt), asc(choreCompletions.id))
+      .orderBy(asc(choreCompletions.completedAt), asc(sql`rowid`))
       .all()
     for (const c of rows) byChore.set(c.choreId, [...(byChore.get(c.choreId) ?? []), c.personId])
     return byChore
@@ -374,8 +374,9 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
           ...(perPerson ? [eq(choreCompletions.personId, personId!)] : [])
         )
       )
-      // the newest tick goes first (a chore done more than once a day loses one at a time)
-      .orderBy(desc(choreCompletions.completedAt), desc(choreCompletions.id))
+      // the newest tick goes first (a chore done more than once a day loses one at a time);
+      // rowid breaks ties within a millisecond, which uuidv7 ids do not order
+      .orderBy(desc(choreCompletions.completedAt), desc(sql`rowid`))
       .limit(1)
       .all()
     if (!completion) return { balance: personId ? balanceOf(personId) : 0 }
