@@ -117,13 +117,12 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     if (result.changes === 0) throw notFound('Redemption')
   }
 
-  /** A parent's manual correction, kept in the ledger like every other change; never below zero. */
+  /** A parent's manual correction, kept in the ledger like every other change; may go below zero. */
   function adjust(personId: string, delta: number): { balance: number } {
     const [person] = db.select().from(people).where(and(eq(people.id, personId), isNull(people.deletedAt))).all()
     if (!person) throw notFound('Person')
     const balance = choresService.balanceOf(personId)
     if (delta === 0) return { balance }
-    if (balance + delta < 0) throw invalid("Stars can't go below 0")
     db.insert(starLedger)
       .values({
         id: uuidv7(),

@@ -79,12 +79,12 @@ describe('chores + rewards', () => {
     expect(chores.balanceOf('kid1')).toBe(5)
   })
 
-  it('a parent can adjust a balance up or down, but never below zero', () => {
+  it('a parent can adjust a balance up or down, even below zero', () => {
     expect(rewards.adjust('kid1', 12)).toEqual({ balance: 12 })
     expect(rewards.adjust('kid1', -5)).toEqual({ balance: 7 })
-    expect(() => rewards.adjust('kid1', -8)).toThrow(/below 0/)
-    expect(rewards.adjust('kid1', 0)).toEqual({ balance: 7 })
-    expect(chores.balanceOf('kid1')).toBe(7)
+    expect(rewards.adjust('kid1', -10)).toEqual({ balance: -3 })
+    expect(rewards.adjust('kid1', 0)).toEqual({ balance: -3 })
+    expect(chores.balanceOf('kid1')).toBe(-3)
     expect(chores.balanceOf('kid2')).toBe(0)
     expect(() => rewards.adjust('nobody', 3)).toThrow()
   })

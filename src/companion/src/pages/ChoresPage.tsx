@@ -39,7 +39,6 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
               <button
                 type="button"
                 aria-label={`One star less for ${p.name}`}
-                disabled={stars <= 0}
                 onClick={() => adjust.mutate({ personId: p.id, delta: -1 })}
                 className={STEP_BUTTON}
               >
@@ -120,8 +119,10 @@ function ClaimSheet({
 function EditStarsSheet({ person, current, onClose }: { person: PersonDto; current: number; onClose: () => void }) {
   const adjust = useAdjustStars()
   const [text, setText] = useState(String(current))
-  const target = /^\d+$/.test(text.trim()) ? Number(text.trim()) : null
-  const set = (n: number) => setText(String(Math.max(0, n)))
+  // a whole number, negatives too ("−" from a phone keyboard counts as a minus)
+  const typed = text.trim().replace('−', '-')
+  const target = /^-?\d+$/.test(typed) ? Number(typed) : null
+  const set = (n: number) => setText(String(n))
   const save = () => {
     if (target === null) return
     adjust.mutate({ personId: person.id, delta: target - current }, { onSuccess: onClose })

@@ -346,7 +346,7 @@ Add unit tests where sensible.
   Everyone chores first, then A–Z), shared by both so they can't drift.
 - v0.8.51: companion Chores opens with a **Stars** card (each child, ★ balance; everyone if no children). Tap a
   child → bottom sheet: − / + or type the new total, Save. New channel `stars:adjust` {personId, delta} →
-  `rewards.adjust` writes one `manual_adjust` ledger row, refuses going below 0 or unknown people. It's in
+  `rewards.adjust` writes one `manual_adjust` ledger row, refuses unknown people. It's in
   `COMPANION_CHANNELS` (phones aren't PIN-gated, like chores:create there) and `PARENT_GATED` on the kiosk;
   mutation domain `chores` so the kiosk's balances refresh.
 - v0.8.52: companion — tapping an "anyone" chore (its circle or its title) opens a "Who did it?" bottom sheet
@@ -356,8 +356,10 @@ Add unit tests where sensible.
 - v0.8.54: companion tabs are Chores · Lists · Meals — no Agenda (`AgendaPage.tsx` kept, unused).
 - v0.8.55: "Add a tile" no longer offers Clock, Camera or Birds (`pickable: false` in `tileRegistry.tsx`); one
   already on the home screen keeps working and can still be removed.
-- v0.8.56: companion Stars card rows are name · − · ★ N · + (each tap `stars:adjust` ±1; − disabled at 0);
+- v0.8.56: companion Stars card rows are name · − · ★ N · + (each tap `stars:adjust` ±1);
   tapping the name still opens the type-a-total sheet.
+- v0.8.57: **balances may go negative** — `rewards.adjust` no longer refuses below 0, the − button is never
+  disabled, and the sheet accepts a negative total. Redeeming a reward still needs enough stars.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)
