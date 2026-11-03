@@ -35,27 +35,31 @@ export function MealStrip({
   date,
   meals,
   onOpen,
-  compact = true
+  compact = true,
+  large = false
 }: {
   date: string
   meals: MealSlotDto[]
   onOpen: (date: string) => void
   compact?: boolean
+  /** 1.5× the compact strip (the home Today tile) */
+  large?: boolean
 }) {
+  const text = large ? 'text-lg' : compact ? 'text-xs' : 'text-sm'
   return (
     <button
       type="button"
       onClick={() => onOpen(date)}
-      className="pressable w-full rounded-xl border border-dashed border-line/80 bg-card/50 px-2 py-1.5 text-left"
+      className={`pressable w-full rounded-xl border border-dashed border-line/80 bg-card/50 text-left ${large ? 'px-3 py-2' : 'px-2 py-1.5'}`}
     >
       {meals.length === 0 ? (
-        <span className={`font-bold text-ink-faint ${compact ? 'text-xs' : 'text-sm'}`}>+ Meals</span>
+        <span className={`font-bold text-ink-faint ${text}`}>+ Meals</span>
       ) : (
-        <span className="flex flex-col gap-0.5">
+        <span className={`flex flex-col ${large ? 'gap-1' : 'gap-0.5'}`}>
           {meals.map((m) => (
-            <span key={m.slot} className={`flex items-center gap-1.5 ${compact ? 'text-xs' : 'text-sm'}`}>
+            <span key={m.slot} className={`flex items-center ${large ? 'gap-2' : 'gap-1.5'} ${text}`}>
               <span
-                className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold text-white"
+                className={`flex shrink-0 items-center justify-center rounded-full font-extrabold text-white ${large ? 'h-7 w-7 text-[15px]' : 'h-4.5 w-4.5 text-[10px]'}`}
                 style={{ backgroundColor: SLOT_META[m.slot].color }}
               >
                 {SLOT_META[m.slot].letter}

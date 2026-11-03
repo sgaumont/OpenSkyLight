@@ -158,7 +158,7 @@ function TodayMeals({ date }: { date: string }) {
     // stops taps on the strip, and (via React's portal bubbling) inside the dialog,
     // from also counting as a tap on the tile, which opens the Day view
     <div className="mt-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-      <MealStrip date={date} meals={meals} onOpen={() => setOpen(true)} />
+      <MealStrip date={date} meals={meals} onOpen={() => setOpen(true)} large />
       {/* portal: the dialog must escape the tile's clipping and text-size zoom */}
       {createPortal(<MealsDialog date={open ? date : null} meals={meals} onClose={() => setOpen(false)} />, document.body)}
     </div>
