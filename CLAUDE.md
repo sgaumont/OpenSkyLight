@@ -388,6 +388,7 @@ Add unit tests where sensible.
 - v0.8.68: Today's chores tile has no progress bar (or its done/total count) — straight to checklists and chores.
 - v0.8.69: Today tile's meal strip 1.5× bigger (`MealStrip large`: text-lg, 28px slot circles); Week view unchanged.
 - v0.8.70: user meant 2.5×, not 1.5× — Today tile meal strip now text-3xl (30px), 44px slot circles.
+- v0.8.71: Today tile meal strip back to 75% of that — 22.5px text, 33px slot circles.
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1
