@@ -293,6 +293,7 @@ Add unit tests where sensible.
   advances mid-drag).
 - v0.8.35: sleep (black, overnight) overlay's bottom-right time + weather are twice as big (40px text,
   48px icon, 22px high/low); still faint `text-white/15`.
+- v0.8.36: …and 50% bigger again (3× the original: 60px text, 72px icon, 33px high/low).
 
 ## Wishlist (not started)
 

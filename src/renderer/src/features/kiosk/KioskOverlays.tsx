@@ -120,7 +120,7 @@ function SleepOverlay({ onWake }: { onWake: () => void }) {
   const now = useClock()
   return (
     <div className="fixed inset-0 z-[90] cursor-none bg-black" onPointerDown={consumeWakeTap(onWake)}>
-      <div className="absolute right-8 bottom-6 flex items-center gap-8 text-[40px] leading-none font-semibold text-white/15 select-none">
+      <div className="absolute right-8 bottom-6 flex items-center gap-12 text-[60px] leading-none font-semibold text-white/15 select-none">
         <SleepWeather />
         <span>{now.toFormat('h:mm a').toLowerCase()}</span>
       </div>
@@ -135,12 +135,12 @@ function SleepWeather() {
   const Icon = weatherIcon(weather.code, weather.isDay)
   const today = weather.daily[0]
   return (
-    <span className="flex items-center gap-4">
-      <Icon className="h-12 w-12" />
+    <span className="flex items-center gap-6">
+      <Icon className="h-[72px] w-[72px]" />
       <span>{weather.temperature}°</span>
       {today && (
         <span
-          className="flex flex-col items-end text-[22px] leading-tight tabular-nums"
+          className="flex flex-col items-end text-[33px] leading-tight tabular-nums"
           aria-label={`Today: high ${today.high}°, low ${today.low}°`}
         >
           <span>{today.high}°</span>
