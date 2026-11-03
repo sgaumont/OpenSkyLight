@@ -312,6 +312,10 @@ Add unit tests where sensible.
 - v0.8.38: home "Chores today" tile — a claimed chore's filled circle shows the claimer's initial (in their
   colour) instead of a tick; the separate initial on the right is gone. "Everyone" chores keep the green tick
   when all are done, with the doers' mini initials on the right.
+- v0.8.39: home chores tile — an "Everyone" chore shows **one circle per person** (filled with their initial
+  once done, an outline with a faint initial until then; replaces the right-hand mini initials). Plain chores
+  are sorted multi-person first, then A–Z within each kind (checklist items keep their checklist order). The
+  circle column is as wide as the most circles any row has, so every title starts at the same x.
 
 ## Wishlist (not started)
 

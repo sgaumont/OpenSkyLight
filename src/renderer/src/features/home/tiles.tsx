@@ -358,60 +358,74 @@ function MiniAvatar({ person }: { person: PersonDto }) {
 
 const UNLOCK_MARK = { pending: '⏳', approved: '✓' } as const
 
-export function ChoresProgressTile({ compact }: TileProps) {
+export function ChoresProgressTile() {
   const { data: chores = [] } = useChoresDay(today())
   const { data: checklists = [] } = useChecklistsDay(today())
   const { data: people = [] } = usePeople()
   const peopleById = new Map(people.map((p) => [p.id, p]))
   const { tap, dialog } = useChoreClaim(today())
   const all = [...checklists.flatMap((cl) => cl.items), ...chores]
+  // every title starts at the same x: the circle column fits the most circles any row has (20px each, 2px gaps)
+  const maxCircles = Math.max(1, ...all.map((c) => (c.mode === 'each' ? c.assignees.length : 1)))
+  const circleWidth = maxCircles * 22 - 2
+  // multi-person chores first, then alphabetical within each kind
+  const sorted = [...chores].sort(
+    (a, b) => Number(b.mode === 'each') - Number(a.mode === 'each') || a.title.localeCompare(b.title)
+  )
   const done = all.filter((c) => c.completed).length
   const pct = all.length === 0 ? 0 : Math.round((done / all.length) * 100)
 
   // the tile itself is a button (opens Chores), so a row can't be one: it opens "Who did it?" instead
-  const row = (c: DayChoreDto) => {
-    const claimer = c.completedBy ? peopleById.get(c.completedBy) : undefined
-    const fill = claimer?.color ?? (c.completed ? '#46A758' : undefined)
-    return (
-      <div
-        key={c.choreId}
-        role="button"
-        aria-label={`${c.mode === 'anyone' && c.completed ? 'Uncheck' : 'Claim'} ${c.title}`}
-        onClick={(e) => {
-          e.stopPropagation()
-          tap(c)
-        }}
-        className="pressable -mx-1 flex items-center gap-2 rounded-lg px-1 py-0.5"
+  /** A filled circle with the doer's initial once done; an empty outline (faint initial when we know whose) until then. */
+  const circle = (key: string, done: PersonDto | undefined, owner?: PersonDto) => (
+    <span
+      key={key}
+      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${done ? '' : 'border-line'}`}
+      style={done ? { borderColor: done.color, backgroundColor: done.color } : undefined}
+    >
+      {(done ?? owner) && (
+        <span
+          className={`text-[10px] leading-none font-extrabold ${done ? '' : 'text-ink-faint'}`}
+          style={done ? { color: textOn(done.color) } : undefined}
+        >
+          {initials((done ?? owner)!.name)}
+        </span>
+      )}
+    </span>
+  )
+
+  // the tile itself is a button (opens Chores), so a row can't be one: it opens "Who did it?" instead
+  const row = (c: DayChoreDto) => (
+    <div
+      key={c.choreId}
+      role="button"
+      aria-label={`${c.mode === 'anyone' && c.completed ? 'Uncheck' : 'Claim'} ${c.title}`}
+      onClick={(e) => {
+        e.stopPropagation()
+        tap(c)
+      }}
+      className="pressable -mx-1 flex items-center gap-2 rounded-lg px-1 py-0.5"
+    >
+      {/* one circle per person who has to do it; a single circle for an anyone chore */}
+      <span
+        className="flex shrink-0 gap-0.5"
+        style={{ minWidth: circleWidth }}
+        data-circles={c.mode === 'each' ? c.assignees.length : 1}
       >
-        <span
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${fill ? '' : 'border-line'}`}
-          style={fill ? { borderColor: fill, backgroundColor: fill } : undefined}
-        >
-          {/* a claimed chore shows who did it; an 'each' chore everyone finished gets a tick */}
-          {claimer ? (
-            <span className="text-[10px] leading-none font-extrabold" style={{ color: textOn(claimer.color) }}>
-              {initials(claimer.name)}
-            </span>
-          ) : (
-            c.completed && <CheckIcon size={12} style={{ color: textOn(fill!) }} />
-          )}
-        </span>
-        <span
-          className={`min-w-0 flex-1 text-sm leading-tight font-bold break-words ${c.completed ? 'text-ink-faint line-through' : ''}`}
-        >
-          {c.title}
-        </span>
-        {!compact && c.mode === 'each' && (
-          <span className="flex shrink-0 gap-0.5">
-            {c.doneBy.map((id) => {
+        {c.mode === 'each'
+          ? c.assignees.map((id) => {
               const p = peopleById.get(id)
-              return p ? <MiniAvatar key={id} person={p} /> : null
-            })}
-          </span>
-        )}
-      </div>
-    )
-  }
+              return circle(id, c.doneBy.includes(id) ? p : undefined, p)
+            })
+          : circle('claim', c.completedBy ? peopleById.get(c.completedBy) : undefined)}
+      </span>
+      <span
+        className={`min-w-0 flex-1 text-sm leading-tight font-bold break-words ${c.completed ? 'text-ink-faint line-through' : ''}`}
+      >
+        {c.title}
+      </span>
+    </div>
+  )
 
   // chores belong to no one: shared progress, then checklists, then every chore — still to do or ticked
   return (
@@ -452,7 +466,7 @@ export function ChoresProgressTile({ compact }: TileProps) {
             </Fragment>
           ))}
           {checklists.length > 0 && chores.length > 0 && <div className="mt-0.5 border-t border-line/60" />}
-          {chores.map(row)}
+          {sorted.map(row)}
         </TileScroll>
       )}
       {/* outside the tile's zoom; taps in it must not bubble (through React) to the tile's own button */}
