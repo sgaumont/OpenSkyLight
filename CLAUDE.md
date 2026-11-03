@@ -383,6 +383,8 @@ Add unit tests where sensible.
   preview)" runs `dist\win-unpacked\OpenSkyLight.exe --tablet`, so it always opens the latest `npm run dist`.
 - v0.8.64: This week tile labels its first day (tomorrow) "Tmrw" instead of "ccc d".
 - v0.8.66: This week tile day labels are weekday only ("Fri") — `ccc`, was "ccc d"; tomorrow stays "Tmrw".
+- v0.8.67: photos change every 10 s on the screensaver (`SLIDE_MS`, was 12 s) and the home photo tile
+  (`PHOTO_TILE_MS`, was 30 s).
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1

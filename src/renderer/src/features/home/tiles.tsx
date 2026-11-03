@@ -933,7 +933,7 @@ export function CameraTile({ tile }: TileProps) {
   )
 }
 
-const PHOTO_TILE_MS = 30_000
+const PHOTO_TILE_MS = 10_000
 
 export function PhotoTile({ tile }: TileProps) {
   const { data: photos = [] } = useQuery({

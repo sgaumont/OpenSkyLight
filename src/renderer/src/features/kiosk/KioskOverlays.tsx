@@ -9,7 +9,7 @@ import { useKioskState } from '../../stores/kioskStore'
 import { guardInput } from '@shared/inputGuard'
 import { ShuffleDeck } from '@shared/shuffleDeck'
 
-const SLIDE_MS = 12_000
+const SLIDE_MS = 10_000
 
 /**
  * Shuffled slideshow order, kept for the life of the app so each screensaver
