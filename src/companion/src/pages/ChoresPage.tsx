@@ -1,11 +1,92 @@
 import { useState } from 'react'
 import { DateTime } from 'luxon'
 import type { ChoreDto, ChoreRoutine, DayChoreDto, PersonDto } from '@shared/types'
-import { useBalances, useChecklistsDay, useChoreMutations, useChores, useChoresDay, usePeople } from '../api/hooks'
+import { useAdjustStars, useBalances, useChecklistsDay, useChoreMutations, useChores, useChoresDay, usePeople } from '../api/hooks'
 import { Card, CheckCircle, EmptyNote, GhostButton, PersonAvatar, PrimaryButton, TextInput } from '../components/ui'
 import { sortDayChores } from '@shared/choreOrder'
 
 type Repeat = 'once' | 'daily' | 'weekly'
+
+/** Each child's star balance; tap one to correct it. */
+function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id: string) => number }) {
+  const kids = people.filter((p) => p.role === 'child')
+  const shown = kids.length > 0 ? kids : people
+  const [editing, setEditing] = useState<PersonDto | null>(null)
+  if (shown.length === 0) return null
+  return (
+    <>
+      <Card>
+        <h2 className="mb-1 font-display text-xl font-semibold">Stars</h2>
+        {shown.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setEditing(p)}
+            className="pressable flex w-full items-center gap-2.5 border-b border-line/60 py-2 text-left last:border-0"
+          >
+            <PersonAvatar name={p.name} color={p.color} />
+            <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
+            <span className="text-lg font-extrabold text-ember-deep tabular-nums">★ {balanceOf(p.id)}</span>
+          </button>
+        ))}
+      </Card>
+      {editing && <EditStarsSheet person={editing} current={balanceOf(editing.id)} onClose={() => setEditing(null)} />}
+    </>
+  )
+}
+
+/** Set a child's balance: − / + or type the new total; saved as one manual adjustment. */
+function EditStarsSheet({ person, current, onClose }: { person: PersonDto; current: number; onClose: () => void }) {
+  const adjust = useAdjustStars()
+  const [text, setText] = useState(String(current))
+  const target = /^\d+$/.test(text.trim()) ? Number(text.trim()) : null
+  const set = (n: number) => setText(String(Math.max(0, n)))
+  const save = () => {
+    if (target === null) return
+    adjust.mutate({ personId: person.id, delta: target - current }, { onSuccess: onClose })
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+      <div
+        className="w-full rounded-t-3xl bg-card p-5"
+        style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center gap-2.5">
+          <PersonAvatar name={person.name} color={person.color} />
+          <h2 className="flex-1 truncate font-display text-xl font-semibold">{person.name}'s stars</h2>
+          <span className="text-sm font-extrabold text-ink-faint">now ★ {current}</span>
+        </div>
+        <div className="mb-4 flex items-center gap-3">
+          <button
+            type="button"
+            aria-label="One less"
+            onClick={() => set((target ?? current) - 1)}
+            className="pressable h-14 w-14 shrink-0 rounded-full bg-paper-deep text-3xl font-extrabold text-ink-soft"
+          >
+            −
+          </button>
+          <TextInput value={text} onChange={setText} inputMode="numeric" />
+          <button
+            type="button"
+            aria-label="One more"
+            onClick={() => set((target ?? current) + 1)}
+            className="pressable h-14 w-14 shrink-0 rounded-full bg-paper-deep text-3xl font-extrabold text-ink-soft"
+          >
+            +
+          </button>
+        </div>
+        {adjust.error && <p className="mb-3 text-sm font-bold text-ember-deep">{adjust.error.message}</p>}
+        <div className="flex gap-2 [&>*]:flex-1">
+          <GhostButton onClick={onClose}>Cancel</GhostButton>
+          <PrimaryButton onClick={save} disabled={target === null || target === current || adjust.isPending}>
+            Save
+          </PrimaryButton>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /** An "everyone" chore: one button per person; a tap ticks or un-ticks just them. */
 function EachChoreRow({ chore, people, date }: { chore: DayChoreDto; people: PersonDto[]; date: string }) {
@@ -68,6 +149,8 @@ export function ChoresPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <StarsCard people={people} balanceOf={balanceOf} />
+
       {isPending && <EmptyNote>Loading…</EmptyNote>}
       {!isPending && dayChores.length === 0 && checklists.length === 0 && <EmptyNote>No chores today.</EmptyNote>}
 

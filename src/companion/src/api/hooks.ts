@@ -82,6 +82,13 @@ export function useMealMutations() {
   }
 }
 
+export function useAdjustStars() {
+  return useInvalidatingMutation(
+    (input: { personId: string; delta: number }) => rpc('stars:adjust', input),
+    [['balances']]
+  )
+}
+
 export function useChoreMutations() {
   const keys = [['choresDay'], ['chores'], ['balances'], ['checklistsDay']]
   return {

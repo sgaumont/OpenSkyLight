@@ -25,6 +25,7 @@ export const COMPANION_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'chores:uncomplete',
   'chores:checklistsDay',
   'stars:balances',
+  'stars:adjust',
   'events:getOccurrences',
   'people:list'
 ])

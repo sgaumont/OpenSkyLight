@@ -99,6 +99,8 @@ export type IpcContract = {
   'chores:approveUnlock': { req: { checklistId: string; personId: string; date: string }; res: void }
 
   'stars:balances': { req: void; res: StarBalanceDto[] }
+  /** a parent's correction: adds `delta` (may be negative) to the person's balance */
+  'stars:adjust': { req: { personId: string; delta: number }; res: { balance: number } }
 
   'lists:getAll': { req: void; res: ListDto[] }
   'lists:create': { req: { name: string; color: string; kind: ListKind }; res: ListDto }

@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, isNull } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
-import { rewardRedemptions, rewards, starLedger } from '../db/schema'
+import { people, rewardRedemptions, rewards, starLedger } from '../db/schema'
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
 import type { RedemptionDto, RewardDto } from '@shared/types'
@@ -117,7 +117,27 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     if (result.changes === 0) throw notFound('Redemption')
   }
 
-  return { list, create, update, remove, redeem, pendingRedemptions, grant }
+  /** A parent's manual correction, kept in the ledger like every other change; never below zero. */
+  function adjust(personId: string, delta: number): { balance: number } {
+    const [person] = db.select().from(people).where(and(eq(people.id, personId), isNull(people.deletedAt))).all()
+    if (!person) throw notFound('Person')
+    const balance = choresService.balanceOf(personId)
+    if (delta === 0) return { balance }
+    if (balance + delta < 0) throw invalid("Stars can't go below 0")
+    db.insert(starLedger)
+      .values({
+        id: uuidv7(),
+        personId,
+        delta,
+        reason: 'manual_adjust',
+        refId: null,
+        createdAt: isoUtc(DateTime.utc())
+      })
+      .run()
+    return { balance: balance + delta }
+  }
+
+  return { list, create, update, remove, redeem, pendingRedemptions, grant, adjust }
 }
 
 export type RewardsService = ReturnType<typeof createRewardsService>

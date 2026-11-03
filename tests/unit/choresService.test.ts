@@ -79,6 +79,16 @@ describe('chores + rewards', () => {
     expect(chores.balanceOf('kid1')).toBe(5)
   })
 
+  it('a parent can adjust a balance up or down, but never below zero', () => {
+    expect(rewards.adjust('kid1', 12)).toEqual({ balance: 12 })
+    expect(rewards.adjust('kid1', -5)).toEqual({ balance: 7 })
+    expect(() => rewards.adjust('kid1', -8)).toThrow(/below 0/)
+    expect(rewards.adjust('kid1', 0)).toEqual({ balance: 7 })
+    expect(chores.balanceOf('kid1')).toBe(7)
+    expect(chores.balanceOf('kid2')).toBe(0)
+    expect(() => rewards.adjust('nobody', 3)).toThrow()
+  })
+
   it('refuses redemptions the balance cannot cover', () => {
     const reward = rewards.create({ title: 'Bike', costStars: 100 })
     expect(() => rewards.redeem(reward.id, 'kid1')).toThrow(/Not enough stars/)

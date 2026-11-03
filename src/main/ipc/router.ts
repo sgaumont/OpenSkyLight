@@ -77,6 +77,7 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
   'chores:checklistUpdate',
   'chores:checklistDelete',
   'chores:approveUnlock',
+  'stars:adjust',
   'rewards:create',
   'rewards:update',
   'rewards:delete',
@@ -121,7 +122,9 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'chores:checklistCreate': 'chores',
   'chores:checklistUpdate': 'chores',
   'chores:checklistDelete': 'chores',
-  'chores:approveUnlock': 'chores'
+  'chores:approveUnlock': 'chores',
+  // balances refresh with the chores domain
+  'stars:adjust': 'chores'
 }
 
 export function broadcast(channel: string, payload: unknown): void {
@@ -276,6 +279,7 @@ export function buildChannelTable(services: Services): ChannelTable {
   )
 
   handle('stars:balances', null, () => services.chores.balances())
+  handle('stars:adjust', s.starsAdjustSchema, (req) => services.rewards.adjust(req.personId, req.delta))
 
   handle('rewards:list', null, () => services.rewards.list())
   handle('rewards:create', s.rewardCreateSchema, (req) => services.rewards.create(req))

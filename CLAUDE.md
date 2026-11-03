@@ -344,6 +344,11 @@ Add unit tests where sensible.
 - v0.8.48: phone companion tabs are Chores · Lists · Meals · Agenda, and it opens on Chores.
 - v0.8.49: companion's Today chores use the home tile's order — `sortDayChores` (`src/shared/choreOrder.ts`,
   Everyone chores first, then A–Z), shared by both so they can't drift.
+- v0.8.51: companion Chores opens with a **Stars** card (each child, ★ balance; everyone if no children). Tap a
+  child → bottom sheet: − / + or type the new total, Save. New channel `stars:adjust` {personId, delta} →
+  `rewards.adjust` writes one `manual_adjust` ledger row, refuses going below 0 or unknown people. It's in
+  `COMPANION_CHANNELS` (phones aren't PIN-gated, like chores:create there) and `PARENT_GATED` on the kiosk;
+  mutation domain `chores` so the kiosk's balances refresh.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)
