@@ -328,6 +328,7 @@ Add unit tests where sensible.
   re-downloads all calendars in full when the device zone differs from the one stored under the settings key
   `sync.deviceTz` (once on upgrade, then on any zone change), and Google sync now rewrites an all-day event
   whose stored `tz` differs even when its etag is unchanged. Home "Chores today" tile is now titled "Chores".
+- v0.8.42: home chores tile titled "Today's chores".
 
 ## Wishlist (not started)
 

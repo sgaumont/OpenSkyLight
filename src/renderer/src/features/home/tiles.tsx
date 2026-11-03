@@ -430,7 +430,7 @@ export function ChoresProgressTile() {
   // chores belong to no one: shared progress, then checklists, then every chore — still to do or ticked
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <TileTitle>Chores</TileTitle>
+      <TileTitle>Today's chores</TileTitle>
       {all.length === 0 ? (
         <Placeholder>No chores today</Placeholder>
       ) : (
