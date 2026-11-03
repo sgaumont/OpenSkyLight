@@ -381,6 +381,7 @@ Add unit tests where sensible.
 - v0.8.63: `--tablet` launch flag previews the Surface on a dev PC — fixed 1440×960 content window +
   `force-device-scale-factor=1.5` (index.ts, before ready) = 2160×1440 px. Desktop shortcut "OpenSkyLight (tablet
   preview)" runs `dist\win-unpacked\OpenSkyLight.exe --tablet`, so it always opens the latest `npm run dist`.
+- v0.8.64: This week tile labels its first day (tomorrow) "Tmrw" instead of "ccc d".
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)
