@@ -329,6 +329,8 @@ Add unit tests where sensible.
   `sync.deviceTz` (once on upgrade, then on any zone change), and Google sync now rewrites an all-day event
   whose stored `tz` differs even when its etag is unchanged. Home "Chores today" tile is now titled "Chores".
 - v0.8.42: home chores tile titled "Today's chores".
+- v0.8.43: header menu is Home · Week · Month · Lists — no Chores button. The Chores view stays (tap the
+  "Today's chores" home tile to open it; it keeps its own text size in Settings).
 
 ## Wishlist (not started)
 
