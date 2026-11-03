@@ -31,7 +31,6 @@ import { ChoreHistoryDialog } from '../chores/ChoreHistory'
 import { ZONE } from '../../stores/uiStore'
 import { formatTime, initials, textOn } from '../../lib/format'
 import { occurrenceColor } from '../../lib/colors'
-import { CheckIcon } from '../../components/icons'
 import { sortDayChores } from '@shared/choreOrder'
 import { canAddMore, countLabel, countOf, isCounted } from '@shared/choreCount'
 
@@ -393,8 +392,6 @@ export function ChoresProgressTile() {
   const maxCircles = Math.max(1, ...all.map((c) => (c.mode === 'each' ? c.assignees.length : anyoneSlots(c).length)))
   const circleWidth = maxCircles * 22 - 2
   const sorted = sortDayChores(chores)
-  const done = all.filter((c) => c.completed).length
-  const pct = all.length === 0 ? 0 : Math.round((done / all.length) * 100)
 
   // the tile itself is a button (opens Chores), so a row can't be one: it opens "Who did it?" instead
   /**
@@ -466,7 +463,7 @@ export function ChoresProgressTile() {
     </div>
   )
 
-  // chores belong to no one: shared progress, then checklists, then every chore — still to do or ticked
+  // chores belong to no one: checklists, then every chore — still to do or ticked
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* the title opens the last few days' history (a div: the tile itself is a button) */}
@@ -485,14 +482,6 @@ export function ChoresProgressTile() {
         <Placeholder>No chores today</Placeholder>
       ) : (
         <TileScroll className="flex-1" innerClassName="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <span className="block h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-paper-deep">
-              <span className="block h-full rounded-full bg-[#46A758] transition-all" style={{ width: `${pct}%` }} />
-            </span>
-            <span className="shrink-0 text-xs font-extrabold text-ink-soft">
-              {done === all.length ? <CheckIcon size={16} className="text-[#46A758]" /> : `${done}/${all.length}`}
-            </span>
-          </div>
           {checklists.map((cl) => (
             <Fragment key={cl.checklistId}>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
