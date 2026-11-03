@@ -370,6 +370,8 @@ Add unit tests where sensible.
   happened to re-render, so a kiosk left on Home showed yesterday's ticks after midnight. They now use
   `useTodayKey()` (re-checked every minute, like This week). The companion got the same: `useToday()` in
   `companion/src/api/hooks.ts`, used by ChoresPage, MealsPage and the header date.
+- v0.8.60: header star circles are display-only (`div`s, no tap action). The Chores view is now reached only from
+  the Star balances tile.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)

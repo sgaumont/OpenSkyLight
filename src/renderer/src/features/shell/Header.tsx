@@ -99,28 +99,27 @@ export function Header() {
 
       <div className="flex-1" />
 
-      {/* each child's star balance, in their colour; tap for chores and rewards. Home only:
+      {/* each child's star balance, in their colour — display only, a tap does nothing. Home only:
           beside the period nav the widest dates and temperatures would push the menu off-screen */}
       {kids.length > 0 && view === 'home' && (
         <div className="flex shrink-0 items-center gap-1.5">
           {kids.map((p) => {
             const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
             return (
-              <button
+              <div
                 key={p.id}
-                type="button"
+                role="img"
                 aria-label={`${p.name}: ${stars} stars`}
                 title={p.name}
-                onClick={() => setView('chores')}
                 // as tall as the date + clock block beside them: the banner's full height
-                className="pressable flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
+                className="flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
                 style={{ backgroundColor: p.color, color: textOn(p.color) }}
               >
                 <span aria-hidden className="text-sm leading-none max-[1300px]:text-xs">
                   ★
                 </span>
                 <span className="text-xl leading-none max-[1300px]:text-base">{stars}</span>
-              </button>
+              </div>
             )
           })}
         </div>
