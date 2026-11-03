@@ -336,6 +336,9 @@ Add unit tests where sensible.
 - v0.8.45: header shows each **child's star balance** as a circle in their colour (number inside, `useBalances`),
   centred between the weather and the family filter (`flex-1` either side). Tapping one opens the Chores view
   (Rewards) — the way in now that the menu button and the chores tile's tap are gone.
+- v0.8.46: the star circles are as tall as the date + clock block (60px; 48px below 1300px, 64px from 1500px)
+  with a ★ above the number, and show **on Home only** — with the period nav, the worst case (Wednesday,
+  12:59, "Dec 30 – Jan 5", −12° with high/low) ran the header ~70px past 1440 and pushed Lists off-screen.
 
 ## Wishlist (not started)
 
