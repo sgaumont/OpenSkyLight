@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { DateTime } from 'luxon'
 import type { ChoreDto, ChoreRoutine, DayChoreDto, PersonDto } from '@shared/types'
 import { useAdjustStars, useBalances, useChecklistsDay, useChoreMutations, useChores, useChoresDay, usePeople } from '../api/hooks'
@@ -35,6 +35,59 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
   )
 }
 
+/** A bottom sheet over a dimmed page; tapping outside it closes it. */
+function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+      <div
+        className="w-full rounded-t-3xl bg-card p-5"
+        style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/** "Who did it?" for a chore anyone can do: one big button per family member. */
+function ClaimSheet({
+  chore,
+  people,
+  onPick,
+  onClose
+}: {
+  chore: DayChoreDto
+  people: PersonDto[]
+  onPick: (personId: string) => void
+  onClose: () => void
+}) {
+  return (
+    <Sheet onClose={onClose}>
+      <h2 className="truncate font-display text-xl font-semibold">{chore.title}</h2>
+      <p className="mb-3 text-sm font-extrabold text-ink-faint">
+        Who did it?{chore.starsValue > 0 ? ` · ★ ${chore.starsValue}` : ''}
+      </p>
+      <div className="mb-3 flex flex-col gap-2">
+        {people.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => onPick(p.id)}
+            className="pressable flex min-h-14 items-center gap-3 rounded-2xl bg-paper-deep px-3 text-left text-lg font-extrabold"
+          >
+            <PersonAvatar name={p.name} color={p.color} />
+            {p.name}
+          </button>
+        ))}
+      </div>
+      <div className="flex [&>*]:flex-1">
+        <GhostButton onClick={onClose}>Cancel</GhostButton>
+      </div>
+    </Sheet>
+  )
+}
+
 /** Set a child's balance: − / + or type the new total; saved as one manual adjustment. */
 function EditStarsSheet({ person, current, onClose }: { person: PersonDto; current: number; onClose: () => void }) {
   const adjust = useAdjustStars()
@@ -46,45 +99,39 @@ function EditStarsSheet({ person, current, onClose }: { person: PersonDto; curre
     adjust.mutate({ personId: person.id, delta: target - current }, { onSuccess: onClose })
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
-      <div
-        className="w-full rounded-t-3xl bg-card p-5"
-        style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center gap-2.5">
-          <PersonAvatar name={person.name} color={person.color} />
-          <h2 className="flex-1 truncate font-display text-xl font-semibold">{person.name}'s stars</h2>
-          <span className="text-sm font-extrabold text-ink-faint">now ★ {current}</span>
-        </div>
-        <div className="mb-4 flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="One less"
-            onClick={() => set((target ?? current) - 1)}
-            className="pressable h-14 w-14 shrink-0 rounded-full bg-paper-deep text-3xl font-extrabold text-ink-soft"
-          >
-            −
-          </button>
-          <TextInput value={text} onChange={setText} inputMode="numeric" />
-          <button
-            type="button"
-            aria-label="One more"
-            onClick={() => set((target ?? current) + 1)}
-            className="pressable h-14 w-14 shrink-0 rounded-full bg-paper-deep text-3xl font-extrabold text-ink-soft"
-          >
-            +
-          </button>
-        </div>
-        {adjust.error && <p className="mb-3 text-sm font-bold text-ember-deep">{adjust.error.message}</p>}
-        <div className="flex gap-2 [&>*]:flex-1">
-          <GhostButton onClick={onClose}>Cancel</GhostButton>
-          <PrimaryButton onClick={save} disabled={target === null || target === current || adjust.isPending}>
-            Save
-          </PrimaryButton>
-        </div>
+    <Sheet onClose={onClose}>
+      <div className="mb-4 flex items-center gap-2.5">
+        <PersonAvatar name={person.name} color={person.color} />
+        <h2 className="flex-1 truncate font-display text-xl font-semibold">{person.name}'s stars</h2>
+        <span className="text-sm font-extrabold text-ink-faint">now ★ {current}</span>
       </div>
-    </div>
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          type="button"
+          aria-label="One less"
+          onClick={() => set((target ?? current) - 1)}
+          className="pressable h-14 w-14 shrink-0 rounded-full bg-paper-deep text-3xl font-extrabold text-ink-soft"
+        >
+          −
+        </button>
+        <TextInput value={text} onChange={setText} inputMode="numeric" />
+        <button
+          type="button"
+          aria-label="One more"
+          onClick={() => set((target ?? current) + 1)}
+          className="pressable h-14 w-14 shrink-0 rounded-full bg-paper-deep text-3xl font-extrabold text-ink-soft"
+        >
+          +
+        </button>
+      </div>
+      {adjust.error && <p className="mb-3 text-sm font-bold text-ember-deep">{adjust.error.message}</p>}
+      <div className="flex gap-2 [&>*]:flex-1">
+        <GhostButton onClick={onClose}>Cancel</GhostButton>
+        <PrimaryButton onClick={save} disabled={target === null || target === current || adjust.isPending}>
+          Save
+        </PrimaryButton>
+      </div>
+    </Sheet>
   )
 }
 
@@ -142,7 +189,7 @@ export function ChoresPage() {
   const [showForm, setShowForm] = useState(false)
   const [showManage, setShowManage] = useState(false)
   // the chore whose "who did it?" picker is open
-  const [claiming, setClaiming] = useState<string | null>(null)
+  const [claiming, setClaiming] = useState<DayChoreDto | null>(null)
 
   const balanceOf = (personId: string): number => balances.find((b) => b.personId === personId)?.balance ?? 0
   const done = dayChores.filter((c) => c.completed).length
@@ -182,19 +229,21 @@ export function ChoresPage() {
           {sortDayChores(dayChores).map((chore) => {
             if (chore.mode === 'each') return <EachChoreRow key={chore.choreId} chore={chore} people={people} date={today} />
             const claimer = people.find((p) => p.id === chore.completedBy)
+            // done: a tap un-ticks it; to do: a tap asks who did it
+            const tap = () => {
+              if (chore.completed) mutations.uncomplete.mutate({ choreId: chore.choreId, date: today })
+              else setClaiming(chore)
+            }
             return (
               <div key={chore.choreId} className="border-b border-line/60 last:border-0">
                 <div className="flex items-center">
                   <CheckCircle
                     checked={chore.completed}
                     color={claimer?.color ?? '#999'}
-                    onTap={() => {
-                      if (chore.completed) mutations.uncomplete.mutate({ choreId: chore.choreId, date: today })
-                      else setClaiming(claiming === chore.choreId ? null : chore.choreId)
-                    }}
+                    onTap={tap}
                     label={`${chore.completed ? 'Uncheck' : 'Check off'} ${chore.title}`}
                   />
-                  <span className="min-w-0 flex-1 py-2">
+                  <span className="min-w-0 flex-1 cursor-pointer py-2" onClick={tap}>
                     <span
                       className={`block truncate text-base font-semibold ${chore.completed ? 'text-ink-faint line-through' : ''}`}
                     >
@@ -206,29 +255,22 @@ export function ChoresPage() {
                     <span className="shrink-0 text-sm font-extrabold text-ink-faint">★ {chore.starsValue}</span>
                   )}
                 </div>
-                {claiming === chore.choreId && !chore.completed && (
-                  <div className="flex flex-wrap items-center gap-2 pb-2.5">
-                    <span className="text-sm font-extrabold text-ink-faint">Who did it?</span>
-                    {people.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setClaiming(null)
-                          mutations.complete.mutate({ choreId: chore.choreId, date: today, personId: p.id })
-                        }}
-                        className="pressable flex items-center gap-1.5 rounded-full bg-paper-deep py-1 pr-3 pl-1 text-sm font-extrabold text-ink-soft"
-                      >
-                        <PersonAvatar name={p.name} color={p.color} size="sm" />
-                        {p.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             )
           })}
         </Card>
+      )}
+
+      {claiming && (
+        <ClaimSheet
+          chore={claiming}
+          people={people}
+          onClose={() => setClaiming(null)}
+          onPick={(personId) => {
+            setClaiming(null)
+            mutations.complete.mutate({ choreId: claiming.choreId, date: today, personId })
+          }}
+        />
       )}
 
       {people.length > 0 && (

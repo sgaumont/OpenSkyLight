@@ -349,6 +349,9 @@ Add unit tests where sensible.
   `rewards.adjust` writes one `manual_adjust` ledger row, refuses going below 0 or unknown people. It's in
   `COMPANION_CHANNELS` (phones aren't PIN-gated, like chores:create there) and `PARENT_GATED` on the kiosk;
   mutation domain `chores` so the kiosk's balances refresh.
+- v0.8.52: companion — tapping an "anyone" chore (its circle or its title) opens a "Who did it?" bottom sheet
+  (`ClaimSheet`, one big button per person) instead of expanding a picker inside the list. Both sheets share
+  a local `Sheet` frame in `ChoresPage.tsx`. Tapping a done one still un-ticks it.
 - v0.8.50: sleep (dark) screen clock + weather 1.5× bigger — 90px text, 108px icon, 50px high/low.
 
 ## Wishlist (not started)
