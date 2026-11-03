@@ -291,6 +291,8 @@ Add unit tests where sensible.
   is portalled to body (escapes the tile's zoom) inside a stopPropagation wrapper. Tapping the tile outside a
   chore still opens Chores. While arranging Home, tile content is `pointer-events-none` (no claims or photo
   advances mid-drag).
+- v0.8.35: sleep (black, overnight) overlay's bottom-right time + weather are twice as big (40px text,
+  48px icon, 22px high/low); still faint `text-white/15`.
 
 ## Wishlist (not started)
 
