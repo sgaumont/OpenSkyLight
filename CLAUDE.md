@@ -291,7 +291,10 @@ Add unit tests where sensible.
   is portalled to body (escapes the tile's zoom) inside a stopPropagation wrapper. Tapping the tile outside a
   chore still opens Chores. While arranging Home, tile content is `pointer-events-none` (no claims or photo
   advances mid-drag).
-- v0.8.35: **"Everyone" chores + checklists.** DB migration v2 (`migrations.ts`, first one after the
+- v0.8.35: sleep (black, overnight) overlay's bottom-right time + weather are twice as big (40px text,
+  48px icon, 22px high/low); still faint `text-white/15`.
+- v0.8.36: …and 50% bigger again (3× the original: 60px text, 72px icon, 33px high/low).
+- v0.8.37: **"Everyone" chores + checklists.** DB migration v2 (`migrations.ts`, first one after the
   initial schema): `chores.mode` ('anyone' | 'each') + `chores.assignees` (JSON ids) + `chores.checklist_id`;
   new `chore_checklists` (title = the prize, assignees, schedule) and `checklist_unlocks` (per checklist +
   person + day, `pending` → `approved`); `chore_completions` rebuilt with UNIQUE(chore, day, **person**)
@@ -306,9 +309,6 @@ Add unit tests where sensible.
     per day). Shown as a card at the top of the Chores tab, a section of the home tile, and the companion.
   - Channels (all `chores:`): checklists, checklistCreate/Update/Delete, checklistsDay, pendingUnlocks,
     approveUnlock; `uncomplete` takes optional `personId` (required for 'each').
-- v0.8.35: sleep (black, overnight) overlay's bottom-right time + weather are twice as big (40px text,
-  48px icon, 22px high/low); still faint `text-white/15`.
-- v0.8.36: …and 50% bigger again (3× the original: 60px text, 72px icon, 33px high/low).
 
 ## Wishlist (not started)
 
