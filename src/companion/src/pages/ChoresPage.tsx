@@ -30,7 +30,10 @@ const SHOW_FAMILY_SUMMARY = false
 const STEP_BUTTON =
   'pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-deep text-2xl font-extrabold text-ink-soft disabled:opacity-30'
 
-/** Each child's star balance with − / + (one star a tap); tap the name to type a new total. */
+/**
+ * Each child's star balance with − / + (one star a tap); tap the name to type a new total.
+ * With two or more, an "All" row steps everyone at once.
+ */
 function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id: string) => number }) {
   const kids = people.filter((p) => p.role === 'child')
   const shown = kids.length > 0 ? kids : people
@@ -83,6 +86,34 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
             </div>
           )
         })}
+        {/* one tap moves everyone's game time by one */}
+        {shown.length > 1 && (
+          <div className="flex items-center gap-2 py-2">
+            <span className="flex min-w-0 flex-1 items-center gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-deep text-xs font-extrabold text-ink-soft">
+                All
+              </span>
+              <span className="min-w-0 flex-1 truncate text-base font-bold">All</span>
+            </span>
+            <button
+              type="button"
+              aria-label="Less game time for everyone"
+              onClick={() => shown.forEach((p) => adjust.mutate({ personId: p.id, delta: -1 }))}
+              className={STEP_BUTTON}
+            >
+              −
+            </button>
+            <span className="min-w-14 text-center text-sm font-extrabold text-ink-faint">each</span>
+            <button
+              type="button"
+              aria-label="More game time for everyone"
+              onClick={() => shown.forEach((p) => adjust.mutate({ personId: p.id, delta: 1 }))}
+              className={STEP_BUTTON}
+            >
+              +
+            </button>
+          </div>
+        )}
       </Card>
       {editing && <EditStarsSheet person={editing} current={balanceOf(editing.id)} onClose={() => setEditing(null)} />}
       {history && <GameTimeLogSheet people={people} onClose={() => setHistory(false)} />}
