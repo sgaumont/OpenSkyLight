@@ -129,3 +129,23 @@ describe('Video Games reward default', () => {
     h.sqlite.close()
   })
 })
+
+describe('Video Games sets waiting for a parent', () => {
+  it("don't drop off at midnight: still waiting days later, and approving then still pays", () => {
+    const h = openDatabase(':memory:')
+    h.db.insert(people).values({ id: 'emma', name: 'Emma', color: '#8E4EC6', role: 'child', sortOrder: 0, createdAt: '2026-01-01T00:00:00Z' }).run()
+    const svc = createChoresService(h.db, () => 'America/Regina')
+    svc.setVideoGamesStars(60)
+    const tasks = ['Room', 'Homework'].map((title) =>
+      svc.create({ title, starsValue: 0, recurrence: null, anchorDate: DAY, mode: 'videogames', assignees: ['emma'] })
+    )
+    for (const t of tasks) svc.complete(t.id, DAY, 'emma')
+    expect(svc.pendingUnlocks('2026-11-08').map((p) => [p.personId, p.date, p.round])).toEqual([['emma', DAY, 1]])
+    expect(svc.pendingUnlocks('2026-11-09')).toHaveLength(1)
+    expect(svc.pendingUnlocks('2026-11-06')).toEqual([]) // not before it happened
+    svc.approveUnlock(VIDEO_GAMES_SET_ID, 'emma', DAY, 1)
+    expect(svc.balanceOf('emma')).toBe(60)
+    expect(svc.pendingUnlocks('2026-11-09')).toEqual([])
+    h.sqlite.close()
+  })
+})

@@ -9,6 +9,7 @@ import { textOn } from '../../lib/format'
 import { BigButton, Dialog, FieldLabel, SegmentedControl } from '../../components/ui'
 import { OskInput } from '../../components/Osk'
 import { GameIcon, PlusIcon } from '../../components/icons'
+import { dayLabel } from '@shared/dayLabel'
 
 const WEEKDAY_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -105,6 +106,7 @@ export function PendingUnlocks() {
           <span className="min-w-0 flex-1 truncate text-lg font-bold">
             {people.find((p) => p.id === u.personId)?.name ?? 'Someone'} finished 🎮 {u.title}
             {u.kind === 'videogames' && (u.round ?? 1) > 1 ? ` (set ${u.round})` : ''}
+            {dayLabel(u.date, today) && <span className="ml-1.5 text-ink-faint">· {dayLabel(u.date, today)}</span>}
           </span>
           {u.kind === 'videogames' && (
             <span className="text-base font-extrabold text-ember-deep">

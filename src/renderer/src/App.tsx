@@ -19,6 +19,7 @@ import { EventEditor } from './features/calendar/EventEditor'
 import { SettingsSheet } from './features/settings/SettingsSheet'
 import { KioskOverlays } from './features/kiosk/KioskOverlays'
 import { NoteOverlay } from './features/notes/NoteOverlay'
+import { ApprovalOverlay } from './features/chores/ApprovalOverlay'
 import { OskTray } from './components/Osk'
 
 export default function App() {
@@ -78,6 +79,8 @@ export default function App() {
       <Toasts />
       <UpdateBanner />
       <KioskOverlays />
+      {/* finished Video Games sets waiting for a parent: over everything but notes and the sleep screen */}
+      <ApprovalOverlay />
       {/* above the screensaver, under the sleep screen */}
       <NoteOverlay />
     </div>

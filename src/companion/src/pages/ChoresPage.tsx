@@ -21,6 +21,7 @@ import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type Schedule
 import { describeRecurrence } from '@shared/recurrence/build'
 import { canAddMore, claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
 import { setProgressLabel } from '@shared/setProgress'
+import { dayLabel } from '@shared/dayLabel'
 
 /** Per-person "N today · stars N" card below the chores: hidden for now (the Stars card covers it). */
 const SHOW_FAMILY_SUMMARY = false
@@ -851,6 +852,7 @@ export function PendingUnlocksCard({ people, today }: { people: PersonDto[]; tod
           <span className="min-w-0 flex-1 text-base font-bold">
             {people.find((p) => p.id === u.personId)?.name ?? 'Someone'} finished 🎮 {u.title}
             {u.kind === 'videogames' && (u.round ?? 1) > 1 ? ` (set ${u.round})` : ''}
+            {dayLabel(u.date, today) ? ` · ${dayLabel(u.date, today)}` : ''}
             {u.kind === 'videogames' && (
               <span className="ml-1.5 text-ember-deep">
                 · <GameIcon /> {u.stars}

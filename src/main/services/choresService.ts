@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, lt, lte, sql } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
 import { checklistUnlocks, choreChecklists, choreCompletions, chores, people, settings, starLedger, videoGameRounds } from '../db/schema'
@@ -553,8 +553,10 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         db
           .select()
           .from(videoGameRounds)
-          .where(and(eq(videoGameRounds.status, 'pending'), eq(videoGameRounds.dueDate, date)))
-          .orderBy(asc(videoGameRounds.completedAt), asc(videoGameRounds.round))
+          // Video Games sets wait until a parent approves them — they don't drop off at midnight
+          .where(and(eq(videoGameRounds.status, 'pending'), lte(videoGameRounds.dueDate, date)))
+          // oldest day first, so a set left over from yesterday is dealt with before today's
+          .orderBy(asc(videoGameRounds.dueDate), asc(videoGameRounds.completedAt), asc(videoGameRounds.round))
           .all()
           .map((r) => ({
             checklistId: VIDEO_GAMES_SET_ID,

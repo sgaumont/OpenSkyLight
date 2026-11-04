@@ -428,6 +428,11 @@ Add unit tests where sensible.
   no longer DELETE ledger rows: `reverse()` adds a minus line ("Un-ticked: …"), so balances are identical but the log
   keeps both. `stars:log` {personId|null, limit} → newest first with per-kid running `balanceAfter`; old note-less rows
   get a best-guess description. Settings → Chores, top: `features/chores/GameTimeLog.tsx` (kid filter, Show more).
+- v0.8.105: Video Games approvals can't be missed. `pendingUnlocks(date)` now returns Video Games rounds from any
+  day up to `date` (they used to vanish at midnight, unpaid), oldest day first; lists show "· yesterday" / "· Mon Nov 3"
+  (`src/shared/dayLabel.ts`). Kiosk pop-up `features/chores/ApprovalOverlay.tsx` (z-[84]: over screens + screensaver,
+  under notes and sleep): "Emma finished 🎮 Video Games! Approve 🎮 60?" — Approve (PinDialog when a PIN is set, then
+  re-locks) / Not now (snoozes that request 30 min).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
