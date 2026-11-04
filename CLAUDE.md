@@ -440,6 +440,9 @@ Add unit tests where sensible.
   screensaver, under the sleep screen; stops pointer events reaching the screensaver). Oldest first (also the phone
   list — `notesService.list` sorts ascending), "1 of N", two-tap Done moves to the next. The home strip and the screensaver card's note list were removed.
 - v0.8.87: phone → slideshow photos. Companion "Photos" tab (`src/companion/src/pages/PhotosPage.tsx`, `api/photos.ts`):
+- v0.8.95: a waiting note dings every 10 s (`lib/alarm.ts` now has per-purpose chime loops: timers 1.5 s, notes
+  `NOTE_CHIME_MS`), silent while the sleep screen is up (`kioskStore.sleeping`, set by KioskOverlays). The window has
+  `autoplayPolicy: 'no-user-gesture-required'` so it sounds with no tap since start.
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):
   GET/POST /api/photos, GET /api/photos/:name/thumb (nativeImage thumbnail; phone shows it via blob: URL — CSP img-src

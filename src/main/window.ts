@@ -23,7 +23,9 @@ export function createMainWindow(): BrowserWindow {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      // a wall display: the note chime and timer alarms must sound without anyone tapping first
+      autoplayPolicy: 'no-user-gesture-required'
     }
   })
 

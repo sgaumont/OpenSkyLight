@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useNoteMutations, useNotes, usePeople } from '../../api/hooks'
 import { initials, textOn } from '../../lib/format'
 import { ZONE } from '../../stores/uiStore'
+import { useKioskState } from '../../stores/kioskStore'
+import { startNoteChime, stopNoteChime } from '../../lib/alarm'
 
 /** "2:15 pm", or "Mon 2:15 pm" for an older note. */
 function noteTime(iso: string): string {
@@ -14,7 +16,7 @@ function noteTime(iso: string): string {
 /**
  * A family note from a phone, centred over everything — the home screen, other screens and the
  * screensaver (but under the sleep screen) — until someone taps Done. Several notes show one at a
- * time, oldest first.
+ * time, oldest first. Dings every 10 seconds until they're all done (quiet during sleep hours).
  */
 export function NoteOverlay() {
   const { data: notes = [] } = useNotes()
@@ -22,6 +24,14 @@ export function NoteOverlay() {
   const { done } = useNoteMutations()
   // two taps, so a passing kid can't clear "Grandma's picking you up"; keyed to the note shown
   const [confirming, setConfirming] = useState<string | null>(null)
+  // a ding every 10 seconds while a note waits — but not in quiet hours (sleep screen up)
+  const sleeping = useKioskState((s) => s.sleeping)
+  const ringing = notes.length > 0 && !sleeping
+  useEffect(() => {
+    if (!ringing) return
+    startNoteChime()
+    return () => stopNoteChime()
+  }, [ringing])
   if (notes.length === 0) return null
   const note = notes[0]
   const author = note.authorId ? people.find((p) => p.id === note.authorId) : undefined

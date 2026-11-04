@@ -212,12 +212,16 @@ export function KioskOverlays() {
   const [screensaver, setScreensaver] = useState(false)
   const [sleeping, setSleeping] = useState(false)
   const setCovered = useKioskState((s) => s.setCovered)
+  const setSleepingState = useKioskState((s) => s.setSleeping)
 
   // let expensive tiles (camera streams) pause while a layer covers them
   const covered = sleeping || screensaver
   useEffect(() => {
     setCovered(covered)
   }, [covered, setCovered])
+  useEffect(() => {
+    setSleepingState(sleeping)
+  }, [sleeping, setSleepingState])
 
   useEffect(() => {
     const offIdle = window.osl.on('push:kioskIdle', (d) => {

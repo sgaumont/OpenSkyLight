@@ -1,10 +1,8 @@
 /**
- * A gentle repeating alarm chime via the Web Audio API — no bundled sound file.
- * Reference-counted so multiple ringing timers share one chime loop.
+ * A gentle repeating chime via the Web Audio API — no bundled sound file. Each loop is
+ * reference-counted, so several ringing timers share one; loops share the audio context.
  */
 let ctx: AudioContext | null = null
-let loop: number | undefined
-let refs = 0
 
 function chime(): void {
   if (!ctx) return
@@ -25,22 +23,39 @@ function chime(): void {
   }
 }
 
-export function startAlarm(): void {
-  refs += 1
-  if (loop !== undefined) return
-  try {
-    ctx = ctx ?? new AudioContext()
-    void ctx.resume()
-  } catch {
-    return
+/** A chime that rings now and then every `intervalMs` while anything holds it. */
+function chimeLoop(intervalMs: number): { start(): void; stop(): void } {
+  let loop: number | undefined
+  let refs = 0
+  return {
+    start() {
+      refs += 1
+      if (loop !== undefined) return
+      try {
+        ctx = ctx ?? new AudioContext()
+        void ctx.resume()
+      } catch {
+        return
+      }
+      chime()
+      loop = window.setInterval(chime, intervalMs)
+    },
+    stop() {
+      refs = Math.max(0, refs - 1)
+      if (refs > 0 || loop === undefined) return
+      window.clearInterval(loop)
+      loop = undefined
+    }
   }
-  chime()
-  loop = window.setInterval(chime, 1500)
 }
 
-export function stopAlarm(): void {
-  refs = Math.max(0, refs - 1)
-  if (refs > 0 || loop === undefined) return
-  window.clearInterval(loop)
-  loop = undefined
-}
+/** Finished kitchen timers: insistent. */
+const timerAlarm = chimeLoop(1500)
+export const startAlarm = timerAlarm.start
+export const stopAlarm = timerAlarm.stop
+
+/** A family note waiting on the kiosk: a ding every 10 seconds until it's marked done. */
+export const NOTE_CHIME_MS = 10_000
+const noteChime = chimeLoop(NOTE_CHIME_MS)
+export const startNoteChime = noteChime.start
+export const stopNoteChime = noteChime.stop
