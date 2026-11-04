@@ -123,7 +123,7 @@ function ScreensaverWeather() {
 }
 
 /**
- * What's next (two timed events), top-left over the photos: the rest of today, running into
+ * What's next (three timed events), top-left over the photos: the rest of today, running into
  * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
  */
 function ScreensaverGlance({ now }: { now: DateTime }) {
@@ -159,7 +159,7 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
       style={{ animation: 'fade-in 1.2s ease both' }}
     >
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
-      {upcoming.slice(0, 2).map(({ o, tomorrow }, i) => (
+      {upcoming.slice(0, 3).map(({ o, tomorrow }, i) => (
         <div key={o.key} className={`flex items-baseline gap-3 ${right ? 'justify-end' : ''} ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
           <span className="shrink-0 tabular-nums">
             {tomorrow && <span className="mr-2 text-white/60 uppercase">Tmrw</span>}
