@@ -427,6 +427,9 @@ Add unit tests where sensible.
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
   tap opens Settings on the right tab (`setSettingsOpen(true, tab)`). Replaces the gear's backup dot. Sign-in warning
   now set on 401 or `invalid_grant` (`isSignInRefused`) and cleared whenever that account's calendar pulls OK.
+- v0.8.91: kids' controller badges back on the right — directly before the screen selector (after the Week/Month
+  date controls) and now on every screen; gap-3 between them on Week/Month. The issue line is a container: under
+  11rem (Week/Month with 3 kids) it shrinks to a ⚠ button (+count), still tappable. Measured at 1440px: header never overflows.
 - v0.8.87: phone → slideshow photos. Companion "Photos" tab (`src/companion/src/pages/PhotosPage.tsx`, `api/photos.ts`):
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):

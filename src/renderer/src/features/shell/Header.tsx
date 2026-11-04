@@ -98,32 +98,6 @@ export function Header() {
 
       <WeatherButton />
 
-      {/* each child's controller balance, in their colour, beside the weather — display only, a tap does
-          nothing. Home only: beside the period nav the widest dates and temperatures would push the menu off-screen */}
-      {kids.length > 0 && view === 'home' && (
-        <div className="flex shrink-0 items-center gap-4.5">
-          {kids.map((p) => {
-            const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
-            return (
-              <div
-                key={p.id}
-                role="img"
-                aria-label={`${p.name}: ${stars} stars`}
-                title={p.name}
-                // as tall as the date + clock block beside them: the banner's full height
-                className="flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
-                style={{ backgroundColor: p.color, color: textOn(p.color) }}
-              >
-                <span aria-hidden className="text-sm leading-none max-[1300px]:text-xs">
-                  <GameIcon className="align-top" />
-                </span>
-                <span className="text-xl leading-none max-[1300px]:text-base">{stars}</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
       {/* problems that need a parent (sign-in expired, calendars not updating, backups) — fills the free space */}
       <IssueLine />
 
@@ -167,6 +141,33 @@ export function Header() {
           <IconButton label="Next" className={NARROW_ICON} onClick={() => step(1)}>
             <ChevronRightIcon />
           </IconButton>
+        </div>
+      )}
+
+      {/* each child's controller balance, in their colour, beside the screen selector on every screen —
+          display only, a tap does nothing */}
+      {kids.length > 0 && (
+        // a little tighter beside the date controls (Week/Month), where the header is fullest
+        <div className={`flex shrink-0 items-center ${view === 'home' || view === 'lists' ? 'gap-4.5' : 'gap-3'}`}>
+          {kids.map((p) => {
+            const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
+            return (
+              <div
+                key={p.id}
+                role="img"
+                aria-label={`${p.name}: ${stars} stars`}
+                title={p.name}
+                // as tall as the date + clock block beside them: the banner's full height
+                className="flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
+                style={{ backgroundColor: p.color, color: textOn(p.color) }}
+              >
+                <span aria-hidden className="text-sm leading-none max-[1300px]:text-xs">
+                  <GameIcon className="align-top" />
+                </span>
+                <span className="text-xl leading-none max-[1300px]:text-base">{stars}</span>
+              </div>
+            )
+          })}
         </div>
       )}
 
