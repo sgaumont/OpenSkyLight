@@ -397,6 +397,7 @@ Add unit tests where sensible.
 - v0.8.73: every ★ is now a game controller — `GameIcon` (solid, 1.2em, currentColor) in renderer `components/icons.tsx`
   and companion `components/ui.tsx`; the stars toast says 🎮. Words ("stars", Rewards) unchanged.
 - v0.8.74: header kids' star badges twice as far apart (gap-1.5 → gap-3).
+- v0.8.75: header star badges 18px apart (gap-4.5).
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1

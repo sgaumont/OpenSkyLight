@@ -102,7 +102,7 @@ export function Header() {
       {/* each child's star balance, in their colour — display only, a tap does nothing. Home only:
           beside the period nav the widest dates and temperatures would push the menu off-screen */}
       {kids.length > 0 && view === 'home' && (
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-4.5">
           {kids.map((p) => {
             const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
             return (
