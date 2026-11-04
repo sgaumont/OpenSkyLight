@@ -1,3 +1,4 @@
+import type { WeatherAlert } from '../weatherAlerts'
 import type {
   AppSettings,
   CalendarCreateInput,
@@ -168,6 +169,7 @@ export type IpcContract = {
       unit: 'f' | 'c'
       label: string
       daily: { date: string; code: number; high: number; low: number; precipProb: number | null }[]
+      alerts: WeatherAlert[]
       fetchedAt: string
     } | null
   }

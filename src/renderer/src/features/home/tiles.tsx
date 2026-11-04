@@ -26,6 +26,7 @@ import { useTimers } from '../../stores/timerStore'
 import { formatDuration } from '@shared/timer'
 import { startAlarm, stopAlarm } from '../../lib/alarm'
 import { weatherIcon } from '../weather/WeatherHeader'
+import { AlertStrip } from '../weather/WeatherAlerts'
 import { MealsDialog, MealStrip, SLOT_META, useMealsForRange } from '../meals/Meals'
 import { useChoreClaim } from '../chores/ClaimChore'
 import { ChoreHistoryDialog } from '../chores/ChoreHistory'
@@ -257,91 +258,94 @@ export function WeatherTile({ tile }: TileProps) {
   // a 1-row column only has room for the high
   const highOnly = oneRow
   return (
-    <div className="h-full overflow-hidden" style={{ containerType: 'size' }}>
-      <div className={`flex h-full ${layout === 'stacked' ? 'flex-col' : ''}`}>
-        {/* today's forecast first, then the next 4 days */}
-        {weather.daily.slice(0, 5).map((d, i) => {
-          const Icon = weatherIcon(d.code, true)
-          const label = i === 0 ? 'Today' : DateTime.fromISO(d.date).toFormat('ccc')
-          const rainy = d.precipProb !== null && d.precipProb >= 20
-          const labelCls = 'font-extrabold text-ink-faint uppercase leading-none'
-          const icon = (size: string) => (
-            <Icon className="shrink-0 text-ember-deep" style={{ width: size, height: size }} />
-          )
-
-          if (layout === 'stacked') {
-            return (
-              <div key={d.date} className="flex min-h-0 flex-1 items-center gap-[4cqw]">
-                <span className={`w-[26cqw] shrink-0 ${labelCls}`} style={{ fontSize: fit(9, 4.5, 6.5, 20) }}>
-                  {label}
-                </span>
-                {icon(fit(18, 11, 16, 56))}
-                {rainy && !narrow && (
-                  <span className="font-bold text-[#0091FF]" style={{ fontSize: fit(10, 4, 6, 18) }}>
-                    {d.precipProb}%
-                  </span>
-                )}
-                <span className="ml-auto font-bold tabular-nums" style={{ fontSize: fit(13, 7, 9, 32) }}>
-                  {d.high}°
-                </span>
-                <span className="font-bold text-ink-faint tabular-nums" style={{ fontSize: fit(11, 6, 7.5, 26) }}>
-                  {d.low}°
-                </span>
-              </div>
+    <div className="flex h-full flex-col gap-1.5">
+      <AlertStrip alerts={weather.alerts} className="shrink-0" />
+      <div className="min-h-0 flex-1 overflow-hidden" style={{ containerType: 'size' }}>
+        <div className={`flex h-full ${layout === 'stacked' ? 'flex-col' : ''}`}>
+          {/* today's forecast first, then the next 4 days */}
+          {weather.daily.slice(0, 5).map((d, i) => {
+            const Icon = weatherIcon(d.code, true)
+            const label = i === 0 ? 'Today' : DateTime.fromISO(d.date).toFormat('ccc')
+            const rainy = d.precipProb !== null && d.precipProb >= 20
+            const labelCls = 'font-extrabold text-ink-faint uppercase leading-none'
+            const icon = (size: string) => (
+              <Icon className="shrink-0 text-ember-deep" style={{ width: size, height: size }} />
             )
-          }
 
-          if (layout === 'short') {
-            return (
-              <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center justify-center gap-[6cqh]">
-                <span className={labelCls} style={{ fontSize: fit(10, 16, 2.6, 18) }}>
-                  {label}
-                </span>
-                <span className="flex items-center gap-1 tabular-nums">
-                  {icon(fit(16, 34, 5, 40))}
-                  <span className="font-bold" style={{ fontSize: fit(12, 24, 3, 26) }}>
+            if (layout === 'stacked') {
+              return (
+                <div key={d.date} className="flex min-h-0 flex-1 items-center gap-[4cqw]">
+                  <span className={`w-[26cqw] shrink-0 ${labelCls}`} style={{ fontSize: fit(9, 4.5, 6.5, 20) }}>
+                    {label}
+                  </span>
+                  {icon(fit(18, 11, 16, 56))}
+                  {rainy && !narrow && (
+                    <span className="font-bold text-[#0091FF]" style={{ fontSize: fit(10, 4, 6, 18) }}>
+                      {d.precipProb}%
+                    </span>
+                  )}
+                  <span className="ml-auto font-bold tabular-nums" style={{ fontSize: fit(13, 7, 9, 32) }}>
                     {d.high}°
                   </span>
-                  {/* dropped when the tile is too narrow for icon + high + low on one line */}
-                  <span className="font-bold text-ink-faint @max-[17rem]:hidden" style={{ fontSize: fit(11, 20, 2.5, 22) }}>
+                  <span className="font-bold text-ink-faint tabular-nums" style={{ fontSize: fit(11, 6, 7.5, 26) }}>
                     {d.low}°
                   </span>
+                </div>
+              )
+            }
+
+            if (layout === 'short') {
+              return (
+                <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center justify-center gap-[6cqh]">
+                  <span className={labelCls} style={{ fontSize: fit(10, 16, 2.6, 18) }}>
+                    {label}
+                  </span>
+                  <span className="flex items-center gap-1 tabular-nums">
+                    {icon(fit(16, 34, 5, 40))}
+                    <span className="font-bold" style={{ fontSize: fit(12, 24, 3, 26) }}>
+                      {d.high}°
+                    </span>
+                    {/* dropped when the tile is too narrow for icon + high + low on one line */}
+                    <span className="font-bold text-ink-faint @max-[17rem]:hidden" style={{ fontSize: fit(11, 20, 2.5, 22) }}>
+                      {d.low}°
+                    </span>
+                  </span>
+                </div>
+              )
+            }
+
+            // high above, low below: each column is only one value wide, so the
+            // width-bound columns can use much larger text. The items take ~80% of the
+            // height and justify-between spreads the rest between them, so the
+            // forecast runs edge to edge instead of floating with bands above/below.
+            return (
+              <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center justify-between gap-[1cqh] py-[1.5cqh]">
+                <span className="font-bold tabular-nums leading-none" style={{ fontSize: highOnly ? fit(11, 22, 5, 26) : fit(13, 22, 7.5, 64) }}>
+                  {d.high}°
                 </span>
+                <span className={labelCls} style={{ fontSize: fit(narrow ? 8 : 10, highOnly ? 16 : 8.5, 3.6, 24) }}>
+                  {label}
+                </span>
+                {icon(highOnly ? fit(14, 30, 12, 40) : fit(18, 23, 17, 80))}
+                {!highOnly && (
+                  <span className="font-bold text-ink-faint tabular-nums leading-none" style={{ fontSize: fit(11, 17, 6.2, 52) }}>
+                    {d.low}°
+                  </span>
+                )}
+                {/* the rain line is always reserved (blank when dry) so every column is
+                    the same height and the days line up across the tile */}
+                {!highOnly && (
+                  <span
+                    className={`font-bold leading-none text-[#0091FF] ${rainy ? '' : 'invisible'}`}
+                    style={{ fontSize: fit(10, 8, 3.2, 20) }}
+                  >
+                    {rainy ? d.precipProb : 0}%
+                  </span>
+                )}
               </div>
             )
-          }
-
-          // high above, low below: each column is only one value wide, so the
-          // width-bound columns can use much larger text. The items take ~80% of the
-          // height and justify-between spreads the rest between them, so the
-          // forecast runs edge to edge instead of floating with bands above/below.
-          return (
-            <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center justify-between gap-[1cqh] py-[1.5cqh]">
-              <span className="font-bold tabular-nums leading-none" style={{ fontSize: highOnly ? fit(11, 22, 5, 26) : fit(13, 22, 7.5, 64) }}>
-                {d.high}°
-              </span>
-              <span className={labelCls} style={{ fontSize: fit(narrow ? 8 : 10, highOnly ? 16 : 8.5, 3.6, 24) }}>
-                {label}
-              </span>
-              {icon(highOnly ? fit(14, 30, 12, 40) : fit(18, 23, 17, 80))}
-              {!highOnly && (
-                <span className="font-bold text-ink-faint tabular-nums leading-none" style={{ fontSize: fit(11, 17, 6.2, 52) }}>
-                  {d.low}°
-                </span>
-              )}
-              {/* the rain line is always reserved (blank when dry) so every column is
-                  the same height and the days line up across the tile */}
-              {!highOnly && (
-                <span
-                  className={`font-bold leading-none text-[#0091FF] ${rainy ? '' : 'invisible'}`}
-                  style={{ fontSize: fit(10, 8, 3.2, 20) }}
-                >
-                  {rainy ? d.precipProb : 0}%
-                </span>
-              )}
-            </div>
-          )
-        })}
+          })}
+        </div>
       </div>
     </div>
   )

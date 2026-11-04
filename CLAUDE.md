@@ -398,6 +398,10 @@ Add unit tests where sensible.
   and companion `components/ui.tsx`; the stars toast says 🎮. Words ("stars", Rewards) unchanged.
 - v0.8.74: header kids' star badges twice as far apart (gap-1.5 → gap-3).
 - v0.8.75: header star badges 18px apart (gap-4.5).
+- v0.8.76: Environment Canada weather alerts — `src/shared/weatherAlerts.ts` (GeoMet `weather-alerts`, tiny bbox around
+  the weather location; drops ended/cancelled/expired, one per alert code, warning>watch>advisory>statement), fetched
+  with the forecast (`WeatherDto.alerts`, failures keep the last alerts). Weather tile: risk-coloured strip on top;
+  header weather button: coloured ⚠ badge, forecast dialog lists alerts in full (`features/weather/WeatherAlerts.tsx`).
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1

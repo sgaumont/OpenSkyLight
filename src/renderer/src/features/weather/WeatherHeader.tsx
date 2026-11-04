@@ -2,7 +2,9 @@ import { useState, type ComponentType, type SVGProps } from 'react'
 import { DateTime } from 'luxon'
 import { useWeather } from '../../api/hooks'
 import { Dialog } from '../../components/ui'
+import { AlertDetails, alertColours } from './WeatherAlerts'
 import {
+  AlertIcon,
   CloudIcon,
   CloudSunIcon,
   FogIcon,
@@ -33,6 +35,7 @@ export function WeatherButton() {
   if (!weather) return null
   const Icon = weatherIcon(weather.code, weather.isDay)
   const today = weather.daily[0]
+  const alert = weather.alerts[0]
 
   return (
     <>
@@ -40,8 +43,17 @@ export function WeatherButton() {
         type="button"
         onClick={() => setOpen(true)}
         className="pressable flex shrink-0 items-center gap-2 rounded-2xl px-3 py-0.5 hover:bg-paper-deep/70 max-[1300px]:gap-1.5 max-[1300px]:px-2 max-[1300px]:py-1.5"
-        aria-label="Weather forecast"
+        aria-label={alert ? `Weather forecast — ${weather.alerts.map((a) => a.title).join(', ')}` : 'Weather forecast'}
       >
+        {/* an Environment Canada alert: a badge in its risk colour; the dialog has the details */}
+        {alert && (
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full max-[1300px]:h-7 max-[1300px]:w-7"
+            style={{ backgroundColor: alertColours(alert.colour).bg, color: alertColours(alert.colour).fg }}
+          >
+            <AlertIcon size={20} />
+          </span>
+        )}
         <Icon size={34} className="h-14 w-14 text-ember-deep max-[1300px]:h-10 max-[1300px]:w-10 max-[1150px]:h-[34px] max-[1150px]:w-[34px] min-[1500px]:h-16 min-[1500px]:w-16" />
         <span className="font-display text-[3.5rem] leading-none max-[1300px]:text-[2.5rem] max-[1150px]:text-3xl min-[1500px]:text-[3.75rem]">{weather.temperature}°</span>
         {/* today's expected high over low, like the weather tile — stacked to stay narrow */}
@@ -76,6 +88,11 @@ export function WeatherButton() {
       </button>
 
       <Dialog open={open} onClose={() => setOpen(false)} title={weather.label}>
+        {weather.alerts.length > 0 && (
+          <div className="mb-4">
+            <AlertDetails alerts={weather.alerts} />
+          </div>
+        )}
         <div className="grid grid-cols-5 gap-2">
           {/* today + 4: the 6th fetched day is only for the Home weather tile */}
           {weather.daily.slice(0, 5).map((d, i) => {

@@ -1,4 +1,5 @@
 import type { SettingsService } from './settingsService'
+import { alertsUrl, parseAlerts, type WeatherAlert } from '@shared/weatherAlerts'
 
 /** Open-Meteo: no API key, generous free tier. https://open-meteo.com */
 
@@ -17,6 +18,8 @@ export interface WeatherDto {
   unit: 'f' | 'c'
   label: string
   daily: WeatherDaily[]
+  /** Environment Canada alerts for the location (empty outside Canada or if the check failed) */
+  alerts: WeatherAlert[]
   fetchedAt: string
 }
 
@@ -45,7 +48,7 @@ export function createWeatherService(settings: SettingsService) {
       '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
       `&temperature_unit=${unit === 'f' ? 'fahrenheit' : 'celsius'}` +
       '&timezone=auto&forecast_days=6'
-    const res = await fetch(url)
+    const [res, alerts] = await Promise.all([fetch(url), fetchAlerts(s.weather.lat, s.weather.lon, key)])
     if (!res.ok) {
       // serve stale data over an error if we have any
       if (cache && cache.key === key) return cache.data
@@ -74,10 +77,22 @@ export function createWeatherService(settings: SettingsService) {
         low: Math.round(body.daily.temperature_2m_min[i]),
         precipProb: body.daily.precipitation_probability_max[i] ?? null
       })),
+      alerts,
       fetchedAt: new Date().toISOString()
     }
     cache = { key, data, atMs: Date.now() }
     return data
+  }
+
+  /** Never fails the forecast: on error, keep the alerts we last had for this place. */
+  async function fetchAlerts(lat: number, lon: number, key: string): Promise<WeatherAlert[]> {
+    try {
+      const res = await fetch(alertsUrl(lat, lon), { signal: AbortSignal.timeout(15_000) })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return parseAlerts(await res.json(), Date.now())
+    } catch {
+      return cache && cache.key === key ? cache.data.alerts : []
+    }
   }
 
   async function searchCity(query: string): Promise<CityResult[]> {
