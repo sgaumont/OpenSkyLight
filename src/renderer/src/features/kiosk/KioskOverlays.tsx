@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
@@ -68,6 +68,15 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
 
   const next = photos.length > 1 ? (slideDeck.peek() ?? null) : null
 
+  // the Next up card moves to the other side each time the photo changes
+  const [glanceRight, setGlanceRight] = useState(false)
+  const shownRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (current === null) return
+    if (shownRef.current !== null && shownRef.current !== current) setGlanceRight((r) => !r)
+    shownRef.current = current
+  }, [current])
+
   return (
     <div className="fixed inset-0 z-[80] cursor-none bg-black" onPointerDown={consumeWakeTap(onDismiss)}>
       {current && (
@@ -88,7 +97,8 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
         <div className="mt-1 text-2xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
       </div>
       <ScreensaverWeather />
-      <ScreensaverGlance now={now} />
+      {/* swaps sides with every new photo */}
+      <ScreensaverGlance now={now} right={glanceRight} />
     </div>
   )
 }
@@ -124,7 +134,7 @@ function ScreensaverWeather() {
  * What's next (two timed events), top-left over the photos: the rest of today, running into
  * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
  */
-function ScreensaverGlance({ now }: { now: DateTime }) {
+function ScreensaverGlance({ now, right }: { now: DateTime; right: boolean }) {
   const todayKey = now.toISODate()!
   const tomorrowKey = now.plus({ days: 1 }).toISODate()!
   const range = useMemo(() => agendaRange(todayKey, ZONE, 2), [todayKey])
@@ -142,10 +152,17 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
   if (upcoming.length === 0) return null
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   return (
-    <div className="absolute top-10 left-12 max-w-[60rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none">
+    // keyed by side so the fade-in plays again on each swap
+    <div
+      key={right ? 'right' : 'left'}
+      className={`absolute top-10 max-w-[60rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none ${
+        right ? 'right-12 text-right' : 'left-12'
+      }`}
+      style={{ animation: 'fade-in 1.2s ease both' }}
+    >
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
       {upcoming.slice(0, 2).map(({ o, tomorrow }, i) => (
-        <div key={o.key} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
+        <div key={o.key} className={`flex items-baseline gap-3 ${right ? 'justify-end' : ''} ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
           <span className="shrink-0 tabular-nums">
             {tomorrow && <span className="mr-2 text-white/60 uppercase">Tmrw</span>}
             {Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}
