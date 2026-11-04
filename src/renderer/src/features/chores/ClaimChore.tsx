@@ -4,7 +4,7 @@ import { canAddMore, claimSummary, countLabel, countOf, isCounted } from '@share
 import { useChoreMutations, useChoresDay, usePeople } from '../../api/hooks'
 import { useToasts } from '../../stores/toastStore'
 import { initials, textOn } from '../../lib/format'
-import { CheckIcon } from '../../components/icons'
+import { CheckIcon, GameIcon } from '../../components/icons'
 import { BigButton, Dialog } from '../../components/ui'
 
 export function Avatar({ person, size = 'h-12 w-12 text-base' }: { person: PersonDto; size?: string }) {
@@ -47,7 +47,7 @@ function ClaimDialog({
       <div className="mb-4">
         <div className="truncate text-lg font-bold text-ink-soft">
           {chore?.title}
-          {chore && chore.starsValue > 0 && <span className="ml-2 text-ember-deep">★ {chore.starsValue}</span>}
+          {chore && chore.starsValue > 0 && <span className="ml-2 text-ember-deep"><GameIcon /> {chore.starsValue}</span>}
         </div>
         {chore && counted && !each && (
           <div className="text-base font-bold text-ink-faint" data-count>
@@ -149,7 +149,7 @@ export function useChoreClaim(date: string): {
       {
         onSuccess: (res) => {
           if (res.unlocked) pushToast(`🎮 ${person.name} finished ${res.unlocked}! Ask a parent to sign off.`)
-          else if (chore.starsValue > 0) pushToast(`★ ${chore.starsValue} for ${person.name}!`)
+          else if (chore.starsValue > 0) pushToast(`🎮 ${chore.starsValue} for ${person.name}!`)
           else if (chore.mode === 'anyone') pushToast(`Thanks, ${person.name}!`)
         }
       }

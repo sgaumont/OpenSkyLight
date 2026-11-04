@@ -394,6 +394,8 @@ Add unit tests where sensible.
   for a Luxon zone that is −6 after the cutover; used in recurrence expansion, Google EXDATE/RDATE/date parsing and
   all-day anchoring. Fixed repeating Edmonton series 1h late after Nov 1 and Google's moved instances showing twice
   ("Jarred at Terwilliger"). Drop it once the bundled tz data knows. Display uses the PC zone (this PC: Saskatchewan).
+- v0.8.73: every ★ is now a game controller — `GameIcon` (solid, 1.2em, currentColor) in renderer `components/icons.tsx`
+  and companion `components/ui.tsx`; the stars toast says 🎮. Words ("stars", Rewards) unchanged.
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1

@@ -3,7 +3,7 @@ import { DateTime } from 'luxon'
 import { useBalances, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { SegmentedControl, IconButton } from '../../components/ui'
-import { ChevronLeftIcon, ChevronRightIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
+import { ChevronLeftIcon, ChevronRightIcon, GameIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
 import { WeatherButton } from '../weather/WeatherHeader'
 import { initials, textOn } from '../../lib/format'
 import type { CalendarViewKind } from '@shared/types'
@@ -116,7 +116,7 @@ export function Header() {
                 style={{ backgroundColor: p.color, color: textOn(p.color) }}
               >
                 <span aria-hidden className="text-sm leading-none max-[1300px]:text-xs">
-                  ★
+                  <GameIcon className="align-top" />
                 </span>
                 <span className="text-xl leading-none max-[1300px]:text-base">{stars}</span>
               </div>

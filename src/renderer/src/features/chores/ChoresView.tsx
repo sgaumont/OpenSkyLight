@@ -4,7 +4,7 @@ import type { DayChecklistDto, DayChoreDto, PersonDto, UnlockState } from '@shar
 import { useBalances, useChecklistsDay, useChoresDay, usePeople } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { initials, isToday, textOn } from '../../lib/format'
-import { CheckIcon, MoonIcon, SunIcon } from '../../components/icons'
+import { CheckIcon, GameIcon, MoonIcon, SunIcon } from '../../components/icons'
 import { BigButton } from '../../components/ui'
 import { RewardsDialog } from './RewardsDialog'
 import { Avatar, useChoreClaim } from './ClaimChore'
@@ -13,7 +13,7 @@ import { claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount
 function StarBadge({ count }: { count: number }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-sun-soft px-2.5 py-1 text-sm font-extrabold text-ember-deep">
-      <span aria-hidden>★</span>
+      <GameIcon />
       {count}
     </span>
   )
@@ -266,7 +266,7 @@ export function ChoresView() {
           )}
         </div>
         <BigButton variant="ghost" onClick={() => setRewardsOpen(true)}>
-          ★ Rewards
+          <GameIcon /> Rewards
         </BigButton>
       </div>
 

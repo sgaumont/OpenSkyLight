@@ -14,13 +14,13 @@ import {
   usePeople,
   useToday
 } from '../api/hooks'
-import { Card, CheckCircle, EmptyNote, GhostButton, PersonAvatar, PrimaryButton, TextInput, textOn } from '../components/ui'
+import { Card, CheckCircle, EmptyNote, GameIcon, GhostButton, PersonAvatar, PrimaryButton, TextInput, textOn } from '../components/ui'
 import { sortDayChores } from '@shared/choreOrder'
 import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type ScheduleKind } from '@shared/choreSchedule'
 import { describeRecurrence } from '@shared/recurrence/build'
 import { canAddMore, claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
 
-/** Per-person "N today · ★ N" card below the chores: hidden for now (the Stars card covers it). */
+/** Per-person "N today · stars N" card below the chores: hidden for now (the Stars card covers it). */
 const SHOW_FAMILY_SUMMARY = false
 
 const STEP_BUTTON =
@@ -57,7 +57,7 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
               >
                 −
               </button>
-              <span className="min-w-14 text-center text-lg font-extrabold text-ember-deep tabular-nums">★ {stars}</span>
+              <span className="min-w-14 text-center text-lg font-extrabold text-ember-deep tabular-nums"><GameIcon /> {stars}</span>
               <button
                 type="button"
                 aria-label={`One star more for ${p.name}`}
@@ -117,7 +117,13 @@ function ClaimSheet({
     <Sheet onClose={onClose}>
       <h2 className="truncate font-display text-xl font-semibold">{chore.title}</h2>
       <p className="mb-3 text-sm font-extrabold text-ink-faint">
-        Who did it?{chore.starsValue > 0 ? ` · ★ ${chore.starsValue}` : ''}
+        Who did it?
+        {chore.starsValue > 0 && (
+          <>
+            {' · '}
+            <GameIcon /> {chore.starsValue}
+          </>
+        )}
         {counted && !each && ` · today ${countLabel(chore)}`}
         {counted && !each && chore.claims.length > 0 && ` · ${claimSummary(chore.claims, nameOf)}`}
       </p>
@@ -176,7 +182,7 @@ function EditStarsSheet({ person, current, onClose }: { person: PersonDto; curre
       <div className="mb-4 flex items-center gap-2.5">
         <PersonAvatar name={person.name} color={person.color} />
         <h2 className="flex-1 truncate font-display text-xl font-semibold">{person.name}'s stars</h2>
-        <span className="text-sm font-extrabold text-ink-faint">now ★ {current}</span>
+        <span className="text-sm font-extrabold text-ink-faint">now <GameIcon /> {current}</span>
       </div>
       <div className="mb-4 flex items-center gap-3">
         <button
@@ -231,7 +237,7 @@ function EachChoreRow({
         <span className={`min-w-0 flex-1 truncate text-base font-semibold ${chore.completed ? 'text-ink-faint line-through' : ''}`}>
           {chore.title}
         </span>
-        {chore.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint">★ {chore.starsValue}</span>}
+        {chore.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><GameIcon /> {chore.starsValue}</span>}
       </div>
       <div className="mt-1.5 flex flex-wrap gap-2">
         {chore.assignees.map((id) => {
@@ -368,7 +374,7 @@ export function ChoresPage() {
                     </span>
                   )}
                   {chore.starsValue > 0 && (
-                    <span className="shrink-0 text-sm font-extrabold text-ink-faint">★ {chore.starsValue}</span>
+                    <span className="shrink-0 text-sm font-extrabold text-ink-faint"><GameIcon /> {chore.starsValue}</span>
                   )}
                 </div>
               </div>
@@ -400,7 +406,7 @@ export function ChoresPage() {
               <PersonAvatar name={p.name} color={p.color} />
               <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
               <span className="text-sm font-extrabold text-ink-faint">
-                {dayChores.filter((c) => c.completedBy === p.id).length} today · ★ {balanceOf(p.id)}
+                {dayChores.filter((c) => c.completedBy === p.id).length} today · <GameIcon /> {balanceOf(p.id)}
               </span>
             </div>
           ))}
@@ -633,7 +639,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
               >
                 −
               </button>
-              <span className="min-w-11 text-center text-base font-extrabold tabular-nums">★ {stars}</span>
+              <span className="min-w-11 text-center text-base font-extrabold tabular-nums"><GameIcon /> {stars}</span>
               <button
                 type="button"
                 aria-label="More stars"
@@ -877,7 +883,7 @@ function ManageChores({ people, onEditChore }: { people: PersonDto[]; onEditChor
                   {c.routine ? ` · ${c.routine}` : ''}
                 </span>
               </span>
-              {c.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint">★ {c.starsValue}</span>}
+              {c.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><GameIcon /> {c.starsValue}</span>}
             </button>
           ))}
       </Card>

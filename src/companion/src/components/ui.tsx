@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, SVGProps } from 'react'
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-card bg-card p-4 shadow-card ${className}`}>{children}</div>
@@ -142,4 +142,22 @@ export function TextInput({
 
 export function EmptyNote({ children }: { children: ReactNode }) {
   return <p className="py-6 text-center text-base font-semibold text-ink-faint">{children}</p>
+}
+
+/** Solid game controller, sized to the text around it — the stars currency's mark (same as the kiosk's). */
+export function GameIcon({ className = '', ...p }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="1.2em"
+      height="1.2em"
+      fill="currentColor"
+      fillRule="evenodd"
+      aria-hidden
+      className={`inline-block shrink-0 align-[-0.25em] ${className}`}
+      {...p}
+    >
+      <path d="M7 6h10a5 5 0 0 1 4.9 4l1 5.2a3.2 3.2 0 0 1-5.6 2.7L15.6 16H8.4l-1.7 1.9a3.2 3.2 0 0 1-5.6-2.7l1-5.2A5 5 0 0 1 7 6ZM6.6 8.8v1.3H5.3v1.8h1.3v1.3h1.8v-1.3h1.3v-1.8H8.4V8.8ZM16 8.9a1.15 1.15 0 1 0 0 2.3 1.15 1.15 0 0 0 0-2.3Zm2.3 2.3a1.15 1.15 0 1 0 0 2.3 1.15 1.15 0 0 0 0-2.3Z" />
+    </svg>
+  )
 }

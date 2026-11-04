@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { GameIcon } from './components/ui'
 import { DateTime } from 'luxon'
 import { getToken, setUnauthorizedHandler } from './api/client'
 import { useToday } from './api/hooks'
@@ -10,8 +11,8 @@ import { PairScreen } from './pages/PairScreen'
 // no Agenda tab (pages/AgendaPage.tsx is kept, unused, in case it comes back)
 type TabId = 'lists' | 'meals' | 'chores'
 
-const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'chores', label: 'Chores', icon: '★' },
+const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
+  { id: 'chores', label: 'Chores', icon: <GameIcon /> },
   { id: 'lists', label: 'Lists', icon: '✓' },
   { id: 'meals', label: 'Meals', icon: '🍽' }
 ]

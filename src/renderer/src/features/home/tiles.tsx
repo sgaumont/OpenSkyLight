@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { GameIcon } from '../../components/icons'
 import { createPortal } from 'react-dom'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
@@ -542,7 +543,7 @@ export function StarBalancesTile({ compact }: TileProps) {
               </span>
               {!compact && <span className="min-w-0 flex-1 truncate text-sm font-bold">{p.name}</span>}
               <span className={`font-extrabold text-ember-deep ${compact ? 'ml-auto text-sm' : 'text-base'}`}>
-                ★ {balances.find((b) => b.personId === p.id)?.balance ?? 0}
+                <GameIcon /> {balances.find((b) => b.personId === p.id)?.balance ?? 0}
               </span>
             </div>
           ))}
