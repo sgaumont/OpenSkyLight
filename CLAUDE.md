@@ -461,6 +461,9 @@ Add unit tests where sensible.
   phone Notes tab `CountdownsCard` (native date input). Not on the default layout: add the tile with ✏️.
 - v0.8.113: screensaver layout — Next up card fixed top-left (no more side swap), a twin Countdowns card top-right
   (next 3, `countdownLabel`; replaces the countdown line in Next up), weather beside the clock/date bottom-left.
+- v0.8.114: screensaver Next up card moved to the bottom-right (user asked, superseding v0.8.113's top-left);
+  `GLANCE_CARD` no longer carries a position — Countdowns adds `top-10 right-12`, Next up `right-12 bottom-10`, or
+  `bottom-28` while a game timer pill (bottom-centre) is showing, so they never overlap.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

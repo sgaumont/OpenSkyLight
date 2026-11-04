@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
-import { useCountdowns, useSettings, useWeather } from '../../api/hooks'
+import { useCountdowns, useGameTimers, useSettings, useWeather } from '../../api/hooks'
 import { countdownLabel } from '@shared/countdown'
 import { useCalendarData } from '../calendar/useCalendarData'
 import { agendaRange } from '@shared/dates'
@@ -126,13 +126,15 @@ function ScreensaverWeather() {
 }
 
 /** The frosted card the screensaver's Next up and Countdowns sit on. */
-const GLANCE_CARD = 'absolute top-10 max-w-[40rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
+/** (Position is per card: Countdowns top-right, Next up bottom-right.) */
+const GLANCE_CARD = 'absolute max-w-[40rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
 
 /**
- * What's next (three timed events), top-left over the photos: the rest of today, running into
+ * What's next (three timed events), bottom-right over the photos: the rest of today, running into
  * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
  */
 function ScreensaverGlance({ now }: { now: DateTime }) {
+  const { data: timers = [] } = useGameTimers()
   const todayKey = now.toISODate()!
   const tomorrowKey = now.plus({ days: 1 }).toISODate()!
   const range = useMemo(() => agendaRange(todayKey, ZONE, 2), [todayKey])
@@ -150,7 +152,8 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
   if (upcoming.length === 0) return null
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   return (
-    <div className={`${GLANCE_CARD} left-12`} style={{ animation: 'fade-in 1.2s ease both' }}>
+    // bottom-right; lifted while a game timer pill sits at the bottom of the screen
+    <div className={`${GLANCE_CARD} right-12 ${timers.length > 0 ? 'bottom-28' : 'bottom-10'}`} style={{ animation: 'fade-in 1.2s ease both' }}>
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
       {upcoming.slice(0, 3).map(({ o, tomorrow }, i) => (
         <div key={o.key} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
@@ -174,7 +177,7 @@ function ScreensaverCountdowns({ today }: { today: string }) {
     .slice(0, 3)
   if (shown.length === 0) return null
   return (
-    <div className={`${GLANCE_CARD} right-12`} style={{ animation: 'fade-in 1.2s ease both' }}>
+    <div className={`${GLANCE_CARD} top-10 right-12`} style={{ animation: 'fade-in 1.2s ease both' }}>
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Countdowns</div>
       {shown.map(({ c, label }, i) => (
         <div key={c.id} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
