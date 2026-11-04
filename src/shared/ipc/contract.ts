@@ -2,6 +2,8 @@ import type { WeatherAlert } from '../weatherAlerts'
 import type {
   AppSettings,
   BackupStatus,
+  CountdownDto,
+  CountdownInput,
   GameTimeLogEntry,
   GameTimerDto,
   CalendarCreateInput,
@@ -132,6 +134,12 @@ export type IpcContract = {
   'meals:getRange': { req: { start: string; end: string }; res: MealSlotDto[] }
   'meals:set': { req: { date: string; slot: MealSlotKind; text: string | null }; res: void }
 
+  /** today's and future countdowns, soonest first */
+  'countdowns:list': { req: void; res: CountdownDto[] }
+  'countdowns:create': { req: CountdownInput; res: CountdownDto }
+  'countdowns:update': { req: CountdownInput & { id: string }; res: CountdownDto }
+  'countdowns:delete': { req: { id: string }; res: void }
+
   'notes:list': { req: void; res: NoteDto[] }
   'notes:add': { req: NoteInput; res: NoteDto }
   'notes:done': { req: { id: string }; res: void }
@@ -260,6 +268,7 @@ export const ALLOWED_CHANNEL_PREFIXES = [
   'listItems:',
   'meals:',
   'notes:',
+  'countdowns:',
   'screensaver:',
   'backup:',
   'kiosk:',

@@ -47,6 +47,7 @@ import {
   useSyncStatus
 } from '../../api/hooks'
 import { GameTimeLog } from '../chores/GameTimeLog'
+import { CountdownsSection } from '../countdowns/CountdownsSection'
 import { PinDialog } from '../../components/PinDialog'
 import { TimeField } from '../../components/DateTimePickers'
 import { ipcInvoke } from '../../api/client'
@@ -1449,6 +1450,7 @@ function GeneralTab() {
       <WeatherSection />
       <ScreensaverSection />
       <SleepSection />
+      <CountdownsSection />
       <BackupSection />
       <ParentalLockSection />
       <CompanionSection />

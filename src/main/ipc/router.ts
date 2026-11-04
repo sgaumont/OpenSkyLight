@@ -14,6 +14,7 @@ import type { GoogleSync } from '../sync/googleSync'
 import type { IcsSync } from '../sync/icsSync'
 import type { SyncManager } from '../sync/scheduler'
 import type { BackupService } from '../backup/backupService'
+import type { CountdownsService } from '../services/countdownsService'
 import type { NotesService } from '../services/notesService'
 import type { WeatherService } from '../services/weatherService'
 import type { AuthService } from '../services/authService'
@@ -45,6 +46,7 @@ export interface Services {
   meals: MealsService
   kiosk: Kiosk
   notes: NotesService
+  countdowns: CountdownsService
   backup: BackupService
   updater: Updater
   rss: RssService
@@ -83,6 +85,9 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
   'chores:approveUnlock',
   'chores:setVideoGamesStars',
   'stars:adjust',
+  'countdowns:create',
+  'countdowns:update',
+  'countdowns:delete',
   'rewards:create',
   'rewards:update',
   'rewards:delete',
@@ -98,7 +103,7 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
 ])
 
 /** Channels that mutate data, mapped to the domain the renderer should refetch. */
-type MutationDomain = 'events' | 'people' | 'calendars' | 'settings' | 'lists' | 'meals' | 'chores' | 'notes'
+type MutationDomain = 'events' | 'people' | 'calendars' | 'settings' | 'lists' | 'meals' | 'chores' | 'notes' | 'countdowns'
 const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'settings:set': 'settings',
   'people:create': 'people',
@@ -123,6 +128,9 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'listItems:clearChecked': 'lists',
   'meals:set': 'meals',
   'notes:add': 'notes',
+  'countdowns:create': 'countdowns',
+  'countdowns:update': 'countdowns',
+  'countdowns:delete': 'countdowns',
   'notes:done': 'notes',
   'chores:create': 'chores',
   'chores:update': 'chores',
@@ -319,6 +327,10 @@ export function buildChannelTable(services: Services): ChannelTable {
 
   handle('meals:getRange', s.mealsRangeSchema, (req) => services.meals.getRange(req.start, req.end))
   handle('meals:set', s.mealSetSchema, (req) => services.meals.set(req.date, req.slot, req.text))
+  handle('countdowns:list', null, () => services.countdowns.list())
+  handle('countdowns:create', s.countdownSchema, (req) => services.countdowns.create(req))
+  handle('countdowns:update', s.countdownUpdateSchema, (req) => services.countdowns.update(req))
+  handle('countdowns:delete', s.countdownDeleteSchema, (req) => services.countdowns.remove(req.id))
   handle('notes:list', null, () => services.notes.list())
   handle('notes:add', s.noteAddSchema, (req) => services.notes.add(req))
   handle('notes:done', s.noteDoneSchema, (req) => services.notes.done(req.id))

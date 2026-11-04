@@ -290,6 +290,17 @@ const MIGRATIONS: string[] = [
   // chore history, which only keeps a few days). Older rows have no note; the log works one out.
   `
   ALTER TABLE star_ledger ADD COLUMN note TEXT;
+  `,
+  // v7: countdowns — "5 days until Christmas" — added in Settings or on the phone
+  `
+  CREATE TABLE countdowns (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    emoji TEXT,
+    date TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
   `
 ]
 

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
-import { useSettings, useWeather } from '../../api/hooks'
+import { useCountdowns, useSettings, useWeather } from '../../api/hooks'
+import { daysUntil } from '@shared/countdown'
 import { useCalendarData } from '../calendar/useCalendarData'
 import { agendaRange } from '@shared/dates'
 import { withoutEnded } from '@shared/occurrences'
@@ -147,7 +148,17 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
       .filter((o) => !todayKeys.has(o.key))
       .map((o) => ({ o, tomorrow: true }))
   ]
-  if (upcoming.length === 0) return null
+  // the nearest countdown, in words, under the events
+  const { data: countdowns = [] } = useCountdowns()
+  const next = countdowns.map((c) => ({ c, n: daysUntil(c.date, todayKey) })).find(({ n }) => n >= 0)
+  const countdownLine = next
+    ? next.n === 0
+      ? `${next.c.emoji ?? '⏳'} ${next.c.title} is today!`
+      : next.n === 1
+        ? `${next.c.emoji ?? '⏳'} ${next.c.title} is tomorrow!`
+        : `${next.c.emoji ?? '⏳'} ${next.n} days until ${next.c.title}`
+    : null
+  if (upcoming.length === 0 && !countdownLine) return null
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   return (
     // keyed by side so the fade-in plays again on each swap
@@ -158,7 +169,7 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
       }`}
       style={{ animation: 'fade-in 1.2s ease both' }}
     >
-      <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
+      {upcoming.length > 0 && <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>}
       {upcoming.slice(0, 3).map(({ o, tomorrow }, i) => (
         <div key={o.key} className={`flex items-baseline gap-3 ${right ? 'justify-end' : ''} ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
           <span className="shrink-0 tabular-nums">
@@ -168,6 +179,11 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
           <span className="truncate">{o.title}</span>
         </div>
       ))}
+      {countdownLine && (
+        <div className={`text-xl font-bold ${upcoming.length > 0 ? 'mt-3 text-white/85' : ''}`} data-countdown-line>
+          {countdownLine}
+        </div>
+      )}
     </div>
   )
 }

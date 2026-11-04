@@ -252,6 +252,17 @@ export const notes = sqliteTable(
   (t) => [index('idx_notes_open').on(t.doneAt)]
 )
 
+/** A date the family is counting down to ("5 days until Christmas"). */
+export const countdowns = sqliteTable('countdowns', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  emoji: text('emoji'),
+  /** ISO date */
+  date: text('date').notNull(),
+  createdAt: text('created_at').notNull(),
+  deletedAt: text('deleted_at')
+})
+
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull() // JSON

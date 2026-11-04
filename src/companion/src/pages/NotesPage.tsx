@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import type { NoteDto, PersonDto } from '@shared/types'
 import { useNoteMutations, useNotes, usePeople } from '../api/hooks'
 import { Card, EmptyNote, PersonAvatar, PrimaryButton } from '../components/ui'
+import { CountdownsCard } from './CountdownsCard'
 
 const AUTHOR_KEY = 'osl.noteAuthor'
 const MAX_LENGTH = 280
@@ -105,6 +106,7 @@ export function NotesPage() {
           ))}
         </div>
       )}
+      <CountdownsCard />
     </div>
   )
 }

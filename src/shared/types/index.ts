@@ -160,6 +160,7 @@ export type HomeTileType =
   | 'camera'
   | 'birdnet'
   | 'timer'
+  | 'countdowns'
 
 export interface HomeTileConfig {
   /** 'list' tiles: which list to show */
@@ -333,6 +334,20 @@ export interface PendingUnlockDto {
   /** Video Games: which finished round (1st, 2nd… time through the set that day) */
   round?: number
   stars?: number
+}
+
+export interface CountdownDto {
+  id: string
+  title: string
+  emoji: string | null
+  /** ISO date */
+  date: string
+}
+
+export interface CountdownInput {
+  title: string
+  emoji: string | null
+  date: string
 }
 
 /** A kid's game time counting down on the kiosk. */

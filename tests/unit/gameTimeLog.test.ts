@@ -92,7 +92,7 @@ describe('game time log', () => {
     runMigrations(sqlite, 5)
     sqlite.exec(`INSERT INTO people (id, name, color, role, sort_order, created_at) VALUES ('k','K','#000','child',0,'2026-01-01T00:00:00Z');
       INSERT INTO star_ledger (id, person_id, delta, reason, ref_id, created_at) VALUES ('x','k',5,'manual_adjust',NULL,'2026-01-01T00:00:00Z')`)
-    runMigrations(sqlite)
+    runMigrations(sqlite, 6)
     expect(sqlite.pragma('user_version', { simple: true })).toBe(6)
     expect(sqlite.prepare('SELECT delta, note FROM star_ledger').get()).toEqual({ delta: 5, note: null })
     sqlite.close()

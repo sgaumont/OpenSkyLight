@@ -452,6 +452,13 @@ Add unit tests where sensible.
 - v0.8.109: phone Game time card has an "All" row (2+ kids) — − / + call `stars:adjust` once per kid, ±1 each.
 - v0.8.110: header top-left — the big clock now comes first, then the divider, then weekday + date (were swapped).
 - v0.8.111: family-note chime rings longer — `chimeLoop(NOTE_CHIME_MS, 1.2)` (1.2s fade per note, was 0.5s); the timer alarm keeps 0.5s.
+- v0.8.112: countdowns. DB migration v7 `countdowns` (title, emoji, ISO date, soft delete); `countdownsService` lists
+  today+future soonest first, refuses blank names and past days. IPC `countdowns:*` (phone allowlist; create/update/delete
+  PIN-gated on the kiosk; push domain 'countdowns'). Wording `src/shared/countdown.ts`: "Today!" / "Tomorrow" / "N days"
+  (user chose days, not sleeps). Home tile type 'countdowns' (`features/countdowns/CountdownsTile.tsx`, registry +
+  TILE_SPECS + the settings zod enum — a test now checks the enum covers every TILE_SPECS type); Settings → General
+  `CountdownsSection` (OSK name, emoji row, DateField); screensaver card adds the nearest ("🎄 51 days until …");
+  phone Notes tab `CountdownsCard` (native date input). Not on the default layout: add the tile with ✏️.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

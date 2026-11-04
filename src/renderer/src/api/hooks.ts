@@ -9,7 +9,8 @@ import type {
   EventUpdateInput,
   PersonCreateInput,
   PersonUpdateInput,
-  AppSettings
+  AppSettings,
+  CountdownInput
 } from '@shared/types'
 import type { DateRange } from '@shared/dates'
 import { useToasts } from '../stores/toastStore'
@@ -373,6 +374,20 @@ export function useAuthMutations() {
     verifyPin: useInvalidatingMutation((input: { pin: string }) => ipcInvoke('auth:verifyPin', input), keys),
     setPin: useInvalidatingMutation((input: { pin: string | null }) => ipcInvoke('auth:setPin', input), keys),
     lock: useInvalidatingMutation(() => ipcInvoke('auth:lock', undefined), keys)
+  }
+}
+
+export function useCountdowns() {
+  // re-read hourly so one that has passed drops off even with nothing else changing
+  return useQuery({ queryKey: ['countdowns'], queryFn: () => ipcInvoke('countdowns:list', undefined), refetchInterval: 60 * 60_000 })
+}
+
+export function useCountdownMutations() {
+  const keys = [['countdowns']]
+  return {
+    create: useInvalidatingMutation((input: CountdownInput) => ipcInvoke('countdowns:create', input), keys),
+    update: useInvalidatingMutation((input: CountdownInput & { id: string }) => ipcInvoke('countdowns:update', input), keys),
+    remove: useInvalidatingMutation((input: { id: string }) => ipcInvoke('countdowns:delete', input), keys)
   }
 }
 

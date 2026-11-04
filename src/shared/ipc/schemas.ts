@@ -102,7 +102,8 @@ const homeTileSchema = z.object({
     'news',
     'camera',
     'birdnet',
-    'timer'
+    'timer',
+    'countdowns'
   ]),
   x: z.number().int().min(0).max(HOME_COLS - 1),
   y: z.number().int().min(0).max(HOME_ROWS - 1),
@@ -280,6 +281,13 @@ export const noteAddSchema = z.object({
   untilTonight: z.boolean()
 })
 export const noteDoneSchema = z.object({ id: z.string().min(1) })
+export const countdownSchema = z.object({
+  title: z.string().trim().min(1).max(60),
+  emoji: z.string().max(8).nullable(),
+  date: isoDate
+})
+export const countdownUpdateSchema = countdownSchema.extend({ id: z.string().min(1) })
+export const countdownDeleteSchema = z.object({ id: z.string().min(1) })
 
 export const mealSetSchema = z.object({
   date: isoDate,

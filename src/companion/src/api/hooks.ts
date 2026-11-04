@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ChecklistInput, ChoreCreateInput, ChoreUpdateInput, NoteInput } from '@shared/types'
+import type { ChecklistInput, ChoreCreateInput, ChoreUpdateInput, CountdownInput, NoteInput } from '@shared/types'
 import { rpc } from './client'
 
 /** Phone tabs get suspended constantly — focus/reconnect refetch is the real
@@ -92,6 +92,18 @@ export function useListMutations() {
     addItem: useInvalidatingMutation((input: { listId: string; text: string }) => rpc('listItems:add', input), keys),
     toggleItem: useInvalidatingMutation((input: { id: string }) => rpc('listItems:toggle', input), keys),
     clearChecked: useInvalidatingMutation((input: { listId: string }) => rpc('listItems:clearChecked', input), keys)
+  }
+}
+
+export function useCountdowns() {
+  return useQuery({ queryKey: ['countdowns'], queryFn: () => rpc('countdowns:list', undefined), ...LIVE })
+}
+
+export function useCountdownMutations() {
+  const keys = [['countdowns']]
+  return {
+    create: useInvalidatingMutation((input: CountdownInput) => rpc('countdowns:create', input), keys),
+    remove: useInvalidatingMutation((input: { id: string }) => rpc('countdowns:delete', input), keys)
   }
 }
 

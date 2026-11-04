@@ -16,6 +16,7 @@ import {
   WeekAgendaTile,
   type TileProps
 } from './tiles'
+import { CountdownsTile } from '../countdowns/CountdownsTile'
 
 export interface TileMeta {
   label: string
@@ -101,5 +102,10 @@ export const TILE_REGISTRY: Record<HomeTileType, TileMeta> = {
     label: 'Timers',
     description: 'Countdown timers — set by tap or voice',
     component: TimerTile
+  },
+  countdowns: {
+    label: 'Countdowns',
+    description: 'Days until birthdays, holidays and trips',
+    component: CountdownsTile
   }
 }

@@ -66,7 +66,8 @@ export const TILE_SPECS: Record<HomeTileType, TileSpec> = {
   news: spec(3, 1, 4, 3, { allowMultiple: true, configKeys: ['feedId'] }),
   camera: spec(3, 2, 4, 3, { allowMultiple: true, configKeys: ['cameraId'] }),
   birdnet: spec(3, 1, 4, 4, { allowMultiple: true, configKeys: ['birdnetUrl'] }),
-  timer: spec(3, 2, 4, 3, { allowMultiple: false, configKeys: [] })
+  timer: spec(3, 2, 4, 3, { allowMultiple: false, configKeys: [] }),
+  countdowns: spec(2, 1, 3, 2, { allowMultiple: false, configKeys: [] })
 }
 
 /** Tiles the full grid with no gaps (written in original cells). Clock/weather tiles
