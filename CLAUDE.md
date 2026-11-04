@@ -421,6 +421,15 @@ Add unit tests where sensible.
   own channel allowlist (`src/preload/index.ts`) — new IPC prefixes must be added there too.
 - v0.8.85: Week view columns sit closer — grid `gap-1` (4px), was `gap-3`.
 - v0.8.86: Week view side margins halved — `px-3` (12px), was `px-6`.
+- v0.8.87: phone → slideshow photos. Companion "Photos" tab (`src/companion/src/pages/PhotosPage.tsx`, `api/photos.ts`):
+  the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
+  `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):
+  GET/POST /api/photos, GET /api/photos/:name/thumb (nativeImage thumbnail; phone shows it via blob: URL — CSP img-src
+  allows blob:), DELETE /api/photos/:name. Store `src/main/companion/phonePhotos.ts` saves `phone-YYYYMMDD-HHmmss-xxxxxx.jpg`
+  into "From phones" inside the screensaver folder (creates Pictures\OpenSkyLight as the folder if none); only those names
+  can be fetched/deleted (`photoUpload.ts`: byte sniffing, 10 MB cap). Kiosk listPhotos includes the subfolder; ShuffleDeck
+  puts photos new since the last list at the front of the next pass. `npm run build` also builds the companion
+  (`build:companion`) — a bare `electron-vite build` leaves the phone app stale.
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1

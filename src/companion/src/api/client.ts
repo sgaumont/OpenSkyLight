@@ -58,3 +58,17 @@ export async function rpc<K extends IpcChannel>(
   if (!json.ok) throw new RpcError(json.error.code, json.error.message)
   return json.data
 }
+
+/** fetch with the pairing token; a 401 drops back to the pairing screen, like rpc(). */
+export async function authedFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const res = await fetch(path, {
+    ...init,
+    headers: { ...(init.headers as Record<string, string> | undefined), Authorization: `Bearer ${getToken() ?? ''}` }
+  })
+  if (res.status === 401) {
+    clearToken()
+    onUnauthorized()
+    throw new RpcError('UNAUTHORIZED', 'Not paired')
+  }
+  return res
+}

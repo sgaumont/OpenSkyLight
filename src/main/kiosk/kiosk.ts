@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url'
 import { DateTime } from 'luxon'
 import type { SettingsService } from '../services/settingsService'
 import { isInSleepWindow, stillAwake } from '@shared/sleepWindow'
+import { PHONE_FOLDER } from '../companion/photoUpload'
 
 const PHOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'])
 const IDLE_POLL_MS = 5_000
@@ -52,14 +53,17 @@ export function createKiosk(deps: { settings: SettingsService; broadcast: (ch: s
   function listPhotos(): string[] {
     const folder = settings.getAll().screensaver.folder
     if (!folder) return []
-    try {
-      return readdirSync(folder)
-        .filter((f) => PHOTO_EXTENSIONS.has(extname(f).toLowerCase()))
-        .sort()
-        .map((f) => `osl-photo://photos/${encodeURIComponent(f)}`)
-    } catch {
-      return []
+    const photosIn = (sub: string): string[] => {
+      try {
+        return readdirSync(join(folder, sub))
+          .filter((f) => PHOTO_EXTENSIONS.has(extname(f).toLowerCase()))
+          .map((f) => (sub ? `${sub}/${f}` : f))
+      } catch {
+        return []
+      }
     }
+    // the folder itself, plus what phones sent (the companion app's "From phones" subfolder)
+    return [...photosIn(''), ...photosIn(PHONE_FOLDER)].sort().map((f) => `osl-photo://photos/${encodeURIComponent(f)}`)
   }
 
   async function pickFolder(): Promise<{ folder: string | null }> {

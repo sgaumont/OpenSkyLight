@@ -6,6 +6,7 @@ import { COMPANION_CHANNELS } from '@shared/ipc/companionChannels'
 import type { SettingsService } from '../services/settingsService'
 import type { CompanionTokens } from './companionTokens'
 import { pickLanAddresses } from './lanAddress'
+import { MAX_PHOTO_BYTES } from './photoUpload'
 
 const MAX_BODY_BYTES = 64 * 1024
 const AUTH_FAIL_LIMIT = 30 // failures per IP per minute → 429
@@ -31,6 +32,13 @@ export interface CompanionServerDeps {
   version: string
   /** Directory holding the built companion web app (out/companion). */
   staticRoot: string
+  /** Photos added from phones for the slideshow (absent in tests that don't need it). */
+  photos?: {
+    add(buf: Buffer): Promise<{ name: string; addedAt: string }>
+    list(): Promise<{ name: string; addedAt: string }[]>
+    thumb(name: string): Buffer | null
+    remove(name: string): Promise<boolean>
+  }
 }
 
 /**
@@ -87,19 +95,80 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     })
   }
 
-  async function handleRpc(req: IncomingMessage, res: ServerResponse, channelRaw: string): Promise<void> {
+  /** Bearer-token check shared by every /api route but health; answers the request itself on failure. */
+  function authorize(req: IncomingMessage, res: ServerResponse): boolean {
     const ip = req.socket.remoteAddress ?? 'unknown'
     if (rateLimited(ip)) {
       sendJson(res, 429, { ok: false, error: { code: 'RATE_LIMITED', message: 'Too many attempts — wait a minute' } })
-      return
+      return false
     }
     const auth = req.headers.authorization ?? ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
     if (!deps.tokens.verify(token)) {
       recordAuthFail(ip)
       sendJson(res, 401, { ok: false, error: { code: 'UNAUTHORIZED', message: 'Not paired — scan the QR code on the kiosk' } })
+      return false
+    }
+    return true
+  }
+
+  function readRaw(req: IncomingMessage, max: number): Promise<Buffer | null> {
+    return new Promise((resolve) => {
+      let size = 0
+      const chunks: Buffer[] = []
+      req.on('data', (chunk: Buffer) => {
+        size += chunk.length
+        if (size > max) {
+          resolve(null)
+          req.destroy()
+          return
+        }
+        chunks.push(chunk)
+      })
+      req.on('end', () => resolve(Buffer.concat(chunks)))
+      req.on('error', () => resolve(null))
+    })
+  }
+
+  /** GET/POST /api/photos, GET /api/photos/:name/thumb, DELETE /api/photos/:name */
+  async function handlePhotos(req: IncomingMessage, res: ServerResponse, name: string | null, thumb: boolean): Promise<void> {
+    if (!authorize(req, res)) return
+    const photos = deps.photos
+    if (!photos) {
+      sendJson(res, 404, { ok: false, error: { code: 'NOT_FOUND', message: 'Photos are not available' } })
       return
     }
+    try {
+      if (name === null && req.method === 'GET') {
+        sendJson(res, 200, { ok: true, data: await photos.list() })
+      } else if (name === null && req.method === 'POST') {
+        const buf = await readRaw(req, MAX_PHOTO_BYTES)
+        if (buf === null) {
+          sendJson(res, 413, { ok: false, error: { code: 'TOO_LARGE', message: 'Photo too large' } })
+          return
+        }
+        sendJson(res, 200, { ok: true, data: await photos.add(buf) })
+      } else if (name !== null && thumb && req.method === 'GET') {
+        const jpeg = photos.thumb(name)
+        if (!jpeg) {
+          res.writeHead(404).end()
+          return
+        }
+        res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=86400' })
+        res.end(jpeg)
+      } else if (name !== null && !thumb && req.method === 'DELETE') {
+        const removed = await photos.remove(name)
+        sendJson(res, removed ? 200 : 404, removed ? { ok: true, data: null } : { ok: false, error: { code: 'NOT_FOUND', message: 'No such photo' } })
+      } else {
+        sendJson(res, 405, { ok: false, error: { code: 'METHOD', message: 'Method not allowed' } })
+      }
+    } catch (err) {
+      sendJson(res, 400, { ok: false, error: { code: 'INVALID', message: err instanceof Error ? err.message : 'Photo rejected' } })
+    }
+  }
+
+  async function handleRpc(req: IncomingMessage, res: ServerResponse, channelRaw: string): Promise<void> {
+    if (!authorize(req, res)) return
     const channel = decodeURIComponent(channelRaw) as IpcChannel
     if (!COMPANION_CHANNELS.has(channel)) {
       sendJson(res, 404, { ok: false, error: { code: 'NOT_FOUND', message: 'Unknown channel' } })
@@ -153,7 +222,7 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     if (ext === '.html') {
       headers['Cache-Control'] = 'no-store'
       headers['Content-Security-Policy'] =
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'"
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'"
     } else if (clean.includes('assets')) {
       headers['Cache-Control'] = 'public, max-age=31536000, immutable' // vite hashes asset names
     } else {
@@ -176,6 +245,11 @@ export function createCompanionServer(deps: CompanionServerDeps) {
         return
       }
       void handleRpc(req, res, rpcMatch[1])
+      return
+    }
+    const photoMatch = url.match(/^\/api\/photos(?:\/([^/?]+)(\/thumb)?)?(?:\?.*)?$/)
+    if (photoMatch) {
+      void handlePhotos(req, res, photoMatch[1] ? decodeURIComponent(photoMatch[1]) : null, !!photoMatch[2])
       return
     }
     if (url.startsWith('/api/')) {

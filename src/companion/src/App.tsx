@@ -6,15 +6,17 @@ import { useToday } from './api/hooks'
 import { ListsPage } from './pages/ListsPage'
 import { MealsPage } from './pages/MealsPage'
 import { ChoresPage } from './pages/ChoresPage'
+import { PhotosPage } from './pages/PhotosPage'
 import { PairScreen } from './pages/PairScreen'
 
 // no Agenda tab (pages/AgendaPage.tsx is kept, unused, in case it comes back)
-type TabId = 'lists' | 'meals' | 'chores'
+type TabId = 'lists' | 'meals' | 'chores' | 'photos'
 
 const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
   { id: 'chores', label: 'Chores', icon: <GameIcon /> },
   { id: 'lists', label: 'Lists', icon: '✓' },
-  { id: 'meals', label: 'Meals', icon: '🍽' }
+  { id: 'meals', label: 'Meals', icon: '🍽' },
+  { id: 'photos', label: 'Photos', icon: '🖼' }
 ]
 
 export default function App() {
@@ -41,6 +43,7 @@ export default function App() {
           {tab === 'lists' && <ListsPage />}
           {tab === 'meals' && <MealsPage />}
           {tab === 'chores' && <ChoresPage />}
+          {tab === 'photos' && <PhotosPage />}
         </div>
       </main>
 

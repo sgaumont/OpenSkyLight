@@ -22,11 +22,20 @@ export class ShuffleDeck<T> {
 
   constructor(private readonly random: () => number = Math.random) {}
 
-  /** Replaces the items; an identical list keeps the current pass going. */
+  /**
+   * Replaces the items; an identical list keeps the current pass going. Items that weren't there
+   * before (a photo just sent from a phone) lead the new pass, so they show up right away.
+   */
   setItems(items: readonly T[]): void {
     if (items.length === this.items.length && items.every((item, i) => item === this.items[i])) return
+    const known = new Set(this.items)
+    const added = this.items.length > 0 ? items.filter((item) => !known.has(item)) : []
     this.items = [...items]
     this.order = this.newPass(this.order[this.pos])
+    if (added.length > 0) {
+      const first = new Set(added)
+      this.order = [...added, ...this.order.filter((item) => !first.has(item))]
+    }
     this.pos = -1
     this.upcoming = null
   }

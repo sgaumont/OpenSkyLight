@@ -21,6 +21,7 @@ import { createCompanionTokens } from './companion/companionTokens'
 import { createCompanionServer } from './companion/companionServer'
 import { createMainWindow } from './window'
 import { createBackupService } from './backup/backupService'
+import { createPhonePhotos } from './companion/phonePhotos'
 import { applyPendingRestore } from './backup/backupFiles'
 import { createWeatherService } from './services/weatherService'
 import { createAuthService } from './services/authService'
@@ -130,7 +131,8 @@ if (!gotLock) {
       tokens: createCompanionTokens(settings),
       dispatch: (channel, payload) => dispatch(services, channelTable, channel, payload, { gate: 'none' }),
       version: app.getVersion(),
-      staticRoot: join(__dirname, '../companion')
+      staticRoot: join(__dirname, '../companion'),
+      photos: createPhonePhotos({ settings, onChange: (domain) => broadcast('push:dataChanged', { domain }) })
     })
     app.on('will-quit', () => companion.shutdown())
 
