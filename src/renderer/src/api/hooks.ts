@@ -176,6 +176,15 @@ export function useBalances() {
   return useQuery({ queryKey: ['balances'], queryFn: () => ipcInvoke('stars:balances', undefined) })
 }
 
+/** The game time log (newest first): one kid, or everyone. */
+export function useGameTimeLog(personId: string | null, limit: number) {
+  return useQuery({
+    queryKey: ['gameTimeLog', personId, limit],
+    queryFn: () => ipcInvoke('stars:log', { personId, limit }),
+    placeholderData: (prev) => prev
+  })
+}
+
 /** A kid spends all their controllers on game time (balance → 0). */
 export function useUseTime() {
   return useInvalidatingMutation((input: { personId: string }) => ipcInvoke('stars:useTime', input), [['balances']])
@@ -412,7 +421,7 @@ export function usePushInvalidation(): void {
       if (domain === 'calendars') void queryClient.invalidateQueries({ queryKey: ['occurrences'] })
       if (domain === 'chores') {
         // chore day views and star balances key off their own roots
-        for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks', 'videoGamesStars']) {
+        for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks', 'videoGamesStars', 'gameTimeLog']) {
           void queryClient.invalidateQueries({ queryKey: [key] })
         }
       }

@@ -2,6 +2,7 @@ import type { WeatherAlert } from '../weatherAlerts'
 import type {
   AppSettings,
   BackupStatus,
+  GameTimeLogEntry,
   CalendarCreateInput,
   CalendarDto,
   CalendarUpdateInput,
@@ -111,6 +112,8 @@ export type IpcContract = {
   'stars:adjust': { req: { personId: string; delta: number }; res: { balance: number } }
   /** a kid uses all their saved-up controllers ("use your time"): balance → 0; not PIN-gated */
   'stars:useTime': { req: { personId: string }; res: { used: number } }
+  /** the game time log, newest first; one kid or everyone */
+  'stars:log': { req: { personId: string | null; limit: number }; res: GameTimeLogEntry[] }
 
   'lists:getAll': { req: void; res: ListDto[] }
   'lists:create': { req: { name: string; color: string; kind: ListKind }; res: ListDto }

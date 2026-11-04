@@ -114,7 +114,7 @@ describe('database upgrade for Video Games (v4 to v5)', () => {
     const sqlite = new Database(':memory:')
     runMigrations(sqlite, 4)
     sqlite.exec(`INSERT INTO chores (id, title, stars_value, created_at) VALUES ('c1','Dishes',2,'2026-06-01T00:00:00Z')`)
-    runMigrations(sqlite)
+    runMigrations(sqlite, 5)
     expect(sqlite.pragma('user_version', { simple: true })).toBe(5)
     expect(sqlite.prepare('SELECT COUNT(*) AS n FROM video_game_rounds').get()).toEqual({ n: 0 })
     expect(sqlite.prepare('SELECT title, mode FROM chores').get()).toEqual({ title: 'Dishes', mode: 'anyone' })

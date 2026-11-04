@@ -285,6 +285,11 @@ const MIGRATIONS: string[] = [
     approved_at TEXT,
     UNIQUE (person_id, due_date, round)
   );
+  `,
+  // v6: a game time log — each balance change says what it was for (chore titles outlive the
+  // chore history, which only keeps a few days). Older rows have no note; the log works one out.
+  `
+  ALTER TABLE star_ledger ADD COLUMN note TEXT;
   `
 ]
 

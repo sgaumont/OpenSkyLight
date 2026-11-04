@@ -105,7 +105,7 @@ describe('chores + rewards', () => {
 
   it('refuses redemptions the balance cannot cover', () => {
     const reward = rewards.create({ title: 'Bike', costStars: 100 })
-    expect(() => rewards.redeem(reward.id, 'kid1')).toThrow(/Not enough stars/)
+    expect(() => rewards.redeem(reward.id, 'kid1')).toThrow(/Not enough game time/)
     expect(chores.balanceOf('kid1')).toBe(0)
   })
 

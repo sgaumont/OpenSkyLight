@@ -171,7 +171,9 @@ export const starLedger = sqliteTable('star_ledger', {
   delta: integer('delta').notNull(),
   reason: text('reason', { enum: ['chore', 'redemption', 'manual_adjust'] }).notNull(),
   refId: text('ref_id'),
-  createdAt: text('created_at').notNull()
+  createdAt: text('created_at').notNull(),
+  /** what it was for, as shown in the game time log ("Make bed", "Un-ticked: Make bed", "Used game time") */
+  note: text('note')
 })
 
 export const rewards = sqliteTable('rewards', {

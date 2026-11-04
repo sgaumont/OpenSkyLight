@@ -335,6 +335,17 @@ export interface PendingUnlockDto {
   stars?: number
 }
 
+/** One line of the game time log: a gain (+), loss or use (−), with the kid's balance right after. */
+export interface GameTimeLogEntry {
+  id: string
+  personId: string
+  delta: number
+  /** UTC ISO */
+  at: string
+  note: string
+  balanceAfter: number
+}
+
 export interface StarBalanceDto {
   personId: string
   balance: number

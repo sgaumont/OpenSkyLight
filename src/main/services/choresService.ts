@@ -334,7 +334,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         .run()
       if (chore.starsValue > 0) {
         tx.insert(starLedger)
-          .values({ id: uuidv7(), personId, delta: chore.starsValue, reason: 'chore', refId: completionId, createdAt: now })
+          .values({ id: uuidv7(), personId, delta: chore.starsValue, reason: 'chore', refId: completionId, createdAt: now, note: chore.title })
           .run()
       }
       if (chore.checklistId) {
@@ -394,7 +394,8 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       .all()
     if (!completion) return { balance: personId ? balanceOf(personId) : 0 }
     db.transaction((tx) => {
-      tx.delete(starLedger).where(eq(starLedger.refId, completion.id)).run()
+      // the log keeps the gain and shows the take-back, rather than the gain vanishing
+      reverse(tx, completion.id, completion.personId, `Un-ticked: ${chore.title}`)
       tx.delete(choreCompletions).where(eq(choreCompletions.id, completion.id)).run()
       if (chore.checklistId) {
         tx.delete(checklistUnlocks)
@@ -585,6 +586,23 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     if (result.changes === 0) throw notFound('Unlock')
   }
 
+  /**
+   * Takes back whatever was paid for `refId` with one minus line (so the log shows both the gain and
+   * the take-back); nothing if nothing was paid or it was already taken back.
+   */
+  function reverse(tx: DbOrTx, refId: string, personId: string, note: string): void {
+    const paid = tx
+      .select()
+      .from(starLedger)
+      .where(eq(starLedger.refId, refId))
+      .all()
+      .reduce((acc, r) => acc + r.delta, 0)
+    if (paid === 0) return
+    tx.insert(starLedger)
+      .values({ id: uuidv7(), personId, delta: -paid, reason: 'chore', refId, createdAt: isoUtc(DateTime.utc()), note })
+      .run()
+  }
+
   // ── Video Games ───────────────────────────────────────────────────────────
 
   function videoGamesStars(): number {
@@ -645,7 +663,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       .where(and(eq(videoGameRounds.personId, personId), eq(videoGameRounds.dueDate, date)))
       .all()
     for (const r of existing.filter((r) => r.round > rounds)) {
-      tx.delete(starLedger).where(eq(starLedger.refId, r.id)).run()
+      reverse(tx, r.id, personId, '🎮 Video Games set taken back (a task was un-ticked)')
       tx.delete(videoGameRounds).where(eq(videoGameRounds.id, r.id)).run()
     }
     let added = false
@@ -744,7 +762,17 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     db.transaction((tx) => {
       tx.update(videoGameRounds).set({ status: 'approved', approvedAt: now }).where(eq(videoGameRounds.id, row.id)).run()
       if (row.stars > 0) {
-        tx.insert(starLedger).values({ id: uuidv7(), personId, delta: row.stars, reason: 'chore', refId: row.id, createdAt: now }).run()
+        tx.insert(starLedger)
+          .values({
+            id: uuidv7(),
+            personId,
+            delta: row.stars,
+            reason: 'chore',
+            refId: row.id,
+            createdAt: now,
+            note: `🎮 Video Games set${round > 1 ? ` (set ${round})` : ''} — approved`
+          })
+          .run()
       }
     })
   }

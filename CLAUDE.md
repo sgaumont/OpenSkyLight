@@ -423,6 +423,11 @@ Add unit tests where sensible.
 - v0.8.86: Week view side margins halved — `px-3` (12px), was `px-6`.
 - v0.8.89: Week view columns nearly touch — grid `gap-0.5` (2px), was `gap-1`.
 - v0.8.103: Week view column gap halved again — `gap-px` (1px), was `gap-0.5`.
+- v0.8.104: game time log. DB migration v6 `star_ledger.note`; every write now says what it was for (chore title, "Reward:
+  …", "🎮 Video Games set — approved", "Changed by a parent", "Used game time"). Un-ticks and withdrawn Video Games sets
+  no longer DELETE ledger rows: `reverse()` adds a minus line ("Un-ticked: …"), so balances are identical but the log
+  keeps both. `stars:log` {personId|null, limit} → newest first with per-kid running `balanceAfter`; old note-less rows
+  get a best-guess description. Settings → Chores, top: `features/chores/GameTimeLog.tsx` (kid filter, Show more).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

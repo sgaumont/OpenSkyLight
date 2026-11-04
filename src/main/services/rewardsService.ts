@@ -1,10 +1,10 @@
-import { and, asc, desc, eq, isNull } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
-import { people, rewardRedemptions, rewards, starLedger } from '../db/schema'
+import { choreCompletions, chores, people, rewardRedemptions, rewards, starLedger, videoGameRounds } from '../db/schema'
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
-import type { RedemptionDto, RewardDto } from '@shared/types'
+import type { GameTimeLogEntry, RedemptionDto, RewardDto } from '@shared/types'
 import type { ChoresService } from './choresService'
 import { invalid, notFound } from './errors'
 
@@ -74,7 +74,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     if (!reward) throw notFound('Reward')
     const balance = choresService.balanceOf(personId)
     if (balance < reward.costStars) {
-      throw invalid(`Not enough stars yet — ${reward.costStars - balance} more to go!`)
+      throw invalid(`Not enough game time yet — ${reward.costStars - balance} more to go!`)
     }
     const id = uuidv7()
     const now = isoUtc(DateTime.utc())
@@ -89,7 +89,8 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
           delta: -reward.costStars,
           reason: 'redemption',
           refId: id,
-          createdAt: now
+          createdAt: now,
+          note: `Reward: ${reward.title}`
         })
         .run()
     })
@@ -130,7 +131,8 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
         delta,
         reason: 'manual_adjust',
         refId: null,
-        createdAt: isoUtc(DateTime.utc())
+        createdAt: isoUtc(DateTime.utc()),
+        note: 'Changed by a parent'
       })
       .run()
     return { balance: balance + delta }
@@ -146,12 +148,67 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     const balance = choresService.balanceOf(personId)
     if (balance <= 0) return { used: 0 }
     db.insert(starLedger)
-      .values({ id: uuidv7(), personId, delta: -balance, reason: 'redemption', refId: null, createdAt: isoUtc(DateTime.utc()) })
+      .values({
+        id: uuidv7(),
+        personId,
+        delta: -balance,
+        reason: 'redemption',
+        refId: null,
+        createdAt: isoUtc(DateTime.utc()),
+        note: 'Used game time'
+      })
       .run()
     return { used: balance }
   }
 
-  return { list, create, update, remove, redeem, pendingRedemptions, grant, adjust, useTime }
+  /**
+   * The game time log: every gain, loss and use, newest first, each with the kid's balance right
+   * after it. Rows from before notes were kept get a best-guess description.
+   */
+  function log(personId: string | null, limit: number): GameTimeLogEntry[] {
+    const rows = db
+      .select()
+      .from(starLedger)
+      .where(personId ? eq(starLedger.personId, personId) : undefined)
+      .orderBy(asc(starLedger.createdAt), asc(sql`rowid`))
+      .all()
+    const running = new Map<string, number>()
+    const entries = rows.map((r) => {
+      const after = (running.get(r.personId) ?? 0) + r.delta
+      running.set(r.personId, after)
+      return { id: r.id, personId: r.personId, delta: r.delta, at: r.createdAt, note: r.note ?? describe(r), balanceAfter: after }
+    })
+    return entries.reverse().slice(0, limit)
+  }
+
+  /** For rows written before notes: what they were for, as far as can still be told. */
+  function describe(r: typeof starLedger.$inferSelect): string {
+    if (r.reason === 'manual_adjust') return 'Changed by a parent'
+    if (r.reason === 'redemption') {
+      if (!r.refId) return 'Used game time'
+      const [row] = db
+        .select({ title: rewards.title })
+        .from(rewardRedemptions)
+        .innerJoin(rewards, eq(rewards.id, rewardRedemptions.rewardId))
+        .where(eq(rewardRedemptions.id, r.refId))
+        .all()
+      return row ? `Reward: ${row.title}` : 'Reward'
+    }
+    if (r.refId) {
+      const [done] = db
+        .select({ title: chores.title })
+        .from(choreCompletions)
+        .innerJoin(chores, eq(chores.id, choreCompletions.choreId))
+        .where(eq(choreCompletions.id, r.refId))
+        .all()
+      if (done) return done.title
+      const [round] = db.select().from(videoGameRounds).where(eq(videoGameRounds.id, r.refId)).all()
+      if (round) return '🎮 Video Games set — approved'
+    }
+    return 'Chore'
+  }
+
+  return { list, create, update, remove, redeem, pendingRedemptions, grant, adjust, useTime, log }
 }
 
 export type RewardsService = ReturnType<typeof createRewardsService>

@@ -254,6 +254,7 @@ export const rewardUpdateSchema = z.object({
 export const redeemSchema = z.object({ rewardId: id, personId: id })
 export const starsAdjustSchema = z.object({ personId: id, delta: z.number().int().min(-10_000).max(10_000) })
 export const useTimeSchema = z.object({ personId: id })
+export const gameTimeLogSchema = z.object({ personId: id.nullable(), limit: z.number().int().min(1).max(5000) })
 export const grantSchema = z.object({ redemptionId: id })
 
 export const listCreateSchema = z.object({

@@ -295,6 +295,7 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('stars:balances', null, () => services.chores.balances())
   handle('stars:adjust', s.starsAdjustSchema, (req) => services.rewards.adjust(req.personId, req.delta))
   handle('stars:useTime', s.useTimeSchema, (req) => services.rewards.useTime(req.personId))
+  handle('stars:log', s.gameTimeLogSchema, (req) => services.rewards.log(req.personId, req.limit))
 
   handle('rewards:list', null, () => services.rewards.list())
   handle('rewards:create', s.rewardCreateSchema, (req) => services.rewards.create(req))

@@ -46,6 +46,7 @@ import {
   useSyncNow,
   useSyncStatus
 } from '../../api/hooks'
+import { GameTimeLog } from '../chores/GameTimeLog'
 import { PinDialog } from '../../components/PinDialog'
 import { TimeField } from '../../components/DateTimePickers'
 import { ipcInvoke } from '../../api/client'
@@ -672,6 +673,9 @@ function ChoresTab() {
           </div>
         </div>
       )}
+
+      {/* who earned, lost and used game time, and when */}
+      <GameTimeLog />
 
       <div>
         <FieldLabel>Chores & routines</FieldLabel>
