@@ -1,15 +1,31 @@
+import { useEffect } from 'react'
+import { DateTime } from 'luxon'
 import type { PersonDto } from '@shared/types'
-import { useUseTime } from '../../api/hooks'
+import { usePendingUnlocks, useUseTime } from '../../api/hooks'
 import { BigButton, Dialog } from '../../components/ui'
 import { GameIcon } from '../../components/icons'
 import { useToasts } from '../../stores/toastStore'
+import { useApprovals } from '../../stores/approvalStore'
+import { ZONE } from '../../stores/uiStore'
 import { SETUP_MINUTES, gameMinutes, minutesLabel } from '@shared/gameTime'
 
-/** Tapped from a kid's header badge: spend all their saved-up controllers on game time. */
+/**
+ * Tapped from a kid's header badge: spend all their saved-up controllers on game time. A kid with a
+ * finished Video Games set still waiting for a parent gets that request instead (even if they'd
+ * tapped "Not now" on it), so they can bring it back themselves.
+ */
 export function UseTimeDialog({ person, balance, onClose }: { person: PersonDto | null; balance: number; onClose: () => void }) {
   const useTime = useUseTime()
   const pushToast = useToasts((s) => s.push)
-  if (!person) return null
+  const reopen = useApprovals((s) => s.reopen)
+  const { data: pending = [] } = usePendingUnlocks(DateTime.now().setZone(ZONE).toISODate()!)
+  const waiting = !!person && pending.some((u) => u.kind === 'videogames' && u.personId === person.id)
+  useEffect(() => {
+    if (!person || !waiting) return
+    reopen(person.id)
+    onClose()
+  }, [person, waiting, reopen, onClose])
+  if (!person || waiting) return null
   const { play, total } = gameMinutes(balance)
   return (
     <Dialog open onClose={onClose} title={person.name}>

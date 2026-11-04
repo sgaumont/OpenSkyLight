@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { GameIcon } from '../../components/icons'
 import { setProgressLabel } from '@shared/setProgress'
+import { useApprovals } from '../../stores/approvalStore'
 import { createPortal } from 'react-dom'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
@@ -386,6 +387,7 @@ function anyoneSlots(c: DayChoreDto): (string | undefined)[] {
 }
 
 export function ChoresProgressTile() {
+  const reopenApprovals = useApprovals((s) => s.reopen)
   // a tile left up overnight must move on to the new day's chores
   const todayKey = useTodayKey()
   const { data: chores = [] } = useChoresDay(todayKey)
@@ -499,7 +501,18 @@ export function ChoresProgressTile() {
           {checklists.map((cl) => (
             <Fragment key={cl.checklistId}>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-xs font-extrabold tracking-wide text-ink-faint uppercase">
+                <span
+                  className="text-xs font-extrabold tracking-wide text-ink-faint uppercase"
+                  // Video Games: a tap brings back a "Not now"-ed sign-off request (not the tile's tap)
+                  {...(cl.kind === 'videogames' && {
+                    role: 'button',
+                    'aria-label': 'Video Games sign-off',
+                    onClick: (e: React.MouseEvent) => {
+                      e.stopPropagation()
+                      reopenApprovals()
+                    }
+                  })}
+                >
                   🎮 {cl.title}
                   {cl.kind === 'videogames' && ` · ${cl.stars}`}
                 </span>

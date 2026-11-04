@@ -5,7 +5,7 @@ import { choreCompletions, chores, people, rewardRedemptions, rewards, settings,
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
 import type { GameTimeLogEntry, GameTimerDto, RedemptionDto, RewardDto } from '@shared/types'
-import { gameMinutes, minutesLabel } from '@shared/gameTime'
+import { SETUP_MINUTES, gameMinutes, minutesLabel, refundPoints } from '@shared/gameTime'
 import type { ChoresService } from './choresService'
 import { invalid, notFound } from './errors'
 
@@ -31,9 +31,33 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     }
   }
 
-  /** Stop a timer early, or put away one whose time is up. */
-  function stopTimer(id: string): void {
-    putSetting(KEY_TIMERS, JSON.stringify(timers().filter((t) => t.id !== id)))
+  /**
+   * Stop a timer early — the time left comes back as controllers, rounded up to a whole minute (no
+   * more than was spent) — or put away one whose time is up (nothing back).
+   */
+  function stopTimer(id: string): { refunded: number } {
+    const list = timers()
+    const timer = list.find((t) => t.id === id)
+    const now = DateTime.utc()
+    const spent = timer ? (timer.points ?? Math.max(0, timer.minutes - SETUP_MINUTES)) : 0
+    const refunded = timer ? refundPoints(DateTime.fromISO(timer.endsAt).toMillis() - now.toMillis(), spent) : 0
+    db.transaction(() => {
+      if (timer && refunded > 0) {
+        db.insert(starLedger)
+          .values({
+            id: uuidv7(),
+            personId: timer.personId,
+            delta: refunded,
+            reason: 'redemption',
+            refId: timer.id,
+            createdAt: isoUtc(now),
+            note: `Game time stopped early (${minutesLabel(refunded)} back)`
+          })
+          .run()
+      }
+      putSetting(KEY_TIMERS, JSON.stringify(list.filter((t) => t.id !== id)))
+    })
+    return { refunded }
   }
 
   function toDto(row: typeof rewards.$inferSelect): RewardDto {
@@ -180,8 +204,13 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     const list = timers()
     const running = list.find((t) => t.personId === personId && DateTime.fromISO(t.endsAt) > now)
     const timer: GameTimerDto = running
-      ? { ...running, minutes: running.minutes + total, endsAt: isoUtc(DateTime.fromISO(running.endsAt).plus({ minutes: total })) }
-      : { id: uuidv7(), personId, startedAt: isoUtc(now), endsAt: isoUtc(now.plus({ minutes: total })), minutes: total }
+      ? {
+          ...running,
+          minutes: running.minutes + total,
+          points: (running.points ?? Math.max(0, running.minutes - SETUP_MINUTES)) + balance,
+          endsAt: isoUtc(DateTime.fromISO(running.endsAt).plus({ minutes: total }))
+        }
+      : { id: uuidv7(), personId, startedAt: isoUtc(now), endsAt: isoUtc(now.plus({ minutes: total })), minutes: total, points: balance }
     db.transaction(() => {
       db.insert(starLedger)
         .values({

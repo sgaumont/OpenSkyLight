@@ -6,11 +6,12 @@ import { useAuthMutations, useAuthStatus, useChecklistMutations, usePendingUnloc
 import { PinDialog } from '../../components/PinDialog'
 import { GameIcon } from '../../components/icons'
 import { ZONE } from '../../stores/uiStore'
+import { useApprovals } from '../../stores/approvalStore'
 
 /** "Not now" hides a request this long, then it asks again — until a parent approves it. */
 const SNOOZE_MS = 30 * 60_000
 
-const keyOf = (u: PendingUnlockDto): string => `${u.personId}:${u.date}:${u.round ?? 0}`
+export const keyOf = (u: PendingUnlockDto): string => `${u.personId}:${u.date}:${u.round ?? 0}`
 
 /**
  * A finished Video Games set waiting for a parent, centred over the kiosk (and the screensaver,
@@ -23,7 +24,9 @@ export function ApprovalOverlay() {
   const { data: auth } = useAuthStatus()
   const authMutations = useAuthMutations()
   const { approve } = useChecklistMutations()
-  const [snoozed, setSnoozed] = useState<Record<string, number>>({})
+  const snoozed = useApprovals((s) => s.snoozed)
+  const snooze = useApprovals((s) => s.snooze)
+  const focus = useApprovals((s) => s.focus)
   const [askPin, setAskPin] = useState(false)
   const [pinError, setPinError] = useState<string | null>(null)
   // re-checked every minute so a snoozed request comes back
@@ -33,7 +36,10 @@ export function ApprovalOverlay() {
     return () => clearInterval(t)
   }, [])
 
-  const waiting = pending.filter((u) => u.kind === 'videogames' && (snoozed[keyOf(u)] ?? 0) <= now)
+  const waiting = pending
+    .filter((u) => u.kind === 'videogames' && (snoozed[keyOf(u)] ?? 0) <= now)
+    // a kid who asked for theirs (badge tap) sees theirs first
+    .sort((a, b) => Number(b.personId === focus) - Number(a.personId === focus))
   const u = waiting[0]
   if (!u) return null
   const name = people.find((p) => p.id === u.personId)?.name ?? 'Someone'
@@ -72,7 +78,7 @@ export function ApprovalOverlay() {
         <div className="flex w-full gap-3 [&>*]:flex-1">
           <button
             type="button"
-            onClick={() => setSnoozed((s) => ({ ...s, [keyOf(u)]: Date.now() + SNOOZE_MS }))}
+            onClick={() => snooze(keyOf(u), Date.now() + SNOOZE_MS)}
             className="pressable min-h-16 rounded-2xl bg-paper-deep text-2xl font-extrabold text-ink-soft"
           >
             Not now

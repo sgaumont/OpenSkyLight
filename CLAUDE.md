@@ -442,6 +442,13 @@ Add unit tests where sensible.
   `features/chores/GameTimers.tsx` (z-[83]): a countdown pill per kid bottom-centre (every screen + screensaver,
   two-tap Stop), and when one runs out a "<name>'s game time is up!" card + the timer chime until OK (quiet in sleep).
   Toasts move up (bottom-28, z-[84]) while any game timer shows so they don't hide behind the pills.
+- v0.8.108: a "Not now"-ed Video Games request can be brought back by the kid: snoozes live in
+  `stores/approvalStore.ts` (`reopen(personId?)`, `focus` puts that kid's request first). Tapping a kid's header badge
+  while they have a set waiting reopens the approval pop-up instead of "use your time?" (`UseTimeDialog` hands off and
+  closes — Header.tsx untouched); the tile's "🎮 VIDEO GAMES" line is a button that reopens it too (stops the tile tap).
+  Stopping a game timer early refunds the time left, rounded up to a whole minute, capped at the controllers spent on it
+  (`refundPoints`; timers now carry `points`, summed when extended; setup minutes never refunded). Ledger +N "Game time
+  stopped early (N min back)"; toast "🎮 N back to …". `stars:stopTimer` returns {refunded}; OK on a finished one = 0.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

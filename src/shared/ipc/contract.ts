@@ -115,7 +115,8 @@ export type IpcContract = {
   'stars:useTime': { req: { personId: string }; res: { used: number; minutes: number; timer: GameTimerDto | null } }
   /** game timers counting down (and finished ones not yet acknowledged) */
   'stars:timers': { req: void; res: GameTimerDto[] }
-  'stars:stopTimer': { req: { id: string }; res: void }
+  /** stop early: the time left comes back as controllers (rounded up to a minute, capped at what was spent) */
+  'stars:stopTimer': { req: { id: string }; res: { refunded: number } }
   /** the game time log, newest first; one kid or everyone */
   'stars:log': { req: { personId: string | null; limit: number }; res: GameTimeLogEntry[] }
 

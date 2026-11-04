@@ -4,7 +4,7 @@ import { openDatabase, type DbHandle } from '../../src/main/db/client'
 import { people, starLedger } from '../../src/main/db/schema'
 import { createChoresService } from '../../src/main/services/choresService'
 import { createRewardsService } from '../../src/main/services/rewardsService'
-import { SETUP_MINUTES, gameMinutes, minutesLabel } from '../../src/shared/gameTime'
+import { SETUP_MINUTES, gameMinutes, minutesLabel, refundPoints } from '../../src/shared/gameTime'
 
 let handle: DbHandle
 let chores: ReturnType<typeof createChoresService>
@@ -89,5 +89,57 @@ describe('use your time', () => {
 
   it('an unknown person is refused', () => {
     expect(() => rewards.useTime('nobody')).toThrow()
+  })
+})
+
+describe('stopping game time early', () => {
+  /** Rewrite a timer so it has `msLeft` to go. */
+  function setLeft(id: string, msLeft: number) {
+    const list = rewards.timers().map((t) => (t.id === id ? { ...t, endsAt: new Date(Date.now() + msLeft).toISOString() } : t))
+    handle.sqlite.prepare("UPDATE settings SET value = ? WHERE key = 'gameTime.timers'").run(JSON.stringify(list))
+  }
+  const back = () => handle.db.select().from(starLedger).all().at(-1)!
+
+  it('the rule: time left rounded up to a whole minute, never more than was spent', () => {
+    expect(refundPoints(11 * 60_000 + 20_000, 60)).toBe(12)
+    expect(refundPoints(60_000, 60)).toBe(1)
+    expect(refundPoints(1, 60)).toBe(1)
+    expect(refundPoints(0, 60)).toBe(0)
+    expect(refundPoints(-5000, 60)).toBe(0)
+    expect(refundPoints(63 * 60_000, 60)).toBe(60)
+  })
+
+  it('stopped with 11:20 left: 12 back, logged', () => {
+    rewards.adjust('emma', 60)
+    const t = rewards.useTime('emma').timer!
+    setLeft(t.id, 11 * 60_000 + 20_000)
+    expect(rewards.stopTimer(t.id)).toEqual({ refunded: 12 })
+    expect(chores.balanceOf('emma')).toBe(12)
+    expect(back()).toMatchObject({ personId: 'emma', delta: 12, note: 'Game time stopped early (12 min back)' })
+    expect(rewards.timers()).toEqual([])
+  })
+
+  it('stopped straight away: what was spent comes back, not the free setup minutes', () => {
+    rewards.adjust('emma', 60)
+    const t = rewards.useTime('emma').timer!
+    expect(rewards.stopTimer(t.id)).toEqual({ refunded: 60 })
+    expect(chores.balanceOf('emma')).toBe(60)
+  })
+
+  it('a timer that already ran out gives nothing back', () => {
+    rewards.adjust('emma', 10)
+    const t = rewards.useTime('emma').timer!
+    setLeft(t.id, -60_000)
+    expect(rewards.stopTimer(t.id)).toEqual({ refunded: 0 })
+    expect(chores.balanceOf('emma')).toBe(0)
+  })
+
+  it('an extended timer can give back everything spent on it, no more', () => {
+    rewards.adjust('emma', 30)
+    const t = rewards.useTime('emma').timer!
+    rewards.adjust('emma', 10)
+    rewards.useTime('emma')
+    expect(rewards.stopTimer(t.id)).toEqual({ refunded: 40 })
+    expect(chores.balanceOf('emma')).toBe(40)
   })
 })

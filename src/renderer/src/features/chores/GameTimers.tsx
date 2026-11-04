@@ -6,6 +6,7 @@ import { GameIcon } from '../../components/icons'
 import { startAlarm, stopAlarm } from '../../lib/alarm'
 import { initials, textOn } from '../../lib/format'
 import { useKioskState } from '../../stores/kioskStore'
+import { useToasts } from '../../stores/toastStore'
 
 /**
  * Kids' game time counting down: a pill each at the bottom of the screen (every screen, and over
@@ -16,6 +17,7 @@ export function GameTimers() {
   const { data: timers = [] } = useGameTimers()
   const { data: people = [] } = usePeople()
   const stop = useStopGameTimer()
+  const pushToast = useToasts((s) => s.push)
   const sleeping = useKioskState((s) => s.sleeping)
   const [now, setNow] = useState(() => Date.now())
   const [confirming, setConfirming] = useState<string | null>(null)
@@ -76,7 +78,11 @@ export function GameTimers() {
                   onClick={() => {
                     if (!armed) return setConfirming(t.id)
                     setConfirming(null)
-                    stop.mutate({ id: t.id })
+                    stop.mutate(
+                      { id: t.id },
+                      // the time left goes back on their balance
+                      { onSuccess: (res) => res.refunded > 0 && pushToast(`🎮 ${res.refunded} back to ${p?.name ?? 'them'}`) }
+                    )
                   }}
                   onBlur={() => setConfirming(null)}
                   className={`pressable rounded-full px-4 py-2 text-sm font-extrabold ${armed ? 'bg-ember text-white' : 'bg-paper/15 text-paper'}`}

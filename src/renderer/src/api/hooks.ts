@@ -191,7 +191,7 @@ export function useGameTimers() {
 }
 
 export function useStopGameTimer() {
-  return useInvalidatingMutation((input: { id: string }) => ipcInvoke('stars:stopTimer', input), [['gameTimers']])
+  return useInvalidatingMutation((input: { id: string }) => ipcInvoke('stars:stopTimer', input), [['gameTimers'], ['balances']])
 }
 
 /** A kid spends all their controllers on game time (balance → 0). */

@@ -344,6 +344,8 @@ export interface GameTimerDto {
   endsAt: string
   /** total minutes, setup included */
   minutes: number
+  /** controllers spent on it — the most a stop-early refund gives back (the setup minutes were free) */
+  points?: number
 }
 
 /** One line of the game time log: a gain (+), loss or use (−), with the kid's balance right after. */
