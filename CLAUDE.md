@@ -409,6 +409,7 @@ Add unit tests where sensible.
 - v0.8.80: Next up card runs into tomorrow ("Tmrw" before the time) once today's timed events are done/too few;
   an overnight event stays under today.
 - v0.8.81: Next up card swaps left/right (text aligned to that edge, fade-in) every time the screensaver photo changes.
+- v0.8.82: user preferred the swap on a timer: Next up card changes sides once a minute (`GLANCE_SWAP_MS`), not per photo.
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1

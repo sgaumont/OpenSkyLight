@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
@@ -13,6 +13,8 @@ import { guardInput } from '@shared/inputGuard'
 import { ShuffleDeck } from '@shared/shuffleDeck'
 
 const SLIDE_MS = 10_000
+/** How often the Next up card swaps sides. */
+const GLANCE_SWAP_MS = 60_000
 
 /**
  * Shuffled slideshow order, kept for the life of the app so each screensaver
@@ -68,15 +70,6 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
 
   const next = photos.length > 1 ? (slideDeck.peek() ?? null) : null
 
-  // the Next up card moves to the other side each time the photo changes
-  const [glanceRight, setGlanceRight] = useState(false)
-  const shownRef = useRef<string | null>(null)
-  useEffect(() => {
-    if (current === null) return
-    if (shownRef.current !== null && shownRef.current !== current) setGlanceRight((r) => !r)
-    shownRef.current = current
-  }, [current])
-
   return (
     <div className="fixed inset-0 z-[80] cursor-none bg-black" onPointerDown={consumeWakeTap(onDismiss)}>
       {current && (
@@ -97,8 +90,7 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
         <div className="mt-1 text-2xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
       </div>
       <ScreensaverWeather />
-      {/* swaps sides with every new photo */}
-      <ScreensaverGlance now={now} right={glanceRight} />
+      <ScreensaverGlance now={now} />
     </div>
   )
 }
@@ -134,7 +126,13 @@ function ScreensaverWeather() {
  * What's next (two timed events), top-left over the photos: the rest of today, running into
  * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
  */
-function ScreensaverGlance({ now, right }: { now: DateTime; right: boolean }) {
+function ScreensaverGlance({ now }: { now: DateTime }) {
+  // swaps between the left and right of the screen, fading in on each move
+  const [right, setRight] = useState(false)
+  useEffect(() => {
+    const t = setInterval(() => setRight((r) => !r), GLANCE_SWAP_MS)
+    return () => clearInterval(t)
+  }, [])
   const todayKey = now.toISODate()!
   const tomorrowKey = now.plus({ days: 1 }).toISODate()!
   const range = useMemo(() => agendaRange(todayKey, ZONE, 2), [todayKey])
