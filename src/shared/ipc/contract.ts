@@ -100,7 +100,11 @@ export type IpcContract = {
   'chores:checklistDelete': { req: { id: string }; res: void }
   'chores:checklistsDay': { req: { date: string }; res: DayChecklistDto[] }
   'chores:pendingUnlocks': { req: { date: string }; res: PendingUnlockDto[] }
-  'chores:approveUnlock': { req: { checklistId: string; personId: string; date: string }; res: void }
+  /** `round`: which finished Video Games round (checklistId = VIDEO_GAMES_SET_ID) */
+  'chores:approveUnlock': { req: { checklistId: string; personId: string; date: string; round?: number }; res: void }
+  /** controllers paid per finished Video Games round */
+  'chores:videoGamesStars': { req: void; res: { stars: number } }
+  'chores:setVideoGamesStars': { req: { stars: number }; res: { stars: number } }
 
   'stars:balances': { req: void; res: StarBalanceDto[] }
   /** a parent's correction: adds `delta` (may be negative) to the person's balance */

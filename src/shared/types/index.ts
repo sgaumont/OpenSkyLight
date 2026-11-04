@@ -220,7 +220,10 @@ export interface MealSlotDto {
 
 export type ChoreRoutine = 'morning' | 'evening' | null
 /** 'anyone' = whoever does it first claims it; 'each' = every assignee has to do it */
-export type ChoreMode = 'anyone' | 'each'
+export type ChoreMode = 'anyone' | 'each' | 'videogames'
+
+/** The Video Games set's id where a checklist id goes (its day card, its sign-off requests). */
+export const VIDEO_GAMES_SET_ID = 'videogames'
 
 /** A chore belongs to no one: whoever does it claims it when checking it off. */
 export interface ChoreDto {
@@ -314,7 +317,11 @@ export interface DayChecklistDto {
   checklistId: string
   title: string
   items: DayChoreDto[]
-  people: { personId: string; done: number; total: number; unlock: UnlockState }[]
+  /** done/total: this round's tasks (Video Games starts over after each finished round) */
+  people: { personId: string; done: number; total: number; unlock: UnlockState; rounds?: number }[]
+  /** 'videogames': the day's Video Games set, paying `stars` per finished round once approved */
+  kind?: 'checklist' | 'videogames'
+  stars?: number
 }
 
 export interface PendingUnlockDto {
@@ -322,6 +329,10 @@ export interface PendingUnlockDto {
   title: string
   personId: string
   date: string
+  kind: 'checklist' | 'videogames'
+  /** Video Games: which finished round (1st, 2nd… time through the set that day) */
+  round?: number
+  stars?: number
 }
 
 export interface StarBalanceDto {

@@ -34,6 +34,8 @@ export const COMPANION_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'chores:checklistsDay',
   'chores:pendingUnlocks',
   'chores:approveUnlock',
+  'chores:videoGamesStars',
+  'chores:setVideoGamesStars',
   'stars:balances',
   'stars:adjust',
   'events:getOccurrences',

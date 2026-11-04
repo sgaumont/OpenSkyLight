@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { GameIcon } from '../../components/icons'
+import { setProgressLabel } from '@shared/setProgress'
 import { createPortal } from 'react-dom'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
@@ -395,7 +396,7 @@ export function ChoresProgressTile() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const all = [...checklists.flatMap((cl) => cl.items), ...chores]
   // every title starts at the same x: the circle column fits the most circles any row has (20px each, 2px gaps)
-  const maxCircles = Math.max(1, ...all.map((c) => (c.mode === 'each' ? c.assignees.length : anyoneSlots(c).length)))
+  const maxCircles = Math.max(1, ...all.map((c) => (c.mode !== 'anyone' ? c.assignees.length : anyoneSlots(c).length)))
   const circleWidth = maxCircles * 22 - 2
   const sorted = sortDayChores(chores)
 
@@ -443,9 +444,9 @@ export function ChoresProgressTile() {
       <span
         className="flex shrink-0 gap-0.5"
         style={{ minWidth: circleWidth }}
-        data-circles={c.mode === 'each' ? c.assignees.length : anyoneSlots(c).length}
+        data-circles={c.mode !== 'anyone' ? c.assignees.length : anyoneSlots(c).length}
       >
-        {c.mode === 'each'
+        {c.mode !== 'anyone'
           ? c.assignees.map((id) => {
               const p = peopleById.get(id)
               return circle(id, c.doneBy.includes(id) ? p : undefined, p, countOf(c, id) > 0)
@@ -458,7 +459,7 @@ export function ChoresProgressTile() {
         {c.title}
         {isCounted(c) && (
           <span className="ml-1.5 inline-block text-xs font-extrabold text-ink-faint" data-count>
-            {c.mode === 'each'
+            {c.mode !== 'anyone'
               ? c.assignees
                   .map((id) => `${initials(peopleById.get(id)?.name ?? '?')} ${countLabel(c, id)}`)
                   .join(' · ')
@@ -491,7 +492,10 @@ export function ChoresProgressTile() {
           {checklists.map((cl) => (
             <Fragment key={cl.checklistId}>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-xs font-extrabold tracking-wide text-ink-faint uppercase">🎮 {cl.title}</span>
+                <span className="text-xs font-extrabold tracking-wide text-ink-faint uppercase">
+                  🎮 {cl.title}
+                  {cl.kind === 'videogames' && ` · ${cl.stars}`}
+                </span>
                 {cl.people.map((s) => {
                   const p = peopleById.get(s.personId)
                   if (!p) return null
@@ -502,7 +506,7 @@ export function ChoresProgressTile() {
                       className={`flex items-center gap-1 text-xs font-extrabold ${s.unlock === 'approved' ? 'text-[#46A758]' : 'text-ink-soft'}`}
                     >
                       <MiniAvatar person={p} />
-                      {s.unlock === 'locked' ? `${s.done}/${s.total}` : UNLOCK_MARK[s.unlock]}
+                      {setProgressLabel(cl, s, UNLOCK_MARK)}
                     </span>
                   )
                 })}

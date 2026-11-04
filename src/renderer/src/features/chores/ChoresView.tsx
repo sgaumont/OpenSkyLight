@@ -8,6 +8,7 @@ import { CheckIcon, GameIcon, MoonIcon, SunIcon } from '../../components/icons'
 import { BigButton } from '../../components/ui'
 import { RewardsDialog } from './RewardsDialog'
 import { Avatar, useChoreClaim } from './ClaimChore'
+import { setProgressLabel } from '@shared/setProgress'
 import { claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
 
 function StarBadge({ count }: { count: number }) {
@@ -177,7 +178,14 @@ function ChecklistCard({
   return (
     <div className="flex flex-col gap-3 rounded-card bg-paper-deep/40 p-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1">
-        <div className="font-display text-2xl">🎮 {checklist.title}</div>
+        <div className="font-display text-2xl">
+          🎮 {checklist.title}
+          {checklist.kind === 'videogames' && (
+            <span className="ml-2 text-xl text-ember-deep">
+              <GameIcon /> {checklist.stars}
+            </span>
+          )}
+        </div>
         {checklist.people.map((s) => {
           const p = peopleById.get(s.personId)
           if (!p) return null
@@ -194,7 +202,7 @@ function ChecklistCard({
               }`}
             >
               <Avatar person={p} size="h-7 w-7 text-[10px]" />
-              {p.name} · {s.unlock === 'locked' ? `${s.done}/${s.total}` : UNLOCK_LABEL[s.unlock]}
+              {p.name} · {setProgressLabel(checklist, s, { pending: UNLOCK_LABEL.pending, approved: UNLOCK_LABEL.approved })}
             </span>
           )
         })}
@@ -296,7 +304,7 @@ export function ChoresView() {
                 )}
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-2">
                   {g.items.map((c) =>
-                    c.mode === 'each' ? (
+                    c.mode !== 'anyone' ? (
                       <EachChoreRow
                         key={c.choreId}
                         chore={c}

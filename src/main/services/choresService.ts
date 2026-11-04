@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
-import { checklistUnlocks, choreChecklists, choreCompletions, chores, people, starLedger } from '../db/schema'
+import { checklistUnlocks, choreChecklists, choreCompletions, chores, people, settings, starLedger, videoGameRounds } from '../db/schema'
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
 import { buildRRuleString, parseRRuleString } from '@shared/recurrence/build'
@@ -18,10 +18,17 @@ import type {
   StarBalanceDto,
   UnlockState
 } from '@shared/types'
+import { VIDEO_GAMES_SET_ID } from '@shared/types'
 import { invalid, notFound } from './errors'
 
 type ChoreRow = typeof chores.$inferSelect
 type ChecklistRow = typeof choreChecklists.$inferSelect
+/** Any write handle: the database or a transaction on it. */
+type DbOrTx = Pick<AppDb, 'select' | 'insert' | 'update' | 'delete'>
+
+/** Settings key for the Video Games set reward (controllers per finished round). */
+const KEY_VIDEO_GAMES_STARS = 'chores.videoGamesStars'
+const DEFAULT_VIDEO_GAMES_STARS = 5
 
 /** The scheduling fields chores and checklists share. */
 interface Schedule {
@@ -63,7 +70,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       active: row.active,
       sortOrder: row.sortOrder,
       mode: row.mode,
-      assignees: row.mode === 'each' ? parseIds(row.assignees) : [],
+      assignees: row.mode !== 'anyone' ? parseIds(row.assignees) : [],
       times: timesOf(row)
     }
   }
@@ -95,20 +102,21 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     const zone = deviceTz()
     const anchor = input.anchorDate ?? DateTime.now().setZone(zone).toISODate()!
     const mode = input.mode ?? 'anyone'
-    if (mode === 'each' && !input.assignees?.length) throw invalid('Pick who has to do this chore')
+    if (mode !== 'anyone' && !input.assignees?.length) throw invalid('Pick who has to do this chore')
     const id = uuidv7()
     db.insert(chores)
       .values({
         id,
         title: input.title,
-        starsValue: input.starsValue,
+        // Video Games tasks pay nothing alone: the set's reward is paid per finished round
+        starsValue: mode === 'videogames' ? 0 : input.starsValue,
         scheduleRrule: input.recurrence ? buildRRuleString(input.recurrence, zone) : null,
         dueDate: anchor,
         routine: input.routine ?? null,
         active: true,
         createdAt: isoUtc(DateTime.utc()),
         mode,
-        assignees: mode === 'each' ? JSON.stringify(input.assignees) : null,
+        assignees: mode !== 'anyone' ? JSON.stringify(input.assignees) : null,
         times: input.times === undefined ? 1 : (input.times ?? 0)
       })
       .run()
@@ -128,9 +136,12 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     if (input.routine !== undefined) patch.routine = input.routine
     if (input.active !== undefined) patch.active = input.active
     if (input.mode !== undefined) patch.mode = input.mode
+    if (input.mode === 'videogames') patch.starsValue = 0
     if (input.assignees !== undefined) patch.assignees = JSON.stringify(input.assignees)
     if (input.times !== undefined) patch.times = input.times ?? 0
-    if (input.mode === 'each' && !input.assignees?.length) throw invalid('Pick who has to do this chore')
+    if ((input.mode === 'each' || input.mode === 'videogames') && !input.assignees?.length) {
+      throw invalid('Pick who has to do this chore')
+    }
     const result = db
       .update(chores)
       .set(patch)
@@ -222,7 +233,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       routine: row.routine,
       completed: who.length > 0 && doneBy.length === who.length,
       completedBy: null,
-      mode: 'each',
+      mode: row.mode === 'videogames' ? 'videogames' : 'each',
       assignees: who,
       doneBy,
       times,
@@ -242,7 +253,8 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     const routineOrder = { morning: 0, null: 1, evening: 2 } as Record<string, number>
     // person_id is legacy and ignored: 'anyone' chores belong to no one
     return rows
-      .filter((row) => isDueOn(row, date))
+      // Video Games tasks show in their set's card (checklistsDay), not as chores of their own
+      .filter((row) => row.mode !== 'videogames' && isDueOn(row, date))
       .map((row) => dayChore(row, done.get(row.id) ?? [], live))
       .filter((c) => c.mode === 'anyone' || c.assignees.length > 0)
       .sort((a, b) => routineOrder[String(a.routine)] - routineOrder[String(b.routine)])
@@ -285,7 +297,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       const checklist = checklistRow(chore.checklistId)
       return checklist ? parseIds(checklist.assignees) : []
     }
-    return chore.mode === 'each' ? parseIds(chore.assignees) : null
+    return chore.mode !== 'anyone' ? parseIds(chore.assignees) : null
   }
 
   /**
@@ -350,6 +362,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
           unlocked = checklist.title
         }
       }
+      if (chore.mode === 'videogames' && syncRounds(tx, personId, date)) unlocked = 'Video Games'
     })
     return { balance: balanceOf(personId), unlocked }
   }
@@ -394,6 +407,8 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
           )
           .run()
       }
+      // a round that no longer holds is withdrawn (and its controllers taken back if paid)
+      if (chore.mode === 'videogames') syncRounds(tx, completion.personId, date)
     })
     return { balance: balanceOf(completion.personId) }
   }
@@ -513,6 +528,8 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         }
       })
       .filter((c) => c.items.length > 0 && c.people.length > 0)
+      .map((c): DayChecklistDto => ({ ...c, kind: 'checklist' }))
+      .concat([videoGamesDay(date)].filter((v): v is DayChecklistDto => v !== null && v.people.length > 0))
   }
 
   function pendingUnlocks(date: string): PendingUnlockDto[] {
@@ -530,10 +547,29 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       )
       .orderBy(asc(checklistUnlocks.unlockedAt))
       .all()
+      .map((u): PendingUnlockDto => ({ ...u, kind: 'checklist' }))
+      .concat(
+        db
+          .select()
+          .from(videoGameRounds)
+          .where(and(eq(videoGameRounds.status, 'pending'), eq(videoGameRounds.dueDate, date)))
+          .orderBy(asc(videoGameRounds.completedAt), asc(videoGameRounds.round))
+          .all()
+          .map((r) => ({
+            checklistId: VIDEO_GAMES_SET_ID,
+            title: 'Video Games',
+            personId: r.personId,
+            date: r.dueDate,
+            kind: 'videogames' as const,
+            round: r.round,
+            stars: r.stars
+          }))
+      )
   }
 
   /** A parent signs off: the prize is unlocked for that person today. */
-  function approveUnlock(checklistId: string, personId: string, date: string): void {
+  function approveUnlock(checklistId: string, personId: string, date: string, round?: number): void {
+    if (checklistId === VIDEO_GAMES_SET_ID) return approveVideoGames(personId, date, round ?? 1)
     const result = db
       .update(checklistUnlocks)
       .set({ status: 'approved', approvedAt: isoUtc(DateTime.utc()) })
@@ -547,6 +583,170 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       )
       .run()
     if (result.changes === 0) throw notFound('Unlock')
+  }
+
+  // ── Video Games ───────────────────────────────────────────────────────────
+
+  function videoGamesStars(): number {
+    const [row] = db.select().from(settings).where(eq(settings.key, KEY_VIDEO_GAMES_STARS)).all()
+    const n = row ? Number(row.value) : NaN
+    return Number.isInteger(n) && n >= 0 ? n : DEFAULT_VIDEO_GAMES_STARS
+  }
+
+  function setVideoGamesStars(stars: number): { stars: number } {
+    db.insert(settings)
+      .values({ key: KEY_VIDEO_GAMES_STARS, value: String(stars) })
+      .onConflictDoUpdate({ target: settings.key, set: { value: String(stars) } })
+      .run()
+    return { stars }
+  }
+
+  /** The Video Games tasks due on `date` (all of them, or just personId's). */
+  function videoGameTasks(date: string, personId?: string, from: DbOrTx = db): ChoreRow[] {
+    return from
+      .select()
+      .from(chores)
+      .where(and(isNull(chores.deletedAt), eq(chores.active, true), eq(chores.mode, 'videogames'), isNull(chores.checklistId)))
+      .orderBy(asc(chores.sortOrder), asc(chores.createdAt))
+      .all()
+      .filter((row) => isDueOn(row, date) && (!personId || parseIds(row.assignees).includes(personId)))
+  }
+
+  /**
+   * How far a person is through the day's set: `rounds` = whole sets done (the fewest times any
+   * one task was done), `max` = how many rounds the tasks allow (each task's times; null = no limit).
+   */
+  function roundsOf(tasks: ChoreRow[], counts: (choreId: string) => number): { rounds: number; max: number | null } {
+    if (tasks.length === 0) return { rounds: 0, max: 0 }
+    const rounds = Math.min(...tasks.map((t) => counts(t.id)))
+    const limits = tasks.map((t) => timesOf(t)).filter((t): t is number => t !== null)
+    return { rounds, max: limits.length > 0 ? Math.min(...limits) : null }
+  }
+
+  /**
+   * Brings personId's finished rounds for the day in line with their ticks: new rounds wait for a
+   * parent (pending); rounds that no longer hold are removed, with their controllers if paid.
+   * Returns whether a round was just finished.
+   */
+  function syncRounds(tx: DbOrTx, personId: string, date: string): boolean {
+    const tasks = videoGameTasks(date, personId, tx)
+    const ids = tasks.map((t) => t.id)
+    const ticks = ids.length
+      ? tx
+          .select()
+          .from(choreCompletions)
+          .where(and(inArray(choreCompletions.choreId, ids), eq(choreCompletions.dueDate, date), eq(choreCompletions.personId, personId)))
+          .all()
+      : []
+    const { rounds } = roundsOf(tasks, (id) => ticks.filter((c) => c.choreId === id).length)
+    const existing = tx
+      .select()
+      .from(videoGameRounds)
+      .where(and(eq(videoGameRounds.personId, personId), eq(videoGameRounds.dueDate, date)))
+      .all()
+    for (const r of existing.filter((r) => r.round > rounds)) {
+      tx.delete(starLedger).where(eq(starLedger.refId, r.id)).run()
+      tx.delete(videoGameRounds).where(eq(videoGameRounds.id, r.id)).run()
+    }
+    let added = false
+    const now = isoUtc(DateTime.utc())
+    for (let round = 1; round <= rounds; round++) {
+      if (existing.some((r) => r.round === round)) continue
+      tx.insert(videoGameRounds)
+        .values({ id: uuidv7(), personId, dueDate: date, round, stars: videoGamesStars(), status: 'pending', completedAt: now })
+        .run()
+      added = true
+    }
+    return added
+  }
+
+  /**
+   * The day's Video Games set as a checklist-style card. A task counts as ticked for a person once
+   * they've done it this round (after a finished round the ticks start over, if the tasks allow).
+   */
+  function videoGamesDay(date: string): DayChecklistDto | null {
+    const tasks = videoGameTasks(date)
+    if (tasks.length === 0) return null
+    const live = livePeople()
+    const done = completionsOn(date)
+    const rows = db.select().from(videoGameRounds).where(eq(videoGameRounds.dueDate, date)).all()
+    const everyone = [...new Set(tasks.flatMap((t) => parseIds(t.assignees)))].filter((p) => live.has(p))
+    const progress = new Map(
+      everyone.map((p) => {
+        const mine = tasks.filter((t) => parseIds(t.assignees).includes(p))
+        const count = (id: string): number => (done.get(id) ?? []).filter((d) => d === p).length
+        const { rounds, max } = roundsOf(mine, count)
+        const finished = max !== null && rounds >= max
+        // ticked = done in the round under way; everything stays ticked once no more rounds fit
+        const ticked = new Set(mine.filter((t) => (finished ? count(t.id) > 0 : count(t.id) > rounds)).map((t) => t.id))
+        return [p, { mine, rounds, finished, ticked }] as const
+      })
+    )
+    const items: DayChoreDto[] = tasks.map((t) => {
+      const who = parseIds(t.assignees).filter((p) => live.has(p))
+      const doneBy = who.filter((p) => progress.get(p)!.ticked.has(t.id))
+      return {
+        choreId: t.id,
+        title: t.title,
+        icon: t.icon,
+        starsValue: 0,
+        routine: t.routine,
+        completed: who.length > 0 && doneBy.length === who.length,
+        completedBy: null,
+        mode: 'videogames',
+        assignees: who,
+        doneBy,
+        times: timesOf(t),
+        claims: (done.get(t.id) ?? []).filter((d) => who.includes(d))
+      }
+    })
+    return {
+      checklistId: VIDEO_GAMES_SET_ID,
+      title: 'Video Games',
+      kind: 'videogames',
+      stars: videoGamesStars(),
+      items,
+      people: everyone.map((personId) => {
+        const p = progress.get(personId)!
+        const mineRounds = rows.filter((r) => r.personId === personId)
+        const unlock: UnlockState = mineRounds.some((r) => r.status === 'pending')
+          ? 'pending'
+          : p.finished && p.rounds > 0
+            ? 'approved'
+            : 'locked'
+        return {
+          personId,
+          done: p.ticked.size,
+          total: p.mine.length,
+          unlock,
+          rounds: mineRounds.filter((r) => r.status === 'approved').length
+        }
+      })
+    }
+  }
+
+  /** A parent signs off a finished round: the set's controllers go to that person. */
+  function approveVideoGames(personId: string, date: string, round: number): void {
+    const [row] = db
+      .select()
+      .from(videoGameRounds)
+      .where(
+        and(
+          eq(videoGameRounds.personId, personId),
+          eq(videoGameRounds.dueDate, date),
+          eq(videoGameRounds.round, round),
+          eq(videoGameRounds.status, 'pending')
+        )
+      )
+      .all()
+    if (!row) throw notFound('Video Games round')
+    const now = isoUtc(DateTime.utc())
+    db.transaction((tx) => {
+      tx.update(videoGameRounds).set({ status: 'approved', approvedAt: now }).where(eq(videoGameRounds.id, row.id)).run()
+      if (row.stars > 0) {
+        tx.insert(starLedger).values({ id: uuidv7(), personId, delta: row.stars, reason: 'chore', refId: row.id, createdAt: now }).run()
+      }
+    })
   }
 
   /**
@@ -574,6 +774,8 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     checklistsDay,
     pendingUnlocks,
     approveUnlock,
+    videoGamesStars: () => ({ stars: videoGamesStars() }),
+    setVideoGamesStars,
     purgeCompletionsBefore
   }
 }

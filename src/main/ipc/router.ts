@@ -81,6 +81,7 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
   'chores:checklistUpdate',
   'chores:checklistDelete',
   'chores:approveUnlock',
+  'chores:setVideoGamesStars',
   'stars:adjust',
   'rewards:create',
   'rewards:update',
@@ -132,6 +133,7 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'chores:checklistUpdate': 'chores',
   'chores:checklistDelete': 'chores',
   'chores:approveUnlock': 'chores',
+  'chores:setVideoGamesStars': 'chores',
   // balances refresh with the chores domain
   'stars:adjust': 'chores'
 }
@@ -283,8 +285,10 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('chores:checklistDelete', s.idSchema, (req) => services.chores.removeChecklist(req.id))
   handle('chores:checklistsDay', s.choreDaySchema, (req) => services.chores.checklistsDay(req.date))
   handle('chores:pendingUnlocks', s.choreDaySchema, (req) => services.chores.pendingUnlocks(req.date))
+  handle('chores:videoGamesStars', null, () => services.chores.videoGamesStars())
+  handle('chores:setVideoGamesStars', s.videoGamesStarsSchema, (req) => services.chores.setVideoGamesStars(req.stars))
   handle('chores:approveUnlock', s.unlockApproveSchema, (req) =>
-    services.chores.approveUnlock(req.checklistId, req.personId, req.date)
+    services.chores.approveUnlock(req.checklistId, req.personId, req.date, req.round)
   )
 
   handle('stars:balances', null, () => services.chores.balances())

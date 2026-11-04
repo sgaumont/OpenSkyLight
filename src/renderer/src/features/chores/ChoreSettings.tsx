@@ -8,7 +8,7 @@ import { ZONE } from '../../stores/uiStore'
 import { textOn } from '../../lib/format'
 import { BigButton, Dialog, FieldLabel, SegmentedControl } from '../../components/ui'
 import { OskInput } from '../../components/Osk'
-import { PlusIcon } from '../../components/icons'
+import { GameIcon, PlusIcon } from '../../components/icons'
 
 const WEEKDAY_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -92,7 +92,7 @@ export function PeoplePicker({
   )
 }
 
-/** Finished checklists waiting for a parent to sign off today. */
+/** Finished checklists and Video Games sets waiting for a parent to sign off today. */
 export function PendingUnlocks() {
   const today = DateTime.now().setZone(ZONE).toISODate()!
   const { data: pending = [] } = usePendingUnlocks(today)
@@ -101,11 +101,19 @@ export function PendingUnlocks() {
   return (
     <>
       {pending.map((u) => (
-        <div key={`${u.checklistId}:${u.personId}`} className="flex items-center gap-3 rounded-2xl bg-sun-soft p-3">
+        <div key={`${u.checklistId}:${u.personId}:${u.round ?? 0}`} className="flex items-center gap-3 rounded-2xl bg-sun-soft p-3">
           <span className="min-w-0 flex-1 truncate text-lg font-bold">
             {people.find((p) => p.id === u.personId)?.name ?? 'Someone'} finished 🎮 {u.title}
+            {u.kind === 'videogames' && (u.round ?? 1) > 1 ? ` (set ${u.round})` : ''}
           </span>
-          <BigButton onClick={() => mutations.approve.mutate({ checklistId: u.checklistId, personId: u.personId, date: u.date })}>
+          {u.kind === 'videogames' && (
+            <span className="text-base font-extrabold text-ember-deep">
+              <GameIcon /> {u.stars}
+            </span>
+          )}
+          <BigButton
+            onClick={() => mutations.approve.mutate({ checklistId: u.checklistId, personId: u.personId, date: u.date, round: u.round })}
+          >
             Approve
           </BigButton>
         </div>

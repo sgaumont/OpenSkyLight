@@ -37,7 +37,8 @@ function ClaimDialog({
   onUndo: (personId?: string) => void
   onClose: () => void
 }) {
-  const each = chore?.mode === 'each'
+  // per person for 'Everyone' and Video Games chores
+  const each = !!chore && chore.mode !== 'anyone'
   const counted = chore ? isCounted(chore) : false
   const candidates = each ? people.filter((p) => chore.assignees.includes(p.id)) : people
   const nameOf = (id: string): string | undefined => people.find((p) => p.id === id)?.name
@@ -171,7 +172,7 @@ export function useChoreClaim(date: string): {
       return
     }
     setClaiming(null)
-    if (chore.mode === 'each') toggle(chore, person)
+    if (chore.mode !== 'anyone') toggle(chore, person)
     else complete(chore, person)
   }
 

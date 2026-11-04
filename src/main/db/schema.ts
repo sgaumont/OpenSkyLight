@@ -120,8 +120,9 @@ export const chores = sqliteTable('chores', {
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: text('created_at').notNull(),
   deletedAt: text('deleted_at'),
-  /** 'anyone' = first to do it claims it; 'each' = every assignee does it */
-  mode: text('mode', { enum: ['anyone', 'each'] }).notNull().default('anyone'),
+  /** 'anyone' = first to do it claims it; 'each' = every assignee does it; 'videogames' = like 'each',
+   *  but part of the day's Video Games set, which pays a set reward instead of per task */
+  mode: text('mode', { enum: ['anyone', 'each', 'videogames'] }).notNull().default('anyone'),
   assignees: text('assignees'), // JSON person ids, for 'each'
   /** set = an item of that checklist (schedule and assignees come from the checklist) */
   checklistId: text('checklist_id').references(() => choreChecklists.id),
@@ -136,6 +137,18 @@ export const checklistUnlocks = sqliteTable('checklist_unlocks', {
   dueDate: text('due_date').notNull(),
   status: text('status', { enum: ['pending', 'approved'] }).notNull().default('pending'),
   unlockedAt: text('unlocked_at').notNull(),
+  approvedAt: text('approved_at')
+})
+
+/** A person finished every Video Games task due that day (`round` times over); paid on approval. */
+export const videoGameRounds = sqliteTable('video_game_rounds', {
+  id: text('id').primaryKey(),
+  personId: text('person_id').notNull(),
+  dueDate: text('due_date').notNull(),
+  round: integer('round').notNull(),
+  stars: integer('stars').notNull(),
+  status: text('status', { enum: ['pending', 'approved'] }).notNull().default('pending'),
+  completedAt: text('completed_at').notNull(),
   approvedAt: text('approved_at')
 })
 

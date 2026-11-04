@@ -49,7 +49,7 @@ describe('family notes', () => {
     const sqlite = new Database(':memory:')
     runMigrations(sqlite, 3)
     sqlite.exec(`INSERT INTO people (id, name, color, role, sort_order, created_at) VALUES ('kid1','Emma','#46A758','child',0,'2026-01-01T00:00:00Z')`)
-    runMigrations(sqlite)
+    runMigrations(sqlite, 4)
     expect(sqlite.pragma('user_version', { simple: true })).toBe(4)
     expect(sqlite.prepare('SELECT COUNT(*) AS n FROM notes').get()).toEqual({ n: 0 })
     expect(sqlite.prepare('SELECT name FROM people').get()).toEqual({ name: 'Emma' })

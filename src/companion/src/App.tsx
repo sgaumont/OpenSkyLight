@@ -2,10 +2,10 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { GameIcon } from './components/ui'
 import { DateTime } from 'luxon'
 import { getToken, setUnauthorizedHandler } from './api/client'
-import { useToday } from './api/hooks'
+import { usePeople, useToday } from './api/hooks'
 import { ListsPage } from './pages/ListsPage'
 import { MealsPage } from './pages/MealsPage'
-import { ChoresPage } from './pages/ChoresPage'
+import { ChoresPage, PendingUnlocksCard } from './pages/ChoresPage'
 import { PhotosPage } from './pages/PhotosPage'
 import { NotesPage } from './pages/NotesPage'
 import { PairScreen } from './pages/PairScreen'
@@ -41,6 +41,8 @@ export default function App() {
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+        {/* sign-offs (checklists, Video Games) prompt on every tab, not just Chores (which has its own) */}
+        {tab !== 'chores' && <ApprovalPrompt today={today} />}
         <div key={tab} className="animate-rise">
           {tab === 'lists' && <ListsPage />}
           {tab === 'meals' && <MealsPage />}
@@ -68,6 +70,16 @@ export default function App() {
           </button>
         ))}
       </nav>
+    </div>
+  )
+}
+
+/** Waiting sign-offs, at the top of whatever tab is open. */
+function ApprovalPrompt({ today }: { today: string }) {
+  const { data: people = [] } = usePeople()
+  return (
+    <div className="mb-4 empty:hidden">
+      <PendingUnlocksCard people={people} today={today} />
     </div>
   )
 }

@@ -21,6 +21,8 @@ import { describeRecurrence } from '@shared/recurrence/build'
 import {
   useAuthMutations,
   useAuthStatus,
+  useSetVideoGamesStars,
+  useVideoGamesStars,
   useBackupMutations,
   useBackupStatus,
   useCalendarMutations,
@@ -518,6 +520,38 @@ function CalendarsTab() {
   )
 }
 
+/** Video Games tasks pay nothing alone — shown instead of the stars field. */
+function VideoGamesStarsNote() {
+  const { data } = useVideoGamesStars()
+  return (
+    <div className="max-w-60">
+      <FieldLabel>Stars</FieldLabel>
+      <p className="text-sm font-bold text-ink-soft">
+        None alone — the whole day's set pays <GameIcon /> {data?.stars ?? '…'}, once a parent approves.
+      </p>
+    </div>
+  )
+}
+
+/** The Video Games set reward: controllers for each finished set (each time through, if repeatable). */
+function VideoGamesReward() {
+  const { data } = useVideoGamesStars()
+  const set = useSetVideoGamesStars()
+  if (!data) return null
+  return (
+    <div>
+      <FieldLabel>🎮 Video Games reward</FieldLabel>
+      <div className="flex items-center gap-4 rounded-2xl bg-paper-deep/50 p-4">
+        <span className="flex-1 text-base font-semibold text-ink-soft">
+          Stars for finishing all of a day's Video Games chores — again for each full set, if they can be done more
+          than once that day.
+        </span>
+        <Stepper value={data.stars} onChange={(stars) => set.mutate({ stars })} min={0} max={99} />
+      </div>
+    </div>
+  )
+}
+
 function Stepper({ value, onChange, min = 0, max = 99 }: { value: number; onChange: (v: number) => void; min?: number; max?: number }) {
   return (
     <div className="flex items-center gap-3">
@@ -584,7 +618,7 @@ function ChoresTab() {
       setWeekdays(c.recurrence?.byWeekdays ?? [])
       setRoutine(c.routine ?? 'any')
       setMode(c.mode)
-      setAssignees(c.mode === 'each' ? c.assignees : defaultAssignees(people))
+      setAssignees(c.mode !== 'anyone' ? c.assignees : defaultAssignees(people))
       setTimes(c.times ?? 1)
       setNoLimit(c.times === null)
     }
@@ -600,7 +634,7 @@ function ChoresTab() {
       recurrence: toRecurrence(schedule, weekdays),
       routine: routine === 'any' ? null : routine,
       mode,
-      ...(mode === 'each' ? { assignees } : {}),
+      ...(mode !== 'anyone' ? { assignees } : {}),
       // only weekly and one-time chores can be done more than once on their day
       times: schedule === 'daily' ? 1 : noLimit ? null : times
     }
@@ -652,8 +686,11 @@ function ChoresTab() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-lg font-bold">{c.title}</span>
                 <span className="block text-sm font-bold text-ink-faint">
-                  {c.mode === 'each'
-                    ? `Everyone: ${c.assignees.map((id) => peopleById.get(id)?.name).filter(Boolean).join(', ')} · `
+                  {c.mode !== 'anyone'
+                    ? `${c.mode === 'videogames' ? '🎮 Video Games' : 'Everyone'}: ${c.assignees
+                        .map((id) => peopleById.get(id)?.name)
+                        .filter(Boolean)
+                        .join(', ')} · `
                     : ''}
                   {c.recurrence ? describeRecurrence(c.recurrence) : 'One time'}
                   {c.times === null ? ' · no limit' : c.times > 1 ? ` · ${c.times}×` : ''}
@@ -670,10 +707,14 @@ function ChoresTab() {
           </BigButton>
           <p className="text-sm font-semibold text-ink-faint">
             "Whoever does it" chores aren't assigned: the first to finish claims it (and its stars). "Everyone"
-            chores need a tick from each person picked.
+            chores need a tick from each person picked. "Video Games" chores are done by each person picked too,
+            but pay nothing alone: finishing all of the day's Video Games chores earns the reward below, once a
+            parent approves.
           </p>
         </div>
       </div>
+
+      <VideoGamesReward />
 
       <ChecklistsSection />
 
@@ -727,20 +768,25 @@ function ChoresTab() {
               onChange={setMode}
               options={[
                 { value: 'anyone', label: 'Whoever does it' },
-                { value: 'each', label: 'Everyone' }
+                { value: 'each', label: 'Everyone' },
+                { value: 'videogames', label: '🎮 Video Games' }
               ]}
             />
-            {mode === 'each' && (
+            {mode !== 'anyone' && (
               <div className="mt-3">
                 <PeoplePicker people={people} selected={assignees} onChange={setAssignees} />
               </div>
             )}
           </div>
           <div className="flex items-end gap-6">
-            <div>
-              <FieldLabel>Stars</FieldLabel>
-              <Stepper value={choreStars} onChange={setChoreStars} max={20} />
-            </div>
+            {mode === 'videogames' ? (
+              <VideoGamesStarsNote />
+            ) : (
+              <div>
+                <FieldLabel>Stars</FieldLabel>
+                <Stepper value={choreStars} onChange={setChoreStars} max={20} />
+              </div>
+            )}
             <div className="flex-1">
               <FieldLabel>Routine</FieldLabel>
               <SegmentedControl
@@ -757,7 +803,7 @@ function ChoresTab() {
           <ScheduleField schedule={schedule} weekdays={weekdays} onSchedule={setSchedule} onWeekdays={setWeekdays} />
           {schedule !== 'daily' && (
             <div>
-              <FieldLabel>{mode === 'each' ? 'Times that day, each' : 'Times that day'}</FieldLabel>
+              <FieldLabel>{mode !== 'anyone' ? 'Times that day, each' : 'Times that day'}</FieldLabel>
               <div className="flex items-center gap-4">
                 {!noLimit && <Stepper value={times} onChange={setTimes} min={1} max={10} />}
                 <button

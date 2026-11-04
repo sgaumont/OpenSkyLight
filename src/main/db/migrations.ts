@@ -270,6 +270,21 @@ const MIGRATIONS: string[] = [
     done_at TEXT
   );
   CREATE INDEX idx_notes_open ON notes(done_at);
+  `,
+  // v5: "Video Games" chores — a set of 'each'-style tasks that pays a set reward (not per task)
+  // each time a person finishes the whole day's set, once a parent signs off. One row per round.
+  `
+  CREATE TABLE video_game_rounds (
+    id TEXT PRIMARY KEY,
+    person_id TEXT NOT NULL,
+    due_date TEXT NOT NULL,
+    round INTEGER NOT NULL,
+    stars INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    completed_at TEXT NOT NULL,
+    approved_at TEXT,
+    UNIQUE (person_id, due_date, round)
+  );
   `
 ]
 

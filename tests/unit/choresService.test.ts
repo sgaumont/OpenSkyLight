@@ -248,7 +248,7 @@ describe('chores + rewards', () => {
       expect(chores.checklistsDay('2026-06-13')[0].people[0]).toMatchObject({ done: 3, unlock: 'pending' })
       expect(chores.checklistsDay('2026-06-13')[0].people[1]).toMatchObject({ done: 0, unlock: 'locked' })
       expect(chores.pendingUnlocks('2026-06-13')).toEqual([
-        { checklistId: list.id, title: 'Video game time', personId: 'kid1', date: '2026-06-13' }
+        { checklistId: list.id, title: 'Video game time', personId: 'kid1', date: '2026-06-13', kind: 'checklist' }
       ])
       chores.approveUnlock(list.id, 'kid1', '2026-06-13')
       expect(chores.pendingUnlocks('2026-06-13')).toHaveLength(0)

@@ -172,8 +172,10 @@ describe('companionServer', () => {
       'chores:getDay',
       'chores:list',
       'chores:pendingUnlocks',
+      'chores:setVideoGamesStars',
       'chores:uncomplete',
-      'chores:update'
+      'chores:update',
+      'chores:videoGamesStars'
     ])
     for (const c of ['settings:set', 'auth:setPin', 'people:create', 'events:create'] as const) {
       expect(COMPANION_CHANNELS.has(c), c).toBe(false)

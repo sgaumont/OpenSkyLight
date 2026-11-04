@@ -443,6 +443,16 @@ Add unit tests where sensible.
 - v0.8.95: a waiting note dings every 10 s (`lib/alarm.ts` now has per-purpose chime loops: timers 1.5 s, notes
   `NOTE_CHIME_MS`), silent while the sleep screen is up (`kioskStore.sleeping`, set by KioskOverlays). The window has
   `autoplayPolicy: 'no-user-gesture-required'` so it sounds with no tap since start.
+- v0.8.96: **Video Games chores** — chore mode 'videogames' (like 'each': every picked kid does each task; tasks
+  forced to 0 stars and left out of `getDay`). The day's Video Games tasks form a set per kid; rounds = the fewest
+  times any of their tasks was done (repeatable via "Times that day"). DB migration v5 `video_game_rounds` (one row
+  per kid/day/round, pending → approved). `syncRounds` runs on every complete/uncomplete: adds pending rounds, removes
+  ones that no longer hold (taking back paid controllers). Approval (`chores:approveUnlock` with checklistId =
+  `VIDEO_GAMES_SET_ID` + round) pays the reward, stored as settings key `chores.videoGamesStars` (default 5;
+  `chores:videoGamesStars` / `setVideoGamesStars`, Settings → Chores "🎮 Video Games reward"). The set appears in
+  `checklistsDay` as kind 'videogames' (ticks = done this round), status text via `src/shared/setProgress.ts`.
+  Phone: editor option "🎮 Games", and the "Waiting for you" approvals card shows at the top of every tab.
+  UI branches on `mode !== 'anyone'` (not `=== 'each'`) for per-kid behaviour.
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):
   GET/POST /api/photos, GET /api/photos/:name/thumb (nativeImage thumbnail; phone shows it via blob: URL — CSP img-src

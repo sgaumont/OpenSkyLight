@@ -191,7 +191,7 @@ export const icsAddSchema = z.object({
 })
 
 const routine = z.enum(['morning', 'evening']).nullable()
-const choreMode = z.enum(['anyone', 'each'])
+const choreMode = z.enum(['anyone', 'each', 'videogames'])
 const assignees = z.array(id).max(20)
 
 /** times a chore can be done on a day it's due; null = no limit */
@@ -236,7 +236,8 @@ const checklistFields = {
 }
 export const checklistCreateSchema = z.object(checklistFields)
 export const checklistUpdateSchema = z.object({ id, ...checklistFields })
-export const unlockApproveSchema = z.object({ checklistId: id, personId: id, date: isoDate })
+export const unlockApproveSchema = z.object({ checklistId: id, personId: id, date: isoDate, round: z.number().int().min(1).max(99).optional() })
+export const videoGamesStarsSchema = z.object({ stars: z.number().int().min(0).max(999) })
 
 export const rewardCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),

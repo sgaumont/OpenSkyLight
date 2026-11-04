@@ -145,8 +145,13 @@ export function useChecklistMutations() {
     update: useInvalidatingMutation((input: ChecklistInput & { id: string }) => rpc('chores:checklistUpdate', input), keys),
     remove: useInvalidatingMutation((input: { id: string }) => rpc('chores:checklistDelete', input), keys),
     approve: useInvalidatingMutation(
-      (input: { checklistId: string; personId: string; date: string }) => rpc('chores:approveUnlock', input),
-      keys
+      (input: { checklistId: string; personId: string; date: string; round?: number }) => rpc('chores:approveUnlock', input),
+      [...keys, ['balances']]
     )
   }
+}
+
+/** Controllers paid for each finished Video Games set. */
+export function useVideoGamesStars() {
+  return useQuery({ queryKey: ['videoGamesStars'], queryFn: () => rpc('chores:videoGamesStars', undefined), ...LIVE })
 }

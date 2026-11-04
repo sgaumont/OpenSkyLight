@@ -205,10 +205,22 @@ export function useChecklistMutations() {
     ),
     remove: useInvalidatingMutation((input: { id: string }) => ipcInvoke('chores:checklistDelete', input), keys),
     approve: useInvalidatingMutation(
-      (input: { checklistId: string; personId: string; date: string }) => ipcInvoke('chores:approveUnlock', input),
-      keys
+      (input: { checklistId: string; personId: string; date: string; round?: number }) => ipcInvoke('chores:approveUnlock', input),
+      [...keys, ['balances']]
     )
   }
+}
+
+/** Controllers paid for each finished Video Games set. */
+export function useVideoGamesStars() {
+  return useQuery({ queryKey: ['videoGamesStars'], queryFn: () => ipcInvoke('chores:videoGamesStars', undefined) })
+}
+
+export function useSetVideoGamesStars() {
+  return useInvalidatingMutation(
+    (input: { stars: number }) => ipcInvoke('chores:setVideoGamesStars', input),
+    [['videoGamesStars'], ['checklistsDay']]
+  )
 }
 
 export function useChoreMutations() {
@@ -395,7 +407,7 @@ export function usePushInvalidation(): void {
       if (domain === 'calendars') void queryClient.invalidateQueries({ queryKey: ['occurrences'] })
       if (domain === 'chores') {
         // chore day views and star balances key off their own roots
-        for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks']) {
+        for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks', 'videoGamesStars']) {
           void queryClient.invalidateQueries({ queryKey: [key] })
         }
       }

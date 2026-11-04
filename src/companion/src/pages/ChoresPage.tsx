@@ -11,6 +11,7 @@ import {
   useChores,
   useChoresDay,
   usePendingUnlocks,
+  useVideoGamesStars,
   usePeople,
   useToday
 } from '../api/hooks'
@@ -19,6 +20,7 @@ import { sortDayChores } from '@shared/choreOrder'
 import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type ScheduleKind } from '@shared/choreSchedule'
 import { describeRecurrence } from '@shared/recurrence/build'
 import { canAddMore, claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
+import { setProgressLabel } from '@shared/setProgress'
 
 /** Per-person "N today · stars N" card below the chores: hidden for now (the Stars card covers it). */
 const SHOW_FAMILY_SUMMARY = false
@@ -109,7 +111,7 @@ function ClaimSheet({
   onClose: () => void
 }) {
   const counted = isCounted(chore)
-  const each = chore.mode === 'each'
+  const each = chore.mode !== 'anyone'
   const candidates = each ? people.filter((p) => chore.assignees.includes(p.id)) : people
   const nameOf = (id: string): string | undefined => people.find((p) => p.id === id)?.name
   const last = chore.claims.at(-1)
@@ -302,12 +304,19 @@ export function ChoresPage() {
 
       {checklists.map((cl) => (
         <Card key={cl.checklistId}>
-          <h2 className="font-display text-xl font-semibold">🎮 {cl.title}</h2>
+          <h2 className="font-display text-xl font-semibold">
+            🎮 {cl.title}
+            {cl.kind === 'videogames' && (
+              <span className="ml-2 text-lg text-ember-deep">
+                <GameIcon /> {cl.stars}
+              </span>
+            )}
+          </h2>
           <div className="mb-1 text-sm font-extrabold text-ink-faint">
             {cl.people
               .map((s) => {
                 const name = people.find((p) => p.id === s.personId)?.name ?? '?'
-                return `${name} ${s.unlock === 'locked' ? `${s.done}/${s.total}` : UNLOCK_TEXT[s.unlock]}`
+                return `${name} ${setProgressLabel(cl, s, UNLOCK_TEXT)}`
               })
               .join(' · ')}
           </div>
@@ -326,7 +335,7 @@ export function ChoresPage() {
             </span>
           </div>
           {sortDayChores(dayChores).map((chore) => {
-            if (chore.mode === 'each') {
+            if (chore.mode !== 'anyone') {
               return (
                 <EachChoreRow
                   key={chore.choreId}
@@ -569,7 +578,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
   const [stars, setStars] = useState(isNew ? 1 : chore.starsValue)
   const [mode, setMode] = useState<ChoreMode>(isNew ? 'anyone' : chore.mode)
   const [assignees, setAssignees] = useState<string[]>(
-    !isNew && chore.mode === 'each' ? chore.assignees : defaultAssignees(people)
+    !isNew && chore.mode !== 'anyone' ? chore.assignees : defaultAssignees(people)
   )
   const [schedule, setSchedule] = useState<ScheduleKind>(isNew ? 'daily' : scheduleOf(chore.recurrence))
   const [weekdays, setWeekdays] = useState<number[]>(isNew ? [todayWeekday] : (chore.recurrence?.byWeekdays ?? [todayWeekday]))
@@ -588,7 +597,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
       recurrence: toRecurrence(schedule, weekdays),
       routine: routine === 'any' ? null : routine,
       mode,
-      ...(mode === 'each' ? { assignees } : {}),
+      ...(mode !== 'anyone' ? { assignees } : {}),
       // only weekly and one-time chores can be done more than once on their day
       times: schedule === 'daily' ? 1 : noLimit ? null : times
     }
@@ -617,18 +626,20 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
             value={mode}
             onChange={setMode}
             options={[
-              { value: 'anyone', label: 'Whoever does it' },
-              { value: 'each', label: 'Everyone' }
+              { value: 'anyone', label: 'Whoever' },
+              { value: 'each', label: 'Everyone' },
+              { value: 'videogames', label: '🎮 Games' }
             ]}
           />
-          {mode === 'each' && (
+          {mode !== 'anyone' && (
             <div className="mt-2">
               <PeoplePicker people={people} selected={assignees} onChange={setAssignees} />
             </div>
           )}
         </div>
+        {mode === 'videogames' && <VideoGamesNote />}
         <div className="flex items-end gap-4">
-          <div>
+          <div className={mode === 'videogames' ? 'hidden' : ''}>
             <FieldLabel>Stars</FieldLabel>
             <div className="flex items-center gap-1.5">
               <button
@@ -666,7 +677,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
         <ScheduleField schedule={schedule} weekdays={weekdays} onSchedule={setSchedule} onWeekdays={setWeekdays} />
         {schedule !== 'daily' && (
           <div>
-            <FieldLabel>{mode === 'each' ? 'Times that day, each' : 'Times that day'}</FieldLabel>
+            <FieldLabel>{mode !== 'anyone' ? 'Times that day, each' : 'Times that day'}</FieldLabel>
             <div className="flex items-center gap-3">
               {!noLimit && (
                 <div className="flex items-center gap-1.5">
@@ -819,8 +830,8 @@ function ChecklistSheet({
   )
 }
 
-/** Finished checklists waiting for a parent to sign off today. */
-function PendingUnlocksCard({ people, today }: { people: PersonDto[]; today: string }) {
+/** Finished checklists and Video Games sets waiting for a parent to sign off today. */
+export function PendingUnlocksCard({ people, today }: { people: PersonDto[]; today: string }) {
   const { data: pending = [] } = usePendingUnlocks(today)
   const mutations = useChecklistMutations()
   if (pending.length === 0) return null
@@ -829,20 +840,39 @@ function PendingUnlocksCard({ people, today }: { people: PersonDto[]; today: str
       <h2 className="mb-1 font-display text-xl font-semibold">Waiting for you</h2>
       {pending.map((u) => (
         <div
-          key={`${u.checklistId}:${u.personId}`}
+          key={`${u.checklistId}:${u.personId}:${u.round ?? 0}`}
           className="flex items-center gap-2.5 border-b border-line/60 py-2 last:border-0"
         >
           <span className="min-w-0 flex-1 text-base font-bold">
             {people.find((p) => p.id === u.personId)?.name ?? 'Someone'} finished 🎮 {u.title}
+            {u.kind === 'videogames' && (u.round ?? 1) > 1 ? ` (set ${u.round})` : ''}
+            {u.kind === 'videogames' && (
+              <span className="ml-1.5 text-ember-deep">
+                · <GameIcon /> {u.stars}
+              </span>
+            )}
           </span>
           <PrimaryButton
-            onClick={() => mutations.approve.mutate({ checklistId: u.checklistId, personId: u.personId, date: u.date })}
+            onClick={() =>
+              mutations.approve.mutate({ checklistId: u.checklistId, personId: u.personId, date: u.date, round: u.round })
+            }
           >
             Approve
           </PrimaryButton>
         </div>
       ))}
     </div>
+  )
+}
+
+/** Shown instead of the stars field: Video Games chores pay only as a whole set. */
+function VideoGamesNote() {
+  const { data } = useVideoGamesStars()
+  return (
+    <p className="rounded-xl bg-sun-soft px-3 py-2 text-sm font-bold text-ink-soft">
+      Pays nothing alone: finishing all of the day's 🎮 Video Games chores earns <GameIcon /> {data?.stars ?? '…'} (again for
+      each full set), once a parent approves.
+    </p>
   )
 }
 
@@ -877,7 +907,7 @@ function ManageChores({ people, onEditChore }: { people: PersonDto[]; onEditChor
                 <span className="block truncate text-base font-bold">{c.title}</span>
                 <span className="block truncate text-xs font-extrabold text-ink-faint">
                   {c.active ? '' : 'Paused · '}
-                  {c.mode === 'each' ? `Everyone: ${names(c.assignees)} · ` : ''}
+                  {c.mode === 'each' ? `Everyone: ${names(c.assignees)} · ` : c.mode === 'videogames' ? `🎮 Video Games: ${names(c.assignees)} · ` : ''}
                   {repeats(c.recurrence)}
                   {c.times === null ? ' · no limit' : c.times > 1 ? ` · ${c.times}×` : ''}
                   {c.routine ? ` · ${c.routine}` : ''}
