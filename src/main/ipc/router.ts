@@ -136,7 +136,8 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'chores:setVideoGamesStars': 'chores',
   // balances refresh with the chores domain
   'stars:adjust': 'chores',
-  'stars:useTime': 'chores'
+  'stars:useTime': 'chores',
+  'stars:stopTimer': 'chores'
 }
 
 export function broadcast(channel: string, payload: unknown): void {
@@ -296,6 +297,8 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('stars:adjust', s.starsAdjustSchema, (req) => services.rewards.adjust(req.personId, req.delta))
   handle('stars:useTime', s.useTimeSchema, (req) => services.rewards.useTime(req.personId))
   handle('stars:log', s.gameTimeLogSchema, (req) => services.rewards.log(req.personId, req.limit))
+  handle('stars:timers', null, () => services.rewards.timers())
+  handle('stars:stopTimer', s.stopTimerSchema, (req) => services.rewards.stopTimer(req.id))
 
   handle('rewards:list', null, () => services.rewards.list())
   handle('rewards:create', s.rewardCreateSchema, (req) => services.rewards.create(req))

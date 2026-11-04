@@ -335,6 +335,17 @@ export interface PendingUnlockDto {
   stars?: number
 }
 
+/** A kid's game time counting down on the kiosk. */
+export interface GameTimerDto {
+  id: string
+  personId: string
+  /** UTC ISO */
+  startedAt: string
+  endsAt: string
+  /** total minutes, setup included */
+  minutes: number
+}
+
 /** One line of the game time log: a gain (+), loss or use (−), with the kid's balance right after. */
 export interface GameTimeLogEntry {
   id: string

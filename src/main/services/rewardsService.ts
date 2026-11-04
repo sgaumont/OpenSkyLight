@@ -1,14 +1,41 @@
 import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
-import { choreCompletions, chores, people, rewardRedemptions, rewards, starLedger, videoGameRounds } from '../db/schema'
+import { choreCompletions, chores, people, rewardRedemptions, rewards, settings, starLedger, videoGameRounds } from '../db/schema'
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
-import type { GameTimeLogEntry, RedemptionDto, RewardDto } from '@shared/types'
+import type { GameTimeLogEntry, GameTimerDto, RedemptionDto, RewardDto } from '@shared/types'
+import { gameMinutes, minutesLabel } from '@shared/gameTime'
 import type { ChoresService } from './choresService'
 import { invalid, notFound } from './errors'
 
+const KEY_TIMERS = 'gameTime.timers'
+
 export function createRewardsService(db: AppDb, choresService: ChoresService) {
+  function getSetting(key: string): string | null {
+    const [row] = db.select().from(settings).where(eq(settings.key, key)).all()
+    return row?.value ?? null
+  }
+
+  function putSetting(key: string, value: string): void {
+    db.insert(settings).values({ key, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run()
+  }
+
+  /** Game timers running (or finished and not yet acknowledged), kept by the kiosk so a restart doesn't lose them. */
+  function timers(): GameTimerDto[] {
+    try {
+      const list: unknown = JSON.parse(getSetting(KEY_TIMERS) ?? '[]')
+      return Array.isArray(list) ? (list as GameTimerDto[]) : []
+    } catch {
+      return []
+    }
+  }
+
+  /** Stop a timer early, or put away one whose time is up. */
+  function stopTimer(id: string): void {
+    putSetting(KEY_TIMERS, JSON.stringify(timers().filter((t) => t.id !== id)))
+  }
+
   function toDto(row: typeof rewards.$inferSelect): RewardDto {
     return { id: row.id, title: row.title, icon: row.icon, costStars: row.costStars, active: row.active }
   }
@@ -139,26 +166,38 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
   }
 
   /**
-   * A kid spends all their saved-up controllers on game time: their balance goes to 0. Only ever
-   * lowers a balance, so it needs no parent PIN. Returns how many were used.
+   * A kid spends all their saved-up controllers on game time: their balance goes to 0 and a game
+   * timer starts (play minutes + setup). Only ever lowers a balance, so it needs no parent PIN.
+   * A kid already playing gets the new minutes added to their running timer.
    */
-  function useTime(personId: string): { used: number } {
+  function useTime(personId: string): { used: number; minutes: number; timer: GameTimerDto | null } {
     const [person] = db.select().from(people).where(and(eq(people.id, personId), isNull(people.deletedAt))).all()
     if (!person) throw notFound('Person')
     const balance = choresService.balanceOf(personId)
-    if (balance <= 0) return { used: 0 }
-    db.insert(starLedger)
-      .values({
-        id: uuidv7(),
-        personId,
-        delta: -balance,
-        reason: 'redemption',
-        refId: null,
-        createdAt: isoUtc(DateTime.utc()),
-        note: 'Used game time'
-      })
-      .run()
-    return { used: balance }
+    if (balance <= 0) return { used: 0, minutes: 0, timer: null }
+    const { total } = gameMinutes(balance)
+    const now = DateTime.utc()
+    const list = timers()
+    const running = list.find((t) => t.personId === personId && DateTime.fromISO(t.endsAt) > now)
+    const timer: GameTimerDto = running
+      ? { ...running, minutes: running.minutes + total, endsAt: isoUtc(DateTime.fromISO(running.endsAt).plus({ minutes: total })) }
+      : { id: uuidv7(), personId, startedAt: isoUtc(now), endsAt: isoUtc(now.plus({ minutes: total })), minutes: total }
+    db.transaction(() => {
+      db.insert(starLedger)
+        .values({
+          id: uuidv7(),
+          personId,
+          delta: -balance,
+          reason: 'redemption',
+          refId: timer.id,
+          createdAt: isoUtc(now),
+          note: `Used game time (${minutesLabel(total)})`
+        })
+        .run()
+      // a finished, unacknowledged timer of theirs makes way for the new one
+      putSetting(KEY_TIMERS, JSON.stringify([...list.filter((t) => t.personId !== personId), timer]))
+    })
+    return { used: balance, minutes: total, timer }
   }
 
   /**
@@ -208,7 +247,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     return 'Chore'
   }
 
-  return { list, create, update, remove, redeem, pendingRedemptions, grant, adjust, useTime, log }
+  return { list, create, update, remove, redeem, pendingRedemptions, grant, adjust, useTime, log, timers, stopTimer }
 }
 
 export type RewardsService = ReturnType<typeof createRewardsService>

@@ -185,9 +185,18 @@ export function useGameTimeLog(personId: string | null, limit: number) {
   })
 }
 
+/** Game timers counting down (and finished ones waiting for an OK). */
+export function useGameTimers() {
+  return useQuery({ queryKey: ['gameTimers'], queryFn: () => ipcInvoke('stars:timers', undefined) })
+}
+
+export function useStopGameTimer() {
+  return useInvalidatingMutation((input: { id: string }) => ipcInvoke('stars:stopTimer', input), [['gameTimers']])
+}
+
 /** A kid spends all their controllers on game time (balance → 0). */
 export function useUseTime() {
-  return useInvalidatingMutation((input: { personId: string }) => ipcInvoke('stars:useTime', input), [['balances']])
+  return useInvalidatingMutation((input: { personId: string }) => ipcInvoke('stars:useTime', input), [['balances'], ['gameTimers']])
 }
 
 export function useChecklists() {
@@ -421,7 +430,7 @@ export function usePushInvalidation(): void {
       if (domain === 'calendars') void queryClient.invalidateQueries({ queryKey: ['occurrences'] })
       if (domain === 'chores') {
         // chore day views and star balances key off their own roots
-        for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks', 'videoGamesStars', 'gameTimeLog']) {
+        for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks', 'videoGamesStars', 'gameTimeLog', 'gameTimers']) {
           void queryClient.invalidateQueries({ queryKey: [key] })
         }
       }

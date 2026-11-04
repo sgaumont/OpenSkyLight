@@ -3,6 +3,7 @@ import type {
   AppSettings,
   BackupStatus,
   GameTimeLogEntry,
+  GameTimerDto,
   CalendarCreateInput,
   CalendarDto,
   CalendarUpdateInput,
@@ -111,7 +112,10 @@ export type IpcContract = {
   /** a parent's correction: adds `delta` (may be negative) to the person's balance */
   'stars:adjust': { req: { personId: string; delta: number }; res: { balance: number } }
   /** a kid uses all their saved-up controllers ("use your time"): balance → 0; not PIN-gated */
-  'stars:useTime': { req: { personId: string }; res: { used: number } }
+  'stars:useTime': { req: { personId: string }; res: { used: number; minutes: number; timer: GameTimerDto | null } }
+  /** game timers counting down (and finished ones not yet acknowledged) */
+  'stars:timers': { req: void; res: GameTimerDto[] }
+  'stars:stopTimer': { req: { id: string }; res: void }
   /** the game time log, newest first; one kid or everyone */
   'stars:log': { req: { personId: string | null; limit: number }; res: GameTimeLogEntry[] }
 

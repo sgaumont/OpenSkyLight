@@ -3,12 +3,14 @@ import { useUseTime } from '../../api/hooks'
 import { BigButton, Dialog } from '../../components/ui'
 import { GameIcon } from '../../components/icons'
 import { useToasts } from '../../stores/toastStore'
+import { SETUP_MINUTES, gameMinutes, minutesLabel } from '@shared/gameTime'
 
 /** Tapped from a kid's header badge: spend all their saved-up controllers on game time. */
 export function UseTimeDialog({ person, balance, onClose }: { person: PersonDto | null; balance: number; onClose: () => void }) {
   const useTime = useUseTime()
   const pushToast = useToasts((s) => s.push)
   if (!person) return null
+  const { play, total } = gameMinutes(balance)
   return (
     <Dialog open onClose={onClose} title={person.name}>
       <div className="flex flex-col items-center gap-5 text-center">
@@ -18,6 +20,9 @@ export function UseTimeDialog({ person, balance, onClose }: { person: PersonDto 
         {balance > 0 ? (
           <>
             <p className="font-display text-3xl">Do you want to use your time?</p>
+            <p className="-mt-2 text-lg font-bold text-ink-soft">
+              That's {minutesLabel(total)} ({minutesLabel(play)} + {SETUP_MINUTES} to set up)
+            </p>
             <div className="flex w-full gap-3 [&>*]:flex-1">
               <BigButton variant="ghost" onClick={onClose}>
                 No
@@ -29,7 +34,7 @@ export function UseTimeDialog({ person, balance, onClose }: { person: PersonDto 
                     { personId: person.id },
                     {
                       onSuccess: (res) => {
-                        if (res.used > 0) pushToast(`🎮 Enjoy your time, ${person.name}!`)
+                        if (res.used > 0) pushToast(`🎮 Enjoy your ${minutesLabel(res.minutes)}, ${person.name}!`)
                         onClose()
                       }
                     }

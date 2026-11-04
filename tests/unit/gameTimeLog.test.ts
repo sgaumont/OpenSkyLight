@@ -47,7 +47,7 @@ describe('game time log', () => {
     rewards.adjust('emma', 5)
     rewards.useTime('emma')
     expect(lines('emma')).toEqual([
-      ['Used game time', -55, 0],
+      ['Used game time (58 min)', -55, 0],
       ['Changed by a parent', 5, 55],
       ['Reward: Ice cream', -10, 50],
       ['🎮 Video Games set — approved', 60, 60]

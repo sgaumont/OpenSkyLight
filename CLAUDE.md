@@ -435,6 +435,13 @@ Add unit tests where sensible.
   re-locks) / Not now (snoozes that request 30 min).
 - v0.8.106: the game time log on the phone — Chores → Game time card → History (`GameTimeLogSheet` in companion
   ChoresPage: kid filter, Show more). `stars:log` added to `COMPANION_CHANNELS` (read-only).
+- v0.8.107: game time countdown. "Use your time" now converts controllers at a fixed 1 point = 1 minute plus
+  `SETUP_MINUTES` = 3 (`src/shared/gameTime.ts`; user asked for both hard-coded) and starts a timer kept main-side in
+  settings key `gameTime.timers` (survives restarts; using time again while playing extends the running timer).
+  `stars:timers` / `stars:stopTimer`; `stars:useTime` returns {used, minutes, timer}; log note "Used game time (1 h 03 min)".
+  `features/chores/GameTimers.tsx` (z-[83]): a countdown pill per kid bottom-centre (every screen + screensaver,
+  two-tap Stop), and when one runs out a "<name>'s game time is up!" card + the timer chime until OK (quiet in sleep).
+  Toasts move up (bottom-28, z-[84]) while any game timer shows so they don't hide behind the pills.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
