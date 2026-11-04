@@ -3,7 +3,7 @@ import type { AppDb } from '../db/client'
 import { calendars } from '../db/schema'
 import type { GoogleAuth } from './googleAuth'
 import type { GoogleSync } from './googleSync'
-import { httpStatus } from './googleSync'
+import { isSignInRefused } from './googleSync'
 import type { IcsSync } from './icsSync'
 import type { OutboxWorker } from './outboxWorker'
 
@@ -61,11 +61,13 @@ export function createSyncManager(deps: {
       for (const cal of googleCals) {
         try {
           anyChange = (await google.pullCalendar(cal)) || anyChange
+          // the account works again (a passing hiccup, or just reconnected): drop any sign-in warning
+          if (cal.googleAccountId) auth.markAuthError(cal.googleAccountId, null)
         } catch (err) {
           const message = err instanceof Error ? err.message : 'sync failed'
           anyError = message
           db.update(calendars).set({ syncError: message }).where(eq(calendars.id, cal.id)).run()
-          if (httpStatus(err) === 401 && cal.googleAccountId) {
+          if (isSignInRefused(err) && cal.googleAccountId) {
             auth.markAuthError(cal.googleAccountId, 'Sign-in expired — reconnect this account')
           }
         }

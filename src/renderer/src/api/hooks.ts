@@ -100,7 +100,8 @@ export function useSettingsMutation() {
 }
 
 export function useGoogleStatus() {
-  return useQuery({ queryKey: ['googleStatus'], queryFn: () => ipcInvoke('google:getStatus', undefined) })
+  // polled so the header's issue line notices a sign-in expiring (or being fixed) without a restart
+  return useQuery({ queryKey: ['googleStatus'], queryFn: () => ipcInvoke('google:getStatus', undefined), refetchInterval: 60_000 })
 }
 
 export function useRemoteCalendars(accountId: string | null) {

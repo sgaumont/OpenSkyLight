@@ -28,6 +28,16 @@ export function httpStatus(err: unknown): number | null {
   return null
 }
 
+/**
+ * Google refused the saved sign-in: a 401, or the token refresh failing with `invalid_grant`
+ * (revoked, password reset, or a sign-in made while the Cloud project was in Testing — 7 days).
+ */
+export function isSignInRefused(err: unknown): boolean {
+  if (httpStatus(err) === 401) return true
+  const e = err as { message?: unknown; response?: { data?: { error?: unknown } } }
+  return e?.response?.data?.error === 'invalid_grant' || (typeof e?.message === 'string' && e.message.includes('invalid_grant'))
+}
+
 export function createGoogleSync(deps: { db: AppDb; auth: GoogleAuth; deviceTz: () => string }) {
   const { db, auth } = deps
 

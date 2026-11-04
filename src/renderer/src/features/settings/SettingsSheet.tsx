@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import type {
   CalendarDto,
@@ -68,6 +68,11 @@ export function SettingsSheet() {
   const open = useUi((s) => s.settingsOpen)
   const setOpen = useUi((s) => s.setSettingsOpen)
   const [tab, setTab] = useState<Tab>('family')
+  // opened from the header's issue line: go straight to the tab that explains it
+  const requestedTab = useUi((s) => s.settingsTab)
+  useEffect(() => {
+    if (open && requestedTab) setTab(requestedTab)
+  }, [open, requestedTab])
   const [pinError, setPinError] = useState<string | null>(null)
   const { data: auth } = useAuthStatus()
   const authMutations = useAuthMutations()

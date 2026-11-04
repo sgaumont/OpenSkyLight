@@ -16,6 +16,8 @@ interface UiState {
   hiddenPeople: string[]
   editor: EditorState
   settingsOpen: boolean
+  /** tab to show when Settings opens (the header's issue line asks for one); null keeps the last */
+  settingsTab: 'family' | 'calendars' | 'chores' | 'general' | null
   /** bumped by the header's pencil; HomeView enters customize mode when it changes */
   homeEditRequest: number
 
@@ -27,7 +29,7 @@ interface UiState {
   openCreate(date?: string): void
   openEdit(occurrence: OccurrenceDto): void
   closeEditor(): void
-  setSettingsOpen(open: boolean): void
+  setSettingsOpen(open: boolean, tab?: 'family' | 'calendars' | 'chores' | 'general'): void
   requestHomeEdit(): void
 }
 
@@ -39,6 +41,7 @@ export const useUi = create<UiState>((set, get) => ({
   hiddenPeople: [],
   editor: { mode: 'closed' },
   settingsOpen: false,
+  settingsTab: null,
   homeEditRequest: 0,
 
   setView: (view) => set({ view }),
@@ -65,6 +68,6 @@ export const useUi = create<UiState>((set, get) => ({
   openCreate: (date) => set({ editor: { mode: 'create', date: date ?? get().focusedDate } }),
   openEdit: (occurrence) => set({ editor: { mode: 'edit', occurrence } }),
   closeEditor: () => set({ editor: { mode: 'closed' } }),
-  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  setSettingsOpen: (settingsOpen, tab) => set({ settingsOpen, settingsTab: tab ?? null }),
   requestHomeEdit: () => set((s) => ({ homeEditRequest: s.homeEditRequest + 1 }))
 }))

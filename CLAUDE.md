@@ -422,6 +422,11 @@ Add unit tests where sensible.
 - v0.8.85: Week view columns sit closer — grid `gap-1` (4px), was `gap-3`.
 - v0.8.86: Week view side margins halved — `px-3` (12px), was `px-6`.
 - v0.8.89: Week view columns nearly touch — grid `gap-0.5` (2px), was `gap-1`.
+- v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
+  issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
+  sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
+  tap opens Settings on the right tab (`setSettingsOpen(true, tab)`). Replaces the gear's backup dot. Sign-in warning
+  now set on 401 or `invalid_grant` (`isSignInRefused`) and cleared whenever that account's calendar pulls OK.
 - v0.8.87: phone → slideshow photos. Companion "Photos" tab (`src/companion/src/pages/PhotosPage.tsx`, `api/photos.ts`):
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):

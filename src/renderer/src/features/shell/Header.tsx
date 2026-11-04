@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
-import { useBackupStatus, useBalances, usePeople, useSettings } from '../../api/hooks'
+import { useBalances, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { SegmentedControl, IconButton } from '../../components/ui'
 import { ChevronLeftIcon, ChevronRightIcon, GameIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
 import { WeatherButton } from '../weather/WeatherHeader'
+import { IssueLine } from './IssueLine'
 import { initials, textOn } from '../../lib/format'
 import type { CalendarViewKind } from '@shared/types'
 import { eachDay, weekViewRange } from '@shared/dates'
@@ -49,8 +50,6 @@ export function Header() {
   const { data: settings } = useSettings()
   const { data: people = [] } = usePeople()
   const { data: balances = [] } = useBalances()
-  const { data: backup } = useBackupStatus()
-  const backupProblem = !!backup && (backup.stale || !!backup.lastError || !!backup.folderError)
   const kids = people.filter((p) => p.role === 'child')
   const view = useUi((s) => s.view)
   const setView = useUi((s) => s.setView)
@@ -99,10 +98,8 @@ export function Header() {
 
       <WeatherButton />
 
-      <div className="flex-1" />
-
-      {/* each child's star balance, in their colour — display only, a tap does nothing. Home only:
-          beside the period nav the widest dates and temperatures would push the menu off-screen */}
+      {/* each child's controller balance, in their colour, beside the weather — display only, a tap does
+          nothing. Home only: beside the period nav the widest dates and temperatures would push the menu off-screen */}
       {kids.length > 0 && view === 'home' && (
         <div className="flex shrink-0 items-center gap-4.5">
           {kids.map((p) => {
@@ -127,7 +124,8 @@ export function Header() {
         </div>
       )}
 
-      <div className="flex-1" />
+      {/* problems that need a parent (sign-in expired, calendars not updating, backups) — fills the free space */}
+      <IssueLine />
 
       {/* person filter: compact avatar circles, never clipped (overlap when the family is large) */}
       {SHOW_PERSON_FILTER && people.length > 0 && (
@@ -189,12 +187,8 @@ export function Header() {
         </IconButton>
       )}
 
-      <IconButton label={backupProblem ? 'Settings — backups need attention' : 'Settings'} className={NARROW_ICON} onClick={() => setSettingsOpen(true)}>
-        <span className="relative">
-          <GearIcon size={26} />
-          {/* backups failing or overdue: Settings → General says why */}
-          {backupProblem && <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-ember ring-2 ring-paper" />}
-        </span>
+      <IconButton label="Settings" className={NARROW_ICON} onClick={() => setSettingsOpen(true)}>
+        <GearIcon size={26} />
       </IconButton>
     </header>
   )
