@@ -159,7 +159,7 @@ export function Header() {
                 key={p.id}
                 type="button"
                 onClick={() => setUsingTime(p.id)}
-                aria-label={`${p.name}: ${stars} stars`}
+                aria-label={`${p.name}: ${stars} game time`}
                 title={p.name}
                 // as tall as the date + clock block beside them: the banner's full height
                 className="pressable flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"

@@ -525,7 +525,7 @@ function VideoGamesStarsNote() {
   const { data } = useVideoGamesStars()
   return (
     <div className="max-w-60">
-      <FieldLabel>Stars</FieldLabel>
+      <FieldLabel>Game time</FieldLabel>
       <p className="text-sm font-bold text-ink-soft">
         None alone — the whole day's set pays <GameIcon /> {data?.stars ?? '…'}, once a parent approves.
       </p>
@@ -543,7 +543,7 @@ function VideoGamesReward() {
       <FieldLabel>🎮 Video Games reward</FieldLabel>
       <div className="flex items-center gap-4 rounded-2xl bg-paper-deep/50 p-4">
         <span className="flex-1 text-base font-semibold text-ink-soft">
-          Stars for finishing all of a day's Video Games chores — again for each full set, if they can be done more
+          Game time for finishing all of a day's Video Games chores — again for each full set, if they can be done more
           than once that day.
         </span>
         <Stepper value={data.stars} onChange={(stars) => set.mutate({ stars })} min={0} max={99} />
@@ -706,7 +706,7 @@ function ChoresTab() {
             </span>
           </BigButton>
           <p className="text-sm font-semibold text-ink-faint">
-            "Whoever does it" chores aren't assigned: the first to finish claims it (and its stars). "Video Games"
+            "Whoever does it" chores aren't assigned: the first to finish claims it (and its game time). "Video Games"
             chores are done by each person picked, but pay nothing alone: finishing all of the day's Video Games
             chores earns the reward below, once a parent approves.
           </p>
@@ -783,7 +783,7 @@ function ChoresTab() {
               <VideoGamesStarsNote />
             ) : (
               <div>
-                <FieldLabel>Stars</FieldLabel>
+                <FieldLabel>Game time</FieldLabel>
                 <Stepper value={choreStars} onChange={setChoreStars} max={20} />
               </div>
             )}
@@ -853,7 +853,7 @@ function ChoresTab() {
             <OskInput value={rewardTitle} onChange={setRewardTitle} placeholder="e.g. Movie night pick" autoFocus={editingReward === 'new'} />
           </div>
           <div>
-            <FieldLabel>Cost in stars</FieldLabel>
+            <FieldLabel>Cost in game time</FieldLabel>
             <Stepper value={rewardCost} onChange={setRewardCost} min={1} max={999} />
           </div>
           <div className="mt-1 flex gap-3">
@@ -1231,7 +1231,7 @@ function BackupSection() {
           <span className="flex-1 text-base font-semibold text-ink-soft">
             {status.lastAt ? `Last backup ${backupWhen(status.lastAt)}` : 'No backup yet'}
             <span className="block text-sm text-ink-faint">
-              Family, chores, stars, lists, meals and settings — every night. Google events come back from Google.
+              Family, chores, game time, lists, meals and settings — every night. Google events come back from Google.
             </span>
           </span>
           <BigButton variant="ghost" disabled={backup.backupNow.isPending} onClick={() => backup.backupNow.mutate(undefined)}>

@@ -545,7 +545,7 @@ export function StarBalancesTile({ compact }: TileProps) {
   const shown = kids.length > 0 ? kids : people
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <TileTitle>Stars</TileTitle>
+      <TileTitle>Game time</TileTitle>
       {shown.length === 0 ? (
         <Placeholder>Add family members in Settings</Placeholder>
       ) : (

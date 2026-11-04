@@ -52,8 +52,8 @@ export const TILE_REGISTRY: Record<HomeTileType, TileMeta> = {
     component: ChoresProgressTile
   },
   starBalances: {
-    label: 'Star balances',
-    description: 'Stars earned by each child',
+    label: 'Game time',
+    description: 'Game time each child has earned',
     component: StarBalancesTile,
     navTarget: 'chores'
   },

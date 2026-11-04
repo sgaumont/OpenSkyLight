@@ -464,6 +464,8 @@ Add unit tests where sensible.
 - v0.8.101: header kid badges are buttons → `features/shell/UseTimeDialog.tsx` "Do you want to use your time?" Yes/No;
   Yes = `stars:useTime` (rewardsService.useTime: ledger entry −balance, reason 'redemption'; NOT PIN-gated since it only
   lowers a balance; no-op at 0). Toast "Enjoy your time, …". With 0 saved it just says so.
+- v0.8.102: on-screen "Stars" → "Game time" (home tile + tile picker, Settings chore/reward/Video Games fields and help,
+  backup text, phone card/editor, aria labels). Code identifiers (starsValue, stars:*, star_ledger) unchanged.
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):
   GET/POST /api/photos, GET /api/photos/:name/thumb (nativeImage thumbnail; phone shows it via blob: URL — CSP img-src

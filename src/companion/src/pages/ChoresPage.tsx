@@ -38,7 +38,7 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
   return (
     <>
       <Card>
-        <h2 className="mb-1 font-display text-xl font-semibold">Stars</h2>
+        <h2 className="mb-1 font-display text-xl font-semibold">Game time</h2>
         {shown.map((p) => {
           const stars = balanceOf(p.id)
           return (
@@ -53,7 +53,7 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
               </button>
               <button
                 type="button"
-                aria-label={`One star less for ${p.name}`}
+                aria-label={`Less game time for ${p.name}`}
                 onClick={() => adjust.mutate({ personId: p.id, delta: -1 })}
                 className={STEP_BUTTON}
               >
@@ -62,7 +62,7 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
               <span className="min-w-14 text-center text-lg font-extrabold text-ember-deep tabular-nums"><GameIcon /> {stars}</span>
               <button
                 type="button"
-                aria-label={`One star more for ${p.name}`}
+                aria-label={`More game time for ${p.name}`}
                 onClick={() => adjust.mutate({ personId: p.id, delta: 1 })}
                 className={STEP_BUTTON}
               >
@@ -183,7 +183,7 @@ function EditStarsSheet({ person, current, onClose }: { person: PersonDto; curre
     <Sheet onClose={onClose}>
       <div className="mb-4 flex items-center gap-2.5">
         <PersonAvatar name={person.name} color={person.color} />
-        <h2 className="flex-1 truncate font-display text-xl font-semibold">{person.name}'s stars</h2>
+        <h2 className="flex-1 truncate font-display text-xl font-semibold">{person.name}'s game time</h2>
         <span className="text-sm font-extrabold text-ink-faint">now <GameIcon /> {current}</span>
       </div>
       <div className="mb-4 flex items-center gap-3">
@@ -645,11 +645,11 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
         {mode === 'videogames' && <VideoGamesNote />}
         <div className="flex items-end gap-4">
           <div className={mode === 'videogames' ? 'hidden' : ''}>
-            <FieldLabel>Stars</FieldLabel>
+            <FieldLabel>Game time</FieldLabel>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                aria-label="Fewer stars"
+                aria-label="Less game time"
                 onClick={() => setStars((n) => Math.max(0, n - 1))}
                 className={STEP_BUTTON}
               >
@@ -658,7 +658,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
               <span className="min-w-11 text-center text-base font-extrabold tabular-nums"><GameIcon /> {stars}</span>
               <button
                 type="button"
-                aria-label="More stars"
+                aria-label="More game time"
                 onClick={() => setStars((n) => Math.min(20, n + 1))}
                 className={STEP_BUTTON}
               >
