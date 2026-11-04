@@ -420,6 +420,7 @@ Add unit tests where sensible.
   State in settings raw keys `backup.*`; gear shows an ember dot when backups fail or are >3 days old. Preload has its
   own channel allowlist (`src/preload/index.ts`) — new IPC prefixes must be added there too.
 - v0.8.85: Week view columns sit closer — grid `gap-1` (4px), was `gap-3`.
+- v0.8.86: Week view side margins halved — `px-3` (12px), was `px-6`.
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1
