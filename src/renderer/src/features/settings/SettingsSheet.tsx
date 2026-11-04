@@ -21,6 +21,8 @@ import { describeRecurrence } from '@shared/recurrence/build'
 import {
   useAuthMutations,
   useAuthStatus,
+  useBackupMutations,
+  useBackupStatus,
   useCalendarMutations,
   useCalendars,
   useCompanionMutations,
@@ -1154,6 +1156,109 @@ function SleepSection() {
   )
 }
 
+/** "today 3:02 am", "Mon 3:02 am", "Oct 12, 3:02 am" */
+function backupWhen(iso: string): string {
+  const t = DateTime.fromISO(iso).setZone(ZONE)
+  const days = Math.round(DateTime.now().setZone(ZONE).startOf('day').diff(t.startOf('day'), 'days').days)
+  const time = t.toFormat('h:mm a').toLowerCase()
+  if (days === 0) return `today ${time}`
+  if (days === 1) return `yesterday ${time}`
+  return days < 7 ? `${t.toFormat('ccc')} ${time}` : `${t.toFormat('LLL d')}, ${time}`
+}
+
+function BackupSection() {
+  const { data: status } = useBackupStatus()
+  const backup = useBackupMutations()
+  const [confirming, setConfirming] = useState<string | null>(null)
+  if (!status) return null
+  const problem = status.lastError ?? status.folderError ?? (status.stale ? 'No backup in the last few days.' : null)
+  return (
+    <div>
+      <FieldLabel>Backups</FieldLabel>
+      <div className="flex flex-col gap-3 rounded-2xl bg-paper-deep/50 p-4">
+        <div className="flex items-center gap-3">
+          <span className="flex-1 text-base font-semibold text-ink-soft">
+            {status.lastAt ? `Last backup ${backupWhen(status.lastAt)}` : 'No backup yet'}
+            <span className="block text-sm text-ink-faint">
+              Family, chores, stars, lists, meals and settings — every night. Google events come back from Google.
+            </span>
+          </span>
+          <BigButton variant="ghost" disabled={backup.backupNow.isPending} onClick={() => backup.backupNow.mutate(undefined)}>
+            {backup.backupNow.isPending ? 'Backing up…' : 'Back up now'}
+          </BigButton>
+        </div>
+        {problem && (
+          <p role="alert" className="rounded-xl bg-ember/15 px-3 py-2 text-sm font-bold text-ember-deep">
+            ⚠ {problem}
+          </p>
+        )}
+
+        <div className="flex items-center gap-3">
+          <span className="min-w-0 flex-1 text-sm font-bold text-ink-soft">
+            Extra copy: <span className="break-all">{status.folder ?? 'none (copies stay on this tablet)'}</span>
+            <span className="block font-semibold text-ink-faint">A USB stick or network folder keeps them safe if the tablet dies.</span>
+          </span>
+          {status.folder && (
+            <button
+              type="button"
+              onClick={() => backup.clearFolder.mutate(undefined)}
+              className="pressable rounded-full px-3 py-1.5 text-sm font-bold text-ink-faint"
+            >
+              Remove
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => backup.pickFolder.mutate(undefined)}
+            className="pressable shrink-0 rounded-full border-2 border-line bg-card px-4 py-1.5 text-sm font-bold text-ink-soft"
+          >
+            Choose folder
+          </button>
+        </div>
+
+        {status.backups.length > 0 && (
+          <div>
+            <FieldLabel>Restore</FieldLabel>
+            <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
+              {status.backups.map((b) => (
+                <div key={b.name} className="flex items-center gap-3 rounded-xl bg-card px-3 py-2">
+                  <span className="min-w-0 flex-1 text-base font-bold text-ink-soft">
+                    {backupWhen(b.takenAt)}
+                    {b.beforeRestore && <span className="ml-2 text-sm text-ink-faint">(saved before a restore)</span>}
+                  </span>
+                  <span className="text-sm text-ink-faint tabular-nums">{b.sizeKb} KB</span>
+                  {confirming === b.name ? (
+                    <button
+                      type="button"
+                      onClick={() => backup.restore.mutate({ name: b.name })}
+                      className="pressable rounded-full bg-ember px-4 py-1.5 text-sm font-extrabold text-white"
+                    >
+                      Tap again — app restarts
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(b.name)}
+                      className="pressable rounded-full border-2 border-line px-4 py-1.5 text-sm font-bold text-ink-soft"
+                    >
+                      Restore
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-xs font-semibold text-ink-faint">
+              Restoring replaces everything with that day's copy (today's data is saved first, as "saved before a restore").
+              If the app won't open: close it, then copy a backup from{' '}
+              {String.raw`%APPDATA%\OpenSkyLight\backups`} over {String.raw`%APPDATA%\OpenSkyLight\openskylight.db`}.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function TextSizeStepper({ value, onChange, label }: { value: number; onChange: (pct: number) => void; label: string }) {
   return (
     <div className="flex shrink-0 items-center rounded-2xl bg-paper-deep p-1">
@@ -1289,6 +1394,7 @@ function GeneralTab() {
       <WeatherSection />
       <ScreensaverSection />
       <SleepSection />
+      <BackupSection />
       <ParentalLockSection />
       <CompanionSection />
       <div>

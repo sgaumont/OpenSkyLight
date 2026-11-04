@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
-import { useBalances, usePeople, useSettings } from '../../api/hooks'
+import { useBackupStatus, useBalances, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { SegmentedControl, IconButton } from '../../components/ui'
 import { ChevronLeftIcon, ChevronRightIcon, GameIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
@@ -49,6 +49,8 @@ export function Header() {
   const { data: settings } = useSettings()
   const { data: people = [] } = usePeople()
   const { data: balances = [] } = useBalances()
+  const { data: backup } = useBackupStatus()
+  const backupProblem = !!backup && (backup.stale || !!backup.lastError || !!backup.folderError)
   const kids = people.filter((p) => p.role === 'child')
   const view = useUi((s) => s.view)
   const setView = useUi((s) => s.setView)
@@ -187,8 +189,12 @@ export function Header() {
         </IconButton>
       )}
 
-      <IconButton label="Settings" className={NARROW_ICON} onClick={() => setSettingsOpen(true)}>
-        <GearIcon size={26} />
+      <IconButton label={backupProblem ? 'Settings — backups need attention' : 'Settings'} className={NARROW_ICON} onClick={() => setSettingsOpen(true)}>
+        <span className="relative">
+          <GearIcon size={26} />
+          {/* backups failing or overdue: Settings → General says why */}
+          {backupProblem && <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-ember ring-2 ring-paper" />}
+        </span>
       </IconButton>
     </header>
   )

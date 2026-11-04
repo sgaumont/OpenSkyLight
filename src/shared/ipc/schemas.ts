@@ -276,6 +276,10 @@ export const mealSetSchema = z.object({
   text: z.string().trim().max(200).nullable()
 })
 
+export const backupRestoreSchema = z.object({
+  name: z.string().regex(/^(openskylight-\d{4}-\d{2}-\d{2}|before-restore-\d{4}-\d{2}-\d{2}-\d{6})\.db$/)
+})
+
 export const citySearchSchema = z.object({ query: z.string().trim().min(2).max(80) })
 
 export const pinVerifySchema = z.object({ pin: z.string().regex(/^\d{4,8}$/) })

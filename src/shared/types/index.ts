@@ -357,6 +357,19 @@ export interface TextSizeSettings {
   weekMeals?: number
 }
 
+export interface BackupStatus {
+  /** UTC ISO of the last successful backup (local copy) */
+  lastAt: string | null
+  lastError: string | null
+  /** extra folder (USB stick / network share) each backup is also copied to */
+  folder: string | null
+  folderError: string | null
+  /** no successful backup for a few days */
+  stale: boolean
+  /** local backups, newest first */
+  backups: { name: string; takenAt: string; sizeKb: number; beforeRestore: boolean }[]
+}
+
 export interface AppSettings {
   /** 0 = Sunday, 1 = Monday */
   weekStartsOn: 0 | 1

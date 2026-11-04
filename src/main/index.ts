@@ -20,6 +20,8 @@ import {
 import { createCompanionTokens } from './companion/companionTokens'
 import { createCompanionServer } from './companion/companionServer'
 import { createMainWindow } from './window'
+import { createBackupService } from './backup/backupService'
+import { applyPendingRestore } from './backup/backupFiles'
 import { createWeatherService } from './services/weatherService'
 import { createAuthService } from './services/authService'
 import { createChoresService } from './services/choresService'
@@ -82,12 +84,17 @@ if (!gotLock) {
   })
 
   function boot(): void {
-    const { db } = openDatabase(join(app.getPath('userData'), 'openskylight.db'))
+    const dbPath = join(app.getPath('userData'), 'openskylight.db')
+    const backupsDir = join(app.getPath('userData'), 'backups')
+    // a restore chosen in Settings is swapped in before the database is opened
+    applyPendingRestore(dbPath, backupsDir, DateTime.now().toFormat('yyyy-LL-dd-HHmmss'))
+    const { db, sqlite } = openDatabase(dbPath)
     const deviceTz = (): string => DateTime.local().zoneName ?? 'UTC'
 
     const settings = createSettingsService(db)
     migrateHomeGrid(settings)
     const kiosk = createKiosk({ settings, broadcast })
+    const backup = createBackupService({ sqlite, dbPath, backupsDir, settings, deviceTz })
     const updater = createUpdater({ broadcast })
     const cameraService = createCameraService(settings)
     app.on('will-quit', () => cameraService.shutdown())
@@ -143,6 +150,7 @@ if (!gotLock) {
       lists: createListsService(db),
       meals: createMealsService(db),
       kiosk,
+      backup,
       updater,
       rss: createRssService(),
       camera: cameraService,
@@ -159,6 +167,7 @@ if (!gotLock) {
     started = true
     syncManager.start()
     kiosk.start()
+    backup.start()
     // chore completions are only kept for the few days the history shows
     const purgeChoreHistory = (): void => {
       choresService.purgeCompletionsBefore(choreHistoryCutoff(DateTime.now().setZone(deviceTz()).toISODate()!, deviceTz()))

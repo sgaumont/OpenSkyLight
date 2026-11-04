@@ -411,6 +411,14 @@ Add unit tests where sensible.
 - v0.8.81: Next up card swaps left/right (text aligned to that edge, fade-in) every time the screensaver photo changes.
 - v0.8.82: user preferred the swap on a timer: Next up card changes sides once a minute (`GLANCE_SWAP_MS`), not per photo.
 - v0.8.83: Next up card lists three events (third styled like the second).
+- v0.8.84: backups — `src/main/backup/` (backupFiles.ts pure + tested; backupService.ts). SQLite online backup
+  (`sqlite.backup`, integrity-checked) to userData/backups/openskylight-YYYY-MM-DD.db nightly (inside the sleep window,
+  or 3 am with sleep off; also ~1 min after start if >24h old; Settings → General → Backups "Back up now"); optional
+  extra folder (USB/network — the Surface has no OneDrive) gets a copy. Keeps 14 days + newest per month for 12 months.
+  Restore (PIN-gated, two taps) copies the backup to `openskylight.db.restore` and relaunches (portable: relaunches
+  PORTABLE_EXECUTABLE_FILE); boot swaps it in via `applyPendingRestore` after saving `before-restore-<stamp>.db`.
+  State in settings raw keys `backup.*`; gear shows an ember dot when backups fail or are >3 days old. Preload has its
+  own channel allowlist (`src/preload/index.ts`) — new IPC prefixes must be added there too.
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1

@@ -340,6 +340,21 @@ export function useAuthMutations() {
   }
 }
 
+export function useBackupStatus() {
+  // re-checked every few minutes so the gear's warning follows the nightly run
+  return useQuery({ queryKey: ['backupStatus'], queryFn: () => ipcInvoke('backup:status', undefined), refetchInterval: 5 * 60_000 })
+}
+
+export function useBackupMutations() {
+  const keys = [['backupStatus']]
+  return {
+    backupNow: useInvalidatingMutation(() => ipcInvoke('backup:now', undefined), keys),
+    pickFolder: useInvalidatingMutation(() => ipcInvoke('backup:pickFolder', undefined), keys),
+    clearFolder: useInvalidatingMutation(() => ipcInvoke('backup:clearFolder', undefined), keys),
+    restore: useInvalidatingMutation((input: { name: string }) => ipcInvoke('backup:restore', input), keys)
+  }
+}
+
 export function useCompanionStatus() {
   return useQuery({
     queryKey: ['companionStatus'],

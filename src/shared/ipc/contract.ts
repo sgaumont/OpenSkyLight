@@ -1,6 +1,7 @@
 import type { WeatherAlert } from '../weatherAlerts'
 import type {
   AppSettings,
+  BackupStatus,
   CalendarCreateInput,
   CalendarDto,
   CalendarUpdateInput,
@@ -175,6 +176,12 @@ export type IpcContract = {
   }
   'weather:searchCity': { req: { query: string }; res: { label: string; lat: number; lon: number }[] }
 
+  'backup:status': { req: void; res: BackupStatus }
+  'backup:now': { req: void; res: BackupStatus }
+  'backup:pickFolder': { req: void; res: BackupStatus }
+  'backup:clearFolder': { req: void; res: BackupStatus }
+  /** replaces all data with a backup and restarts the app */
+  'backup:restore': { req: { name: string }; res: void }
   'screensaver:pickFolder': { req: void; res: { folder: string | null } }
   'screensaver:listPhotos': { req: void; res: string[] }
   'kiosk:previewScreensaver': { req: void; res: void }
@@ -233,6 +240,7 @@ export const ALLOWED_CHANNEL_PREFIXES = [
   'listItems:',
   'meals:',
   'screensaver:',
+  'backup:',
   'kiosk:',
   'rss:',
   'camera:',

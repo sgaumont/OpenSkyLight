@@ -13,6 +13,7 @@ import type { GoogleAuth } from '../sync/googleAuth'
 import type { GoogleSync } from '../sync/googleSync'
 import type { IcsSync } from '../sync/icsSync'
 import type { SyncManager } from '../sync/scheduler'
+import type { BackupService } from '../backup/backupService'
 import type { WeatherService } from '../services/weatherService'
 import type { AuthService } from '../services/authService'
 import type { ChoresService } from '../services/choresService'
@@ -42,6 +43,7 @@ export interface Services {
   lists: ListsService
   meals: MealsService
   kiosk: Kiosk
+  backup: BackupService
   updater: Updater
   rss: RssService
   camera: CameraService
@@ -83,6 +85,9 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
   'rewards:delete',
   'rewards:grant',
   'screensaver:pickFolder',
+  'backup:pickFolder',
+  'backup:clearFolder',
+  'backup:restore',
   'camera:add',
   'camera:remove',
   'companion:issueToken',
@@ -315,6 +320,11 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('weather:searchCity', s.citySearchSchema, (req) => services.weather.searchCity(req.query))
 
   handle('screensaver:pickFolder', null, () => services.kiosk.pickFolder())
+  handle('backup:status', null, () => services.backup.status())
+  handle('backup:now', null, () => services.backup.backupNow())
+  handle('backup:pickFolder', null, () => services.backup.pickFolder())
+  handle('backup:clearFolder', null, () => services.backup.clearFolder())
+  handle('backup:restore', s.backupRestoreSchema, (req) => services.backup.restore(req.name))
   handle('screensaver:listPhotos', null, () => services.kiosk.listPhotos())
   handle('kiosk:previewScreensaver', null, () => services.kiosk.previewScreensaver())
   handle('kiosk:wake', null, () => services.kiosk.wake())
