@@ -706,10 +706,9 @@ function ChoresTab() {
             </span>
           </BigButton>
           <p className="text-sm font-semibold text-ink-faint">
-            "Whoever does it" chores aren't assigned: the first to finish claims it (and its stars). "Everyone"
-            chores need a tick from each person picked. "Video Games" chores are done by each person picked too,
-            but pay nothing alone: finishing all of the day's Video Games chores earns the reward below, once a
-            parent approves.
+            "Whoever does it" chores aren't assigned: the first to finish claims it (and its stars). "Video Games"
+            chores are done by each person picked, but pay nothing alone: finishing all of the day's Video Games
+            chores earns the reward below, once a parent approves.
           </p>
         </div>
       </div>
@@ -766,9 +765,10 @@ function ChoresTab() {
             <SegmentedControl
               value={mode}
               onChange={setMode}
+              // "Everyone" is no longer offered for new chores; an existing one keeps it so it isn't changed by accident
               options={[
                 { value: 'anyone', label: 'Whoever does it' },
-                { value: 'each', label: 'Everyone' },
+                ...(editingChore !== 'new' && editingChore?.mode === 'each' ? [{ value: 'each' as const, label: 'Everyone' }] : []),
                 { value: 'videogames', label: '🎮 Video Games' }
               ]}
             />

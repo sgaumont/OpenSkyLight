@@ -626,9 +626,10 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
             value={mode}
             onChange={setMode}
             options={[
+              // "Everyone" is no longer offered for new chores; an existing one keeps it so it isn't changed by accident
               { value: 'anyone', label: 'Whoever' },
-              { value: 'each', label: 'Everyone' },
-              { value: 'videogames', label: '🎮 Games' }
+              ...(!isNew && chore.mode === 'each' ? [{ value: 'each' as const, label: 'Everyone' }] : []),
+              { value: 'videogames', label: '🎮 Video Games' }
             ]}
           />
           {mode !== 'anyone' && (
