@@ -28,7 +28,7 @@ type DbOrTx = Pick<AppDb, 'select' | 'insert' | 'update' | 'delete'>
 
 /** Settings key for the Video Games set reward (controllers per finished round). */
 const KEY_VIDEO_GAMES_STARS = 'chores.videoGamesStars'
-const DEFAULT_VIDEO_GAMES_STARS = 5
+const DEFAULT_VIDEO_GAMES_STARS = 60
 
 /** The scheduling fields chores and checklists share. */
 interface Schedule {

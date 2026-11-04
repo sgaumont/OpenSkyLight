@@ -121,3 +121,11 @@ describe('database upgrade for Video Games (v4 to v5)', () => {
     sqlite.close()
   })
 })
+
+describe('Video Games reward default', () => {
+  it('is 60 until a parent changes it', () => {
+    const h = openDatabase(':memory:')
+    expect(createChoresService(h.db, () => 'America/Regina').videoGamesStars()).toEqual({ stars: 60 })
+    h.sqlite.close()
+  })
+})
