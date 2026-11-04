@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
 import { useSettings, useWeather } from '../../api/hooks'
 import { useCalendarData } from '../calendar/useCalendarData'
-import { dayRange } from '@shared/dates'
+import { agendaRange } from '@shared/dates'
 import { withoutEnded } from '@shared/occurrences'
 import { weatherIcon } from '../weather/WeatherHeader'
 import { ZONE } from '../../stores/uiStore'
@@ -120,20 +120,36 @@ function ScreensaverWeather() {
   )
 }
 
-/** What's next today (the next two timed events), top-left over the photos; gone once the day is done. */
+/**
+ * What's next (two timed events), top-left over the photos: the rest of today, running into
+ * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
+ */
 function ScreensaverGlance({ now }: { now: DateTime }) {
   const todayKey = now.toISODate()!
-  const range = useMemo(() => dayRange(todayKey, ZONE), [todayKey])
+  const tomorrowKey = now.plus({ days: 1 }).toISODate()!
+  const range = useMemo(() => agendaRange(todayKey, ZONE, 2), [todayKey])
   const { byDay } = useCalendarData(range)
-  const upcoming = withoutEnded(byDay.get(todayKey) ?? [], now.toMillis()).filter((o) => !o.allDay)
+  const timed = (key: string) => (byDay.get(key) ?? []).filter((o) => !o.allDay)
+  const today = withoutEnded(timed(todayKey), now.toMillis())
+  const todayKeys = new Set(today.map((o) => o.key))
+  const upcoming = [
+    ...today.map((o) => ({ o, tomorrow: false })),
+    // an event running past midnight is listed on both days: keep it under today
+    ...timed(tomorrowKey)
+      .filter((o) => !todayKeys.has(o.key))
+      .map((o) => ({ o, tomorrow: true }))
+  ]
   if (upcoming.length === 0) return null
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   return (
     <div className="absolute top-10 left-12 max-w-[60rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none">
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
-      {upcoming.slice(0, 2).map((o, i) => (
+      {upcoming.slice(0, 2).map(({ o, tomorrow }, i) => (
         <div key={o.key} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
-          <span className="shrink-0 tabular-nums">{Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}</span>
+          <span className="shrink-0 tabular-nums">
+            {tomorrow && <span className="mr-2 text-white/60 uppercase">Tmrw</span>}
+            {Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}
+          </span>
           <span className="truncate">{o.title}</span>
         </div>
       ))}

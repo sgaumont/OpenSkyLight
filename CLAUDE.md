@@ -406,6 +406,8 @@ Add unit tests where sensible.
   "Now" while one is on; hidden once the day is done. Chores were tried there and removed at the user's request.
 - v0.8.78: Next up card text smaller to fit more of the titles (24px / 18px, card up to 40rem wide).
 - v0.8.79: Next up card 50% wider (max 60rem).
+- v0.8.80: Next up card runs into tomorrow ("Tmrw" before the time) once today's timed events are done/too few;
+  an overnight event stays under today.
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1
