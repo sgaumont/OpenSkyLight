@@ -431,6 +431,11 @@ Add unit tests where sensible.
   date controls) and now on every screen; gap-3 between them on Week/Month. The issue line is a container: under
   11rem (Week/Month with 3 kids) it shrinks to a ⚠ button (+count), still tappable. Measured at 1440px: header never overflows.
 - v0.8.92: "Tmrw" shown as written (not TMRW) on the This week tile and the screensaver Next up card; other weekdays stay in capitals.
+- v0.8.93: family notes. DB migration v4 `notes` (author_id plain id, expires_at for "until tonight" = end of the
+  posting day in the device zone, done_at). `notesService` list/add/done; IPC `notes:*` (in the phone allowlist, not
+  PIN-gated; push domain 'notes'). Kiosk: `features/notes/NotesStrip.tsx` sticky cards above the home tiles (two-tap
+  Done; theme colours so dark mode reads), screensaver card lists up to 2 under Next up. Phone: Notes tab (text ≤280,
+  From chips remembered in localStorage, Until tonight). The v2→v3 migration test is pinned with runMigrations(sqlite, 3).
 - v0.8.87: phone → slideshow photos. Companion "Photos" tab (`src/companion/src/pages/PhotosPage.tsx`, `api/photos.ts`):
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):

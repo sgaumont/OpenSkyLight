@@ -223,6 +223,20 @@ export const mealSlots = sqliteTable(
   (t) => [index('idx_meal_slots_date').on(t.date)]
 )
 
+export const notes = sqliteTable(
+  'notes',
+  {
+    id: text('id').primaryKey(),
+    text: text('text').notNull(),
+    authorId: text('author_id'),
+    createdAt: text('created_at').notNull(),
+    /** UTC ISO; set for "until tonight" notes (end of the posting day) */
+    expiresAt: text('expires_at'),
+    doneAt: text('done_at')
+  },
+  (t) => [index('idx_notes_open').on(t.doneAt)]
+)
+
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull() // JSON

@@ -21,6 +21,8 @@ import type {
   ListKind,
   MealSlotDto,
   MealSlotKind,
+  NoteDto,
+  NoteInput,
   OccurrenceDto,
   PendingUnlockDto,
   PersonCreateInput,
@@ -115,6 +117,10 @@ export type IpcContract = {
 
   'meals:getRange': { req: { start: string; end: string }; res: MealSlotDto[] }
   'meals:set': { req: { date: string; slot: MealSlotKind; text: string | null }; res: void }
+
+  'notes:list': { req: void; res: NoteDto[] }
+  'notes:add': { req: NoteInput; res: NoteDto }
+  'notes:done': { req: { id: string }; res: void }
 
   'rewards:list': { req: void; res: RewardDto[] }
   'rewards:create': { req: { title: string; costStars: number }; res: RewardDto }
@@ -239,6 +245,7 @@ export const ALLOWED_CHANNEL_PREFIXES = [
   'lists:',
   'listItems:',
   'meals:',
+  'notes:',
   'screensaver:',
   'backup:',
   'kiosk:',

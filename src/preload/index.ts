@@ -17,6 +17,7 @@ const ALLOWED_INVOKE_PREFIXES = [
   'lists:',
   'listItems:',
   'meals:',
+  'notes:',
   'screensaver:',
   'backup:',
   'kiosk:',

@@ -21,6 +21,7 @@ import { createCompanionTokens } from './companion/companionTokens'
 import { createCompanionServer } from './companion/companionServer'
 import { createMainWindow } from './window'
 import { createBackupService } from './backup/backupService'
+import { createNotesService } from './services/notesService'
 import { createPhonePhotos } from './companion/phonePhotos'
 import { applyPendingRestore } from './backup/backupFiles'
 import { createWeatherService } from './services/weatherService'
@@ -151,6 +152,7 @@ if (!gotLock) {
       rewards: createRewardsService(db, choresService),
       lists: createListsService(db),
       meals: createMealsService(db),
+      notes: createNotesService(db, deviceTz),
       kiosk,
       backup,
       updater,

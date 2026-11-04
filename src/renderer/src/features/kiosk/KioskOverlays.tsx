@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
-import { useSettings, useWeather } from '../../api/hooks'
+import { useNotes, useSettings, useWeather } from '../../api/hooks'
 import { useCalendarData } from '../calendar/useCalendarData'
 import { agendaRange } from '@shared/dates'
 import { withoutEnded } from '@shared/occurrences'
@@ -123,7 +123,7 @@ function ScreensaverWeather() {
 }
 
 /**
- * What's next (three timed events), top-left over the photos: the rest of today, running into
+ * What's next (three timed events) and family notes, top-left over the photos: the rest of today, running into
  * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
  */
 function ScreensaverGlance({ now }: { now: DateTime }) {
@@ -147,7 +147,8 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
       .filter((o) => !todayKeys.has(o.key))
       .map((o) => ({ o, tomorrow: true }))
   ]
-  if (upcoming.length === 0) return null
+  const { data: notes = [] } = useNotes()
+  if (upcoming.length === 0 && notes.length === 0) return null
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   return (
     // keyed by side so the fade-in plays again on each swap
@@ -158,7 +159,7 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
       }`}
       style={{ animation: 'fade-in 1.2s ease both' }}
     >
-      <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
+      {upcoming.length > 0 && <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>}
       {upcoming.slice(0, 3).map(({ o, tomorrow }, i) => (
         <div key={o.key} className={`flex items-baseline gap-3 ${right ? 'justify-end' : ''} ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
           <span className="shrink-0 tabular-nums">
@@ -168,6 +169,18 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
           <span className="truncate">{o.title}</span>
         </div>
       ))}
+      {/* family notes from phones, newest first */}
+      {notes.length > 0 && (
+        <div className={upcoming.length > 0 ? 'mt-4' : ''}>
+          <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Notes</div>
+          {notes.slice(0, 2).map((n) => (
+            <p key={n.id} className="mt-1 line-clamp-2 text-xl font-bold">
+              {n.text}
+            </p>
+          ))}
+          {notes.length > 2 && <p className="mt-1 text-base font-bold text-white/60">+{notes.length - 2} more on the home screen</p>}
+        </div>
+      )}
     </div>
   )
 }

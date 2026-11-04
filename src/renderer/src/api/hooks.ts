@@ -341,6 +341,17 @@ export function useAuthMutations() {
   }
 }
 
+export function useNotes() {
+  // re-checked every minute so "until tonight" notes drop off at midnight
+  return useQuery({ queryKey: ['notes'], queryFn: () => ipcInvoke('notes:list', undefined), refetchInterval: 60_000 })
+}
+
+export function useNoteMutations() {
+  return {
+    done: useInvalidatingMutation((input: { id: string }) => ipcInvoke('notes:done', input), [['notes']])
+  }
+}
+
 export function useBackupStatus() {
   // re-checked every few minutes so the gear's warning follows the nightly run
   return useQuery({ queryKey: ['backupStatus'], queryFn: () => ipcInvoke('backup:status', undefined), refetchInterval: 5 * 60_000 })

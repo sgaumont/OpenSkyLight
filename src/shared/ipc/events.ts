@@ -1,7 +1,7 @@
 /** Push events from main -> renderer (sync engine, kiosk state). */
 export type MainPushEvents = {
   'push:dataChanged': {
-    domain: 'events' | 'people' | 'calendars' | 'settings' | 'lists' | 'meals' | 'chores' | 'screensaverPhotos'
+    domain: 'events' | 'people' | 'calendars' | 'settings' | 'lists' | 'meals' | 'chores' | 'screensaverPhotos' | 'notes'
   }
   'push:syncStatus': { state: 'idle' | 'syncing' | 'error'; message?: string }
   'push:syncConflict': { title: string }

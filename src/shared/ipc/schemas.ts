@@ -270,6 +270,13 @@ export const listItemAddSchema = z.object({ listId: id, text: z.string().trim().
 export const listIdSchema = z.object({ listId: id })
 
 export const mealsRangeSchema = z.object({ start: isoDate, end: isoDate })
+export const noteAddSchema = z.object({
+  text: z.string().trim().min(1).max(280),
+  authorId: z.string().min(1).nullable(),
+  untilTonight: z.boolean()
+})
+export const noteDoneSchema = z.object({ id: z.string().min(1) })
+
 export const mealSetSchema = z.object({
   date: isoDate,
   slot: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),

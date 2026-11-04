@@ -14,6 +14,7 @@ import type { GoogleSync } from '../sync/googleSync'
 import type { IcsSync } from '../sync/icsSync'
 import type { SyncManager } from '../sync/scheduler'
 import type { BackupService } from '../backup/backupService'
+import type { NotesService } from '../services/notesService'
 import type { WeatherService } from '../services/weatherService'
 import type { AuthService } from '../services/authService'
 import type { ChoresService } from '../services/choresService'
@@ -43,6 +44,7 @@ export interface Services {
   lists: ListsService
   meals: MealsService
   kiosk: Kiosk
+  notes: NotesService
   backup: BackupService
   updater: Updater
   rss: RssService
@@ -95,7 +97,7 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
 ])
 
 /** Channels that mutate data, mapped to the domain the renderer should refetch. */
-type MutationDomain = 'events' | 'people' | 'calendars' | 'settings' | 'lists' | 'meals' | 'chores'
+type MutationDomain = 'events' | 'people' | 'calendars' | 'settings' | 'lists' | 'meals' | 'chores' | 'notes'
 const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'settings:set': 'settings',
   'people:create': 'people',
@@ -119,6 +121,8 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'listItems:delete': 'lists',
   'listItems:clearChecked': 'lists',
   'meals:set': 'meals',
+  'notes:add': 'notes',
+  'notes:done': 'notes',
   'chores:create': 'chores',
   'chores:update': 'chores',
   'chores:delete': 'chores',
@@ -305,6 +309,9 @@ export function buildChannelTable(services: Services): ChannelTable {
 
   handle('meals:getRange', s.mealsRangeSchema, (req) => services.meals.getRange(req.start, req.end))
   handle('meals:set', s.mealSetSchema, (req) => services.meals.set(req.date, req.slot, req.text))
+  handle('notes:list', null, () => services.notes.list())
+  handle('notes:add', s.noteAddSchema, (req) => services.notes.add(req))
+  handle('notes:done', s.noteDoneSchema, (req) => services.notes.done(req.id))
 
   handle('rss:getFeed', s.rssFeedSchema, (req) => services.rss.getFeed(req.feedId))
 

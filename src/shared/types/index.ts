@@ -357,6 +357,23 @@ export interface TextSizeSettings {
   weekMeals?: number
 }
 
+export interface NoteDto {
+  id: string
+  text: string
+  /** family member it's from, if the poster picked one */
+  authorId: string | null
+  createdAt: string
+  /** set for "until tonight" notes */
+  expiresAt: string | null
+}
+
+export interface NoteInput {
+  text: string
+  authorId: string | null
+  /** gone at the end of today (device zone) instead of waiting for "Done" */
+  untilTonight: boolean
+}
+
 export interface BackupStatus {
   /** UTC ISO of the last successful backup (local copy) */
   lastAt: string | null

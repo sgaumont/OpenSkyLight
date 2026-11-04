@@ -431,7 +431,7 @@ describe('database upgrade to chores done more than once a day (v2 to v3)', () =
       INSERT INTO star_ledger (id, person_id, delta, reason, ref_id, created_at)
         VALUES ('s1','kid1',3,'chore','done1','2026-06-10T12:00:00Z');
     `)
-    runMigrations(sqlite)
+    runMigrations(sqlite, 3)
     expect(sqlite.pragma('user_version', { simple: true })).toBe(3)
     expect(sqlite.prepare('SELECT times FROM chores').get()).toEqual({ times: 1 })
     expect(sqlite.prepare('SELECT id, person_id, stars_awarded FROM chore_completions').all()).toEqual([

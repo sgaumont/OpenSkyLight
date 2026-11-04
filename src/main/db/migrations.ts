@@ -256,6 +256,20 @@ const MIGRATIONS: string[] = [
   DROP TABLE chore_completions;
   ALTER TABLE chore_completions_v3 RENAME TO chore_completions;
   CREATE INDEX idx_completions_chore_date ON chore_completions(chore_id, due_date);
+  `,
+  // v4: family notes — short messages posted from a phone that stay on the kiosk until someone
+  // marks them done (or, for "until tonight", until midnight). author_id is a plain id, not a
+  // foreign key, so removing a family member never blocks or breaks their old notes.
+  `
+  CREATE TABLE notes (
+    id TEXT PRIMARY KEY,
+    text TEXT NOT NULL,
+    author_id TEXT,
+    created_at TEXT NOT NULL,
+    expires_at TEXT,
+    done_at TEXT
+  );
+  CREATE INDEX idx_notes_open ON notes(done_at);
   `
 ]
 
