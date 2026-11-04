@@ -129,7 +129,7 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
   if (upcoming.length === 0) return null
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   return (
-    <div className="absolute top-10 left-12 max-w-[40rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none">
+    <div className="absolute top-10 left-12 max-w-[60rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none">
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
       {upcoming.slice(0, 2).map((o, i) => (
         <div key={o.key} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
