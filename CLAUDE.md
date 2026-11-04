@@ -430,6 +430,8 @@ Add unit tests where sensible.
   can be fetched/deleted (`photoUpload.ts`: byte sniffing, 10 MB cap). Kiosk listPhotos includes the subfolder; ShuffleDeck
   puts photos new since the last list at the front of the next pass. `npm run build` also builds the companion
   (`build:companion`) — a bare `electron-vite build` leaves the phone app stale.
+- v0.8.88: phone Photos tab deletes several at once — Select (or tap any photo) → tick → Select all/Cancel → bottom bar
+  "Delete N photos" → "Tap again to delete N"; deletes one by one with progress.
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1
