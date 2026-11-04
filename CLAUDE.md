@@ -402,6 +402,8 @@ Add unit tests where sensible.
   the weather location; drops ended/cancelled/expired, one per alert code, warning>watch>advisory>statement), fetched
   with the forecast (`WeatherDto.alerts`, failures keep the last alerts). Weather tile: risk-coloured strip on top;
   header weather button: coloured ⚠ badge, forecast dialog lists alerts in full (`features/weather/WeatherAlerts.tsx`).
+- v0.8.77: screensaver "Next up" card top-left (`ScreensaverGlance` in KioskOverlays): next two timed events today,
+  "Now" while one is on; hidden once the day is done. Chores were tried there and removed at the user's request.
 - v0.8.65: chores done more than once a day — `chores.times` (DB migration v3: 0 = no limit; completions lose
   UNIQUE(chore,date,person)). Only Weekly/One time chores get "Times that day" (1–10 or No limit; Every day saves 1);
   it resets on each due day. `DayChoreDto.times` + `claims` (every tick, oldest first); done = reached times (≥1

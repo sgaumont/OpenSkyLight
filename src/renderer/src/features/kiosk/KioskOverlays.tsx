@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
 import { useSettings, useWeather } from '../../api/hooks'
+import { useCalendarData } from '../calendar/useCalendarData'
+import { dayRange } from '@shared/dates'
+import { withoutEnded } from '@shared/occurrences'
 import { weatherIcon } from '../weather/WeatherHeader'
 import { ZONE } from '../../stores/uiStore'
 import { useKioskState } from '../../stores/kioskStore'
@@ -85,6 +88,7 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
         <div className="mt-1 text-2xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
       </div>
       <ScreensaverWeather />
+      <ScreensaverGlance now={now} />
     </div>
   )
 }
@@ -112,6 +116,27 @@ function ScreensaverWeather() {
           <span className="text-white/60">{today.low}°</span>
         </span>
       )}
+    </div>
+  )
+}
+
+/** What's next today (the next two timed events), top-left over the photos; gone once the day is done. */
+function ScreensaverGlance({ now }: { now: DateTime }) {
+  const todayKey = now.toISODate()!
+  const range = useMemo(() => dayRange(todayKey, ZONE), [todayKey])
+  const { byDay } = useCalendarData(range)
+  const upcoming = withoutEnded(byDay.get(todayKey) ?? [], now.toMillis()).filter((o) => !o.allDay)
+  if (upcoming.length === 0) return null
+  const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
+  return (
+    <div className="absolute top-10 left-12 max-w-[34rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none">
+      <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
+      {upcoming.slice(0, 2).map((o, i) => (
+        <div key={o.key} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-3xl' : 'mt-1.5 text-xl text-white/70'} font-bold`}>
+          <span className="shrink-0 tabular-nums">{Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}</span>
+          <span className="truncate">{o.title}</span>
+        </div>
+      ))}
     </div>
   )
 }
