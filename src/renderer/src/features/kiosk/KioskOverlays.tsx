@@ -82,15 +82,15 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
       )}
       {/* preload the next slide so the crossfade never flashes */}
       {next && <img src={next} alt="" className="hidden" />}
-      {/* clock and date, with the weather beside them, bottom-left */}
-      <div className="absolute bottom-10 left-12 flex items-end gap-12 select-none">
-        <div>
+      {/* bottom-left: the clock with a small weather just right of it, the date underneath */}
+      <div className="absolute bottom-10 left-12 select-none" data-screensaver-clock>
+        <div className="flex items-center gap-6">
           <div className="font-display text-7xl font-semibold text-white/90 drop-shadow-lg">
             {timeFormat === '24h' ? now.toFormat('HH:mm') : now.toFormat('h:mm')}
           </div>
-          <div className="mt-1 text-2xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
+          <ScreensaverWeather />
         </div>
-        <ScreensaverWeather />
+        <div className="mt-1 text-2xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
       </div>
       <ScreensaverGlance now={now} />
       <ScreensaverCountdowns today={now.toISODate()!} />
@@ -99,9 +99,8 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
 }
 
 /**
- * The header's weather — icon, current temperature, today's high over low — in the
- * screensaver's white-on-photo style, beside the clock. Raised by the date line's height
- * (mt-1 + text-2xl line) so it lines up with the clock digits.
+ * The header's weather — icon, current temperature, today's high over low — small, in the
+ * screensaver's white-on-photo style, just right of the clock (the date runs underneath both).
  */
 function ScreensaverWeather() {
   const { data: weather } = useWeather()
@@ -109,12 +108,12 @@ function ScreensaverWeather() {
   const Icon = weatherIcon(weather.code, weather.isDay)
   const today = weather.daily[0]
   return (
-    <div className="mb-9 flex items-center gap-4 text-white/90 drop-shadow-lg">
-      <Icon className="h-[72px] w-[72px]" />
-      <span className="font-display text-7xl leading-none font-semibold">{weather.temperature}°</span>
+    <div className="flex items-center gap-2.5 text-white/90 drop-shadow-lg" data-screensaver-weather>
+      <Icon className="h-11 w-11" />
+      <span className="font-display text-4xl leading-none font-semibold">{weather.temperature}°</span>
       {today && (
         <span
-          className="flex flex-col items-end gap-1 text-3xl leading-none font-bold tabular-nums"
+          className="flex flex-col items-end gap-0.5 text-lg leading-none font-bold tabular-nums"
           aria-label={`Today: high ${today.high}°, low ${today.low}°`}
         >
           <span>{today.high}°</span>
