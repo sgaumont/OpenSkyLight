@@ -136,7 +136,22 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     return { balance: balance + delta }
   }
 
-  return { list, create, update, remove, redeem, pendingRedemptions, grant, adjust }
+  /**
+   * A kid spends all their saved-up controllers on game time: their balance goes to 0. Only ever
+   * lowers a balance, so it needs no parent PIN. Returns how many were used.
+   */
+  function useTime(personId: string): { used: number } {
+    const [person] = db.select().from(people).where(and(eq(people.id, personId), isNull(people.deletedAt))).all()
+    if (!person) throw notFound('Person')
+    const balance = choresService.balanceOf(personId)
+    if (balance <= 0) return { used: 0 }
+    db.insert(starLedger)
+      .values({ id: uuidv7(), personId, delta: -balance, reason: 'redemption', refId: null, createdAt: isoUtc(DateTime.utc()) })
+      .run()
+    return { used: balance }
+  }
+
+  return { list, create, update, remove, redeem, pendingRedemptions, grant, adjust, useTime }
 }
 
 export type RewardsService = ReturnType<typeof createRewardsService>

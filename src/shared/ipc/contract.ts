@@ -109,6 +109,8 @@ export type IpcContract = {
   'stars:balances': { req: void; res: StarBalanceDto[] }
   /** a parent's correction: adds `delta` (may be negative) to the person's balance */
   'stars:adjust': { req: { personId: string; delta: number }; res: { balance: number } }
+  /** a kid uses all their saved-up controllers ("use your time"): balance → 0; not PIN-gated */
+  'stars:useTime': { req: { personId: string }; res: { used: number } }
 
   'lists:getAll': { req: void; res: ListDto[] }
   'lists:create': { req: { name: string; color: string; kind: ListKind }; res: ListDto }

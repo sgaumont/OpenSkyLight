@@ -461,6 +461,9 @@ Add unit tests where sensible.
   Games shows only this set's x/y per kid, never "+N" (Chores tab and phone still show controllers earned).
 - v0.8.100: home tile, Video Games task circles: part-way (1/2) = outline + initial in the kid's colour; complete
   (count ≥ times, e.g. 2/2) = filled in their colour with a white initial (`circle(..., white)`). Everyone chores unchanged.
+- v0.8.101: header kid badges are buttons → `features/shell/UseTimeDialog.tsx` "Do you want to use your time?" Yes/No;
+  Yes = `stars:useTime` (rewardsService.useTime: ledger entry −balance, reason 'redemption'; NOT PIN-gated since it only
+  lowers a balance; no-op at 0). Toast "Enjoy your time, …". With 0 saved it just says so.
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):
   GET/POST /api/photos, GET /api/photos/:name/thumb (nativeImage thumbnail; phone shows it via blob: URL — CSP img-src

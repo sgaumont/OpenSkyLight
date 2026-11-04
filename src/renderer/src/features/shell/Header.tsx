@@ -6,6 +6,7 @@ import { SegmentedControl, IconButton } from '../../components/ui'
 import { ChevronLeftIcon, ChevronRightIcon, GameIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
 import { WeatherButton } from '../weather/WeatherHeader'
 import { IssueLine } from './IssueLine'
+import { UseTimeDialog } from './UseTimeDialog'
 import { initials, textOn } from '../../lib/format'
 import type { CalendarViewKind } from '@shared/types'
 import { eachDay, weekViewRange } from '@shared/dates'
@@ -51,6 +52,8 @@ export function Header() {
   const { data: people = [] } = usePeople()
   const { data: balances = [] } = useBalances()
   const kids = people.filter((p) => p.role === 'child')
+  // the kid whose "use your time?" question is open
+  const [usingTime, setUsingTime] = useState<string | null>(null)
   const view = useUi((s) => s.view)
   const setView = useUi((s) => s.setView)
   const focusedDate = useUi((s) => s.focusedDate)
@@ -145,31 +148,37 @@ export function Header() {
       )}
 
       {/* each child's controller balance, in their colour, beside the screen selector on every screen —
-          display only, a tap does nothing */}
+          a tap asks whether they want to use their time (spend it all) */}
       {kids.length > 0 && (
         // a little tighter beside the date controls (Week/Month), where the header is fullest
         <div className={`flex shrink-0 items-center ${view === 'home' || view === 'lists' ? 'gap-4.5' : 'gap-3'}`}>
           {kids.map((p) => {
             const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
             return (
-              <div
+              <button
                 key={p.id}
-                role="img"
+                type="button"
+                onClick={() => setUsingTime(p.id)}
                 aria-label={`${p.name}: ${stars} stars`}
                 title={p.name}
                 // as tall as the date + clock block beside them: the banner's full height
-                className="flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
+                className="pressable flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
                 style={{ backgroundColor: p.color, color: textOn(p.color) }}
               >
                 <span aria-hidden className="text-sm leading-none max-[1300px]:text-xs">
                   <GameIcon className="align-top" />
                 </span>
                 <span className="text-xl leading-none max-[1300px]:text-base">{stars}</span>
-              </div>
+              </button>
             )
           })}
         </div>
       )}
+      <UseTimeDialog
+        person={kids.find((k) => k.id === usingTime) ?? null}
+        balance={balances.find((b) => b.personId === usingTime)?.balance ?? 0}
+        onClose={() => setUsingTime(null)}
+      />
 
       <SegmentedControl
         value={view}

@@ -1,0 +1,52 @@
+import type { PersonDto } from '@shared/types'
+import { useUseTime } from '../../api/hooks'
+import { BigButton, Dialog } from '../../components/ui'
+import { GameIcon } from '../../components/icons'
+import { useToasts } from '../../stores/toastStore'
+
+/** Tapped from a kid's header badge: spend all their saved-up controllers on game time. */
+export function UseTimeDialog({ person, balance, onClose }: { person: PersonDto | null; balance: number; onClose: () => void }) {
+  const useTime = useUseTime()
+  const pushToast = useToasts((s) => s.push)
+  if (!person) return null
+  return (
+    <Dialog open onClose={onClose} title={person.name}>
+      <div className="flex flex-col items-center gap-5 text-center">
+        <span className="text-4xl font-extrabold text-ember-deep tabular-nums">
+          <GameIcon /> {balance}
+        </span>
+        {balance > 0 ? (
+          <>
+            <p className="font-display text-3xl">Do you want to use your time?</p>
+            <div className="flex w-full gap-3 [&>*]:flex-1">
+              <BigButton variant="ghost" onClick={onClose}>
+                No
+              </BigButton>
+              <BigButton
+                disabled={useTime.isPending}
+                onClick={() =>
+                  useTime.mutate(
+                    { personId: person.id },
+                    {
+                      onSuccess: (res) => {
+                        if (res.used > 0) pushToast(`🎮 Enjoy your time, ${person.name}!`)
+                        onClose()
+                      }
+                    }
+                  )
+                }
+              >
+                Yes
+              </BigButton>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="font-display text-2xl">No time saved up yet — finish some chores first!</p>
+            <BigButton onClick={onClose}>OK</BigButton>
+          </>
+        )}
+      </div>
+    </Dialog>
+  )
+}

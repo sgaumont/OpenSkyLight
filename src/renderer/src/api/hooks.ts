@@ -176,6 +176,11 @@ export function useBalances() {
   return useQuery({ queryKey: ['balances'], queryFn: () => ipcInvoke('stars:balances', undefined) })
 }
 
+/** A kid spends all their controllers on game time (balance → 0). */
+export function useUseTime() {
+  return useInvalidatingMutation((input: { personId: string }) => ipcInvoke('stars:useTime', input), [['balances']])
+}
+
 export function useChecklists() {
   return useQuery({ queryKey: ['checklists'], queryFn: () => ipcInvoke('chores:checklists', undefined) })
 }
