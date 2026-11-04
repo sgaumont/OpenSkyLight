@@ -451,6 +451,7 @@ Add unit tests where sensible.
   stopped early (N min back)"; toast "🎮 N back to …". `stars:stopTimer` returns {refunded}; OK on a finished one = 0.
 - v0.8.109: phone Game time card has an "All" row (2+ kids) — − / + call `stars:adjust` once per kid, ±1 each.
 - v0.8.110: header top-left — the big clock now comes first, then the divider, then weekday + date (were swapped).
+- v0.8.111: family-note chime rings longer — `chimeLoop(NOTE_CHIME_MS, 1.2)` (1.2s fade per note, was 0.5s); the timer alarm keeps 0.5s.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

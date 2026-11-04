@@ -4,7 +4,8 @@
  */
 let ctx: AudioContext | null = null
 
-function chime(): void {
+/** One ding; `ringS` is how long each note takes to fade out. */
+function chime(ringS: number): void {
   if (!ctx) return
   const now = ctx.currentTime
   // a two-note ding, soft attack/release so it isn't harsh on a kitchen wall
@@ -16,15 +17,15 @@ function chime(): void {
     const t = now + i * 0.18
     gain.gain.setValueAtTime(0, t)
     gain.gain.linearRampToValueAtTime(0.22, t + 0.03)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5)
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + ringS)
     osc.connect(gain).connect(ctx.destination)
     osc.start(t)
-    osc.stop(t + 0.55)
+    osc.stop(t + ringS + 0.05)
   }
 }
 
 /** A chime that rings now and then every `intervalMs` while anything holds it. */
-function chimeLoop(intervalMs: number): { start(): void; stop(): void } {
+function chimeLoop(intervalMs: number, ringS = 0.5): { start(): void; stop(): void } {
   let loop: number | undefined
   let refs = 0
   return {
@@ -37,8 +38,8 @@ function chimeLoop(intervalMs: number): { start(): void; stop(): void } {
       } catch {
         return
       }
-      chime()
-      loop = window.setInterval(chime, intervalMs)
+      chime(ringS)
+      loop = window.setInterval(() => chime(ringS), intervalMs)
     },
     stop() {
       refs = Math.max(0, refs - 1)
@@ -54,8 +55,8 @@ const timerAlarm = chimeLoop(1500)
 export const startAlarm = timerAlarm.start
 export const stopAlarm = timerAlarm.stop
 
-/** A family note waiting on the kiosk: a ding every 10 seconds until it's marked done. */
+/** A family note waiting on the kiosk: a ding every 10 seconds until it's marked done, with a longer ring. */
 export const NOTE_CHIME_MS = 10_000
-const noteChime = chimeLoop(NOTE_CHIME_MS)
+const noteChime = chimeLoop(NOTE_CHIME_MS, 1.2)
 export const startNoteChime = noteChime.start
 export const stopNoteChime = noteChime.stop
