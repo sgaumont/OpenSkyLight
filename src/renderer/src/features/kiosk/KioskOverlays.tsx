@@ -3,7 +3,7 @@ import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
 import { useCountdowns, useSettings, useWeather } from '../../api/hooks'
-import { daysUntil } from '@shared/countdown'
+import { countdownLabel } from '@shared/countdown'
 import { useCalendarData } from '../calendar/useCalendarData'
 import { agendaRange } from '@shared/dates'
 import { withoutEnded } from '@shared/occurrences'
@@ -14,8 +14,6 @@ import { guardInput } from '@shared/inputGuard'
 import { ShuffleDeck } from '@shared/shuffleDeck'
 
 const SLIDE_MS = 10_000
-/** How often the Next up card swaps sides. */
-const GLANCE_SWAP_MS = 60_000
 
 /**
  * Shuffled slideshow order, kept for the life of the app so each screensaver
@@ -84,22 +82,26 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
       )}
       {/* preload the next slide so the crossfade never flashes */}
       {next && <img src={next} alt="" className="hidden" />}
-      <div className="absolute bottom-10 left-12 select-none">
-        <div className="font-display text-7xl font-semibold text-white/90 drop-shadow-lg">
-          {timeFormat === '24h' ? now.toFormat('HH:mm') : now.toFormat('h:mm')}
+      {/* clock and date, with the weather beside them, bottom-left */}
+      <div className="absolute bottom-10 left-12 flex items-end gap-12 select-none">
+        <div>
+          <div className="font-display text-7xl font-semibold text-white/90 drop-shadow-lg">
+            {timeFormat === '24h' ? now.toFormat('HH:mm') : now.toFormat('h:mm')}
+          </div>
+          <div className="mt-1 text-2xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
         </div>
-        <div className="mt-1 text-2xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
+        <ScreensaverWeather />
       </div>
-      <ScreensaverWeather />
       <ScreensaverGlance now={now} />
+      <ScreensaverCountdowns today={now.toISODate()!} />
     </div>
   )
 }
 
 /**
  * The header's weather — icon, current temperature, today's high over low — in the
- * screensaver's white-on-photo style, bottom-right. Raised by the date line's height
- * (mt-1 + text-2xl line) so it lines up with the clock digits on the left.
+ * screensaver's white-on-photo style, beside the clock. Raised by the date line's height
+ * (mt-1 + text-2xl line) so it lines up with the clock digits.
  */
 function ScreensaverWeather() {
   const { data: weather } = useWeather()
@@ -107,7 +109,7 @@ function ScreensaverWeather() {
   const Icon = weatherIcon(weather.code, weather.isDay)
   const today = weather.daily[0]
   return (
-    <div className="absolute right-12 bottom-[4.75rem] flex items-center gap-4 text-white/90 drop-shadow-lg select-none">
+    <div className="mb-9 flex items-center gap-4 text-white/90 drop-shadow-lg">
       <Icon className="h-[72px] w-[72px]" />
       <span className="font-display text-7xl leading-none font-semibold">{weather.temperature}°</span>
       {today && (
@@ -123,17 +125,14 @@ function ScreensaverWeather() {
   )
 }
 
+/** The frosted card the screensaver's Next up and Countdowns sit on. */
+const GLANCE_CARD = 'absolute top-10 max-w-[40rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
+
 /**
  * What's next (three timed events), top-left over the photos: the rest of today, running into
  * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
  */
 function ScreensaverGlance({ now }: { now: DateTime }) {
-  // swaps between the left and right of the screen, fading in on each move
-  const [right, setRight] = useState(false)
-  useEffect(() => {
-    const t = setInterval(() => setRight((r) => !r), GLANCE_SWAP_MS)
-    return () => clearInterval(t)
-  }, [])
   const todayKey = now.toISODate()!
   const tomorrowKey = now.plus({ days: 1 }).toISODate()!
   const range = useMemo(() => agendaRange(todayKey, ZONE, 2), [todayKey])
@@ -148,30 +147,13 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
       .filter((o) => !todayKeys.has(o.key))
       .map((o) => ({ o, tomorrow: true }))
   ]
-  // the nearest countdown, in words, under the events
-  const { data: countdowns = [] } = useCountdowns()
-  const next = countdowns.map((c) => ({ c, n: daysUntil(c.date, todayKey) })).find(({ n }) => n >= 0)
-  const countdownLine = next
-    ? next.n === 0
-      ? `${next.c.emoji ?? '⏳'} ${next.c.title} is today!`
-      : next.n === 1
-        ? `${next.c.emoji ?? '⏳'} ${next.c.title} is tomorrow!`
-        : `${next.c.emoji ?? '⏳'} ${next.n} days until ${next.c.title}`
-    : null
-  if (upcoming.length === 0 && !countdownLine) return null
+  if (upcoming.length === 0) return null
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   return (
-    // keyed by side so the fade-in plays again on each swap
-    <div
-      key={right ? 'right' : 'left'}
-      className={`absolute top-10 max-w-[60rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none ${
-        right ? 'right-12 text-right' : 'left-12'
-      }`}
-      style={{ animation: 'fade-in 1.2s ease both' }}
-    >
-      {upcoming.length > 0 && <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>}
+    <div className={`${GLANCE_CARD} left-12`} style={{ animation: 'fade-in 1.2s ease both' }}>
+      <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
       {upcoming.slice(0, 3).map(({ o, tomorrow }, i) => (
-        <div key={o.key} className={`flex items-baseline gap-3 ${right ? 'justify-end' : ''} ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
+        <div key={o.key} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
           <span className="shrink-0 tabular-nums">
             {tomorrow && <span className="mr-2 text-white/60">Tmrw</span>}
             {Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}
@@ -179,11 +161,29 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
           <span className="truncate">{o.title}</span>
         </div>
       ))}
-      {countdownLine && (
-        <div className={`text-xl font-bold ${upcoming.length > 0 ? 'mt-3 text-white/85' : ''}`} data-countdown-line>
-          {countdownLine}
+    </div>
+  )
+}
+
+/** The next three countdowns, top-right — Next up's twin, soonest first. */
+function ScreensaverCountdowns({ today }: { today: string }) {
+  const { data: countdowns = [] } = useCountdowns()
+  const shown = countdowns
+    .map((c) => ({ c, label: countdownLabel(c.date, today) }))
+    .filter((x): x is { c: (typeof countdowns)[number]; label: string } => x.label !== null)
+    .slice(0, 3)
+  if (shown.length === 0) return null
+  return (
+    <div className={`${GLANCE_CARD} right-12`} style={{ animation: 'fade-in 1.2s ease both' }}>
+      <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Countdowns</div>
+      {shown.map(({ c, label }, i) => (
+        <div key={c.id} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
+          <span className="truncate">
+            {c.emoji ?? '⏳'} {c.title}
+          </span>
+          <span className="ml-auto shrink-0 pl-4 tabular-nums">{label}</span>
         </div>
-      )}
+      ))}
     </div>
   )
 }

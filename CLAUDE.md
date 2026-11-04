@@ -459,6 +459,8 @@ Add unit tests where sensible.
   TILE_SPECS + the settings zod enum — a test now checks the enum covers every TILE_SPECS type); Settings → General
   `CountdownsSection` (OSK name, emoji row, DateField); screensaver card adds the nearest ("🎄 51 days until …");
   phone Notes tab `CountdownsCard` (native date input). Not on the default layout: add the tile with ✏️.
+- v0.8.113: screensaver layout — Next up card fixed top-left (no more side swap), a twin Countdowns card top-right
+  (next 3, `countdownLabel`; replaces the countdown line in Next up), weather beside the clock/date bottom-left.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
