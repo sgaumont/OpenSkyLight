@@ -3,6 +3,7 @@ import type { AppDb } from '../db/client'
 import { calendars, eventPeople, events } from '../db/schema'
 import { uuidv7 } from '@shared/uuid'
 import { fromIso, isoUtc } from '@shared/dates'
+import { zoneFor } from '@shared/zones'
 import { buildRRuleString, parseRRuleString, withUntilInstant, withoutEndCap } from '@shared/recurrence/build'
 import {
   expandOccurrences,
@@ -66,7 +67,7 @@ function asExceptionLike(row: EventRow): ExceptionLike {
  */
 export function allDayInZone(startIso: string, endIso: string, tz: string, zone: string): { start: string; end: string } {
   const at = (iso: string) =>
-    isoUtc(DateTime.fromISO(DateTime.fromISO(iso, { zone: 'utc' }).setZone(tz).toISODate()!, { zone }))
+    isoUtc(DateTime.fromISO(DateTime.fromISO(iso, { zone: 'utc' }).setZone(zoneFor(tz)).toISODate()!, { zone: zoneFor(zone) }))
   return { start: at(startIso), end: at(endIso) }
 }
 
@@ -255,8 +256,8 @@ export function createEventService(db: AppDb, deviceTz: () => string = () => Dat
 
   function normalizeCreateTimes(input: EventCreateInput): { startAt: string; endAt: string } {
     if (input.allDay) {
-      const start = fromIso(input.start).setZone(input.tz).startOf('day')
-      let end = fromIso(input.end).setZone(input.tz).startOf('day')
+      const start = fromIso(input.start).setZone(zoneFor(input.tz)).startOf('day')
+      let end = fromIso(input.end).setZone(zoneFor(input.tz)).startOf('day')
       if (end <= start) end = start.plus({ days: 1 })
       return { startAt: isoUtc(start), endAt: isoUtc(end) }
     }

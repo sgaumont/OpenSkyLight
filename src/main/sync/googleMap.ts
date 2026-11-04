@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
 import { isoUtc } from '@shared/dates'
+import { zoneFor } from '@shared/zones'
 
 /**
  * Pure mapping between Google Calendar API event resources and OpenSkyLight
@@ -31,7 +32,7 @@ export interface GEventItem {
 
 export function gTimeToInstant(t: GTime, fallbackTz: string): { iso: string; allDay: boolean; tz: string } {
   if (t.date) {
-    const dt = DateTime.fromISO(t.date, { zone: fallbackTz }).startOf('day')
+    const dt = DateTime.fromISO(t.date, { zone: zoneFor(fallbackTz) }).startOf('day')
     return { iso: isoUtc(dt), allDay: true, tz: fallbackTz }
   }
   const tz = t.timeZone ?? fallbackTz
@@ -41,12 +42,12 @@ export function gTimeToInstant(t: GTime, fallbackTz: string): { iso: string; all
 
 function parseDateValue(value: string, tzid: string | null, eventTz: string): string {
   if (/^\d{8}$/.test(value)) {
-    return isoUtc(DateTime.fromFormat(value, 'yyyyMMdd', { zone: tzid ?? eventTz }).startOf('day'))
+    return isoUtc(DateTime.fromFormat(value, 'yyyyMMdd', { zone: zoneFor(tzid ?? eventTz) }).startOf('day'))
   }
   if (value.endsWith('Z')) {
     return isoUtc(DateTime.fromFormat(value, "yyyyMMdd'T'HHmmss'Z'", { zone: 'utc' }))
   }
-  return isoUtc(DateTime.fromFormat(value, "yyyyMMdd'T'HHmmss", { zone: tzid ?? eventTz }))
+  return isoUtc(DateTime.fromFormat(value, "yyyyMMdd'T'HHmmss", { zone: zoneFor(tzid ?? eventTz) }))
 }
 
 /** Parse Google's `recurrence` string array (RRULE / EXDATE / RDATE lines). */

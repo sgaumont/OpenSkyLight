@@ -1,6 +1,7 @@
 import { RRule } from 'rrule'
-import { DateTime } from 'luxon'
+import { DateTime, type Zone } from 'luxon'
 import { isoUtc } from '../dates'
+import { zoneFor } from '../zones'
 
 /**
  * Pure recurrence expansion.
@@ -50,7 +51,7 @@ function toFloating(dt: DateTime): Date {
   return new Date(Date.UTC(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second))
 }
 
-function fromFloating(d: Date, zone: string): DateTime {
+function fromFloating(d: Date, zone: Zone | string): DateTime {
   return DateTime.fromObject(
     {
       year: d.getUTCFullYear(),
@@ -74,8 +75,8 @@ interface Duration {
 }
 
 function eventDuration(master: MasterEventLike): Duration {
-  const start = DateTime.fromISO(master.startAt, { zone: 'utc' }).setZone(master.tz)
-  const end = DateTime.fromISO(master.endAt, { zone: 'utc' }).setZone(master.tz)
+  const start = DateTime.fromISO(master.startAt, { zone: 'utc' }).setZone(zoneFor(master.tz))
+  const end = DateTime.fromISO(master.endAt, { zone: 'utc' }).setZone(zoneFor(master.tz))
   if (master.allDay) {
     return { allDayDays: Math.max(1, Math.round(end.diff(start, 'days').days)), millis: 0 }
   }
@@ -92,7 +93,7 @@ export function occurrenceTimes(
   occurrenceStartIso: string
 ): { start: string; end: string } {
   const dur = eventDuration(master)
-  const occStart = DateTime.fromISO(occurrenceStartIso, { zone: 'utc' }).setZone(master.tz)
+  const occStart = DateTime.fromISO(occurrenceStartIso, { zone: 'utc' }).setZone(zoneFor(master.tz))
   return { start: isoUtc(occStart), end: isoUtc(occurrenceEnd(occStart, dur)) }
 }
 
@@ -106,7 +107,7 @@ export function expandOccurrences(
   windowStartIso: string,
   windowEndIso: string
 ): ExpandedOccurrence[] {
-  const zone = master.tz || 'utc'
+  const zone = zoneFor(master.tz || 'utc')
   const dur = eventDuration(master)
   const windowStart = DateTime.fromISO(windowStartIso, { zone: 'utc' })
   const windowEnd = DateTime.fromISO(windowEndIso, { zone: 'utc' })
