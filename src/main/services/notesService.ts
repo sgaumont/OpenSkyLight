@@ -1,4 +1,4 @@
-import { desc, eq, isNull } from 'drizzle-orm'
+import { asc, eq, isNull } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import type { AppDb } from '../db/client'
 import { notes } from '../db/schema'
@@ -11,14 +11,14 @@ const MAX_LENGTH = 280
 
 /** Family notes: posted from a phone, on the kiosk until marked done or (if asked) until midnight. */
 export function createNotesService(db: AppDb, deviceTz: () => string, now: () => DateTime = () => DateTime.utc()) {
-  /** Notes still showing, newest first. */
+  /** Notes still showing, oldest first (the order they're read and cleared in). */
   function list(): NoteDto[] {
     const nowIso = isoUtc(now())
     return db
       .select()
       .from(notes)
       .where(isNull(notes.doneAt))
-      .orderBy(desc(notes.createdAt))
+      .orderBy(asc(notes.createdAt))
       .all()
       .filter((n) => !n.expiresAt || n.expiresAt > nowIso)
       .map((n) => ({ id: n.id, text: n.text, authorId: n.authorId, createdAt: n.createdAt, expiresAt: n.expiresAt }))

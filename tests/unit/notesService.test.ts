@@ -16,14 +16,14 @@ afterEach(() => handle.sqlite.close())
 const notes = () => createNotesService(handle.db, () => ZONE, () => clock.toUTC())
 
 describe('family notes', () => {
-  it('posts a note and lists newest first, with its author', () => {
+  it('posts a note and lists oldest first, with its author', () => {
     const svc = notes()
     svc.add({ text: 'Grandma pickup today', authorId: 'mum', untilTonight: false })
     clock = clock.plus({ minutes: 5 })
     svc.add({ text: '  Hockey bags in the car  ', authorId: null, untilTonight: false })
     const list = svc.list()
-    expect(list.map((n) => n.text)).toEqual(['Hockey bags in the car', 'Grandma pickup today'])
-    expect(list[1]).toMatchObject({ authorId: 'mum', expiresAt: null })
+    expect(list.map((n) => n.text)).toEqual(['Grandma pickup today', 'Hockey bags in the car'])
+    expect(list[0]).toMatchObject({ authorId: 'mum', expiresAt: null })
   })
 
   it('Done takes a note off; "until tonight" drops off at local midnight', () => {

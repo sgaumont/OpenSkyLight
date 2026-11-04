@@ -1,5 +1,4 @@
 import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { NotesStrip } from '../notes/NotesStrip'
 import { DEFAULT_SETTINGS, type HomeTile, type HomeTileType } from '@shared/types'
 import { sanitizeLayout } from '@shared/home'
 import { stepTextSize, tileZoom } from '@shared/textSize'
@@ -113,8 +112,6 @@ export function HomeView() {
 
   return (
     <div className="relative flex h-full flex-col px-6 pb-6">
-      {/* notes from phones sit above the tiles (not while arranging them) */}
-      {!editing && <NotesStrip />}
       {/* in edit mode the grid shrinks to keep the bottom row clear of the floating chrome bar */}
       <div ref={containerRef} className={`relative min-h-0 flex-1 ${editing ? 'mb-24' : ''}`} data-home-grid>
         {/* nothing renders until settings load (the fallback default layout must

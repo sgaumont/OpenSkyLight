@@ -436,6 +436,9 @@ Add unit tests where sensible.
   PIN-gated; push domain 'notes'). Kiosk: `features/notes/NotesStrip.tsx` sticky cards above the home tiles (two-tap
   Done; theme colours so dark mode reads), screensaver card lists up to 2 under Next up. Phone: Notes tab (text ≤280,
   From chips remembered in localStorage, Until tonight). The v2→v3 migration test is pinned with runMigrations(sqlite, 3).
+- v0.8.94: notes are a centred pop-up instead (`features/notes/NoteOverlay.tsx`, z-[85]: over every screen and the
+  screensaver, under the sleep screen; stops pointer events reaching the screensaver). Oldest first (also the phone
+  list — `notesService.list` sorts ascending), "1 of N", two-tap Done moves to the next. The home strip and the screensaver card's note list were removed.
 - v0.8.87: phone → slideshow photos. Companion "Photos" tab (`src/companion/src/pages/PhotosPage.tsx`, `api/photos.ts`):
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):

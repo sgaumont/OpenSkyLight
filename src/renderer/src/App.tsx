@@ -18,6 +18,7 @@ import { ListsView } from './features/lists/ListsView'
 import { EventEditor } from './features/calendar/EventEditor'
 import { SettingsSheet } from './features/settings/SettingsSheet'
 import { KioskOverlays } from './features/kiosk/KioskOverlays'
+import { NoteOverlay } from './features/notes/NoteOverlay'
 import { OskTray } from './components/Osk'
 
 export default function App() {
@@ -77,6 +78,8 @@ export default function App() {
       <Toasts />
       <UpdateBanner />
       <KioskOverlays />
+      {/* above the screensaver, under the sleep screen */}
+      <NoteOverlay />
     </div>
   )
 }
