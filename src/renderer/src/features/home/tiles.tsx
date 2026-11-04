@@ -506,7 +506,8 @@ export function ChoresProgressTile() {
                       className={`flex items-center gap-1 text-xs font-extrabold ${s.unlock === 'approved' ? 'text-[#46A758]' : 'text-ink-soft'}`}
                     >
                       <MiniAvatar person={p} />
-                      {setProgressLabel(cl, s, UNLOCK_MARK)}
+                      {/* Video Games: just this set's count here, never the controllers earned */}
+                      {cl.kind === 'videogames' ? `${s.done}/${s.total}` : setProgressLabel(cl, s, UNLOCK_MARK)}
                     </span>
                   )
                 })}

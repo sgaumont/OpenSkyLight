@@ -456,6 +456,9 @@ Add unit tests where sensible.
 - v0.8.97: Video Games set reward defaults to 60 (was 5).
 - v0.8.98: "Everyone" is no longer offered in either chore editor (Whoever / 🎮 Video Games); an existing 'each'
   chore still shows it when edited so it isn't converted by accident. 'each' itself is unchanged (checklist items use it).
+- v0.8.99: the kiosk "Who did it?" popup now finds a Video Games task / checklist item in `checklistsDay` (it only
+  looked in `getDay`, which leaves them out), so its count updates live; same lookup on the phone. Home tile: Video
+  Games shows only this set's x/y per kid, never "+N" (Chores tab and phone still show controllers earned).
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):
   GET/POST /api/photos, GET /api/photos/:name/thumb (nativeImage thumbnail; phone shows it via blob: URL — CSP img-src

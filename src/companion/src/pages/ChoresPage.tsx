@@ -288,7 +288,11 @@ export function ChoresPage() {
   const [editingChore, setEditingChore] = useState<ChoreDto | 'new' | null>(null)
   // the chore whose "who did it?" picker is open — as it is now, so a counting sheet shows each tick
   const [claimingId, setClaimingId] = useState<string | null>(null)
-  const claiming = dayChores.find((c) => c.choreId === claimingId) ?? null
+  // Video Games tasks and checklist items live in their set's card, not the plain chore list
+  const claiming =
+    dayChores.find((c) => c.choreId === claimingId) ??
+    checklists.flatMap((cl) => cl.items).find((c) => c.choreId === claimingId) ??
+    null
   const nameOf = (id: string): string | undefined => people.find((p) => p.id === id)?.name
 
   const balanceOf = (personId: string): number => balances.find((b) => b.personId === personId)?.balance ?? 0

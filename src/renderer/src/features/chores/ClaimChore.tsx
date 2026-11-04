@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { DayChoreDto, PersonDto } from '@shared/types'
 import { canAddMore, claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
-import { useChoreMutations, useChoresDay, usePeople } from '../../api/hooks'
+import { useChecklistsDay, useChoreMutations, useChoresDay, usePeople } from '../../api/hooks'
 import { useToasts } from '../../stores/toastStore'
 import { initials, textOn } from '../../lib/format'
 import { CheckIcon, GameIcon } from '../../components/icons'
@@ -138,11 +138,17 @@ export function useChoreClaim(date: string): {
 } {
   const { data: people = [] } = usePeople()
   const { data: dayChores = [] } = useChoresDay(date)
+  const { data: checklists = [] } = useChecklistsDay(date)
   const mutations = useChoreMutations()
   const pushToast = useToasts((s) => s.push)
   const [claiming, setClaiming] = useState<DayChoreDto | null>(null)
-  // the open chore as it is now, so a counting picker shows each new tick
-  const current = claiming ? (dayChores.find((c) => c.choreId === claiming.choreId) ?? claiming) : null
+  // the open chore as it is now, so a counting picker shows each new tick — Video Games tasks and
+  // checklist items live in their set's card, not the plain chore list
+  const current = claiming
+    ? (dayChores.find((c) => c.choreId === claiming.choreId) ??
+      checklists.flatMap((cl) => cl.items).find((c) => c.choreId === claiming.choreId) ??
+      claiming)
+    : null
 
   const complete = (chore: DayChoreDto, person: PersonDto): void => {
     mutations.complete.mutate(
