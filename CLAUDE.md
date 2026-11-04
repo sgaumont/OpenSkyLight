@@ -450,6 +450,7 @@ Add unit tests where sensible.
   (`refundPoints`; timers now carry `points`, summed when extended; setup minutes never refunded). Ledger +N "Game time
   stopped early (N min back)"; toast "🎮 N back to …". `stars:stopTimer` returns {refunded}; OK on a finished one = 0.
 - v0.8.109: phone Game time card has an "All" row (2+ kids) — − / + call `stars:adjust` once per kid, ±1 each.
+- v0.8.110: header top-left — the big clock now comes first, then the divider, then weekday + date (were swapped).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

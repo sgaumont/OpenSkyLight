@@ -76,15 +76,6 @@ export function Header() {
         onClick={goToday}
         className="pressable flex shrink-0 items-center gap-3 text-left max-[1300px]:gap-2 min-[1500px]:gap-4"
       >
-        <div>
-          <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight max-[1300px]:text-[1.65rem] min-[1500px]:text-[2.6rem]">
-            {now.toFormat('cccc')}
-          </div>
-          <div className="mt-1 text-base font-bold text-ink-soft max-[1300px]:text-sm min-[1500px]:text-lg">
-            {now.toFormat('LLLL d')}
-          </div>
-        </div>
-        <div className="w-px self-stretch bg-ink-faint/30" />
         <div className="font-display text-[3.75rem] leading-none font-semibold tracking-tight tabular-nums max-[1300px]:text-[3.125rem] max-[1150px]:text-[2.125rem] min-[1500px]:text-[4rem]">
           {timeFormat === '24h' ? (
             now.toFormat('HH:mm')
@@ -96,6 +87,15 @@ export function Header() {
               </span>
             </>
           )}
+        </div>
+        <div className="w-px self-stretch bg-ink-faint/30" />
+        <div>
+          <div className="font-display text-[2.05rem] leading-none font-semibold tracking-tight max-[1300px]:text-[1.65rem] min-[1500px]:text-[2.6rem]">
+            {now.toFormat('cccc')}
+          </div>
+          <div className="mt-1 text-base font-bold text-ink-soft max-[1300px]:text-sm min-[1500px]:text-lg">
+            {now.toFormat('LLLL d')}
+          </div>
         </div>
       </button>
 
