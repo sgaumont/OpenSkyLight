@@ -433,6 +433,8 @@ Add unit tests where sensible.
   (`src/shared/dayLabel.ts`). Kiosk pop-up `features/chores/ApprovalOverlay.tsx` (z-[84]: over screens + screensaver,
   under notes and sleep): "Emma finished 🎮 Video Games! Approve 🎮 60?" — Approve (PinDialog when a PIN is set, then
   re-locks) / Not now (snoozes that request 30 min).
+- v0.8.106: the game time log on the phone — Chores → Game time card → History (`GameTimeLogSheet` in companion
+  ChoresPage: kid filter, Show more). `stars:log` added to `COMPANION_CHANNELS` (read-only).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

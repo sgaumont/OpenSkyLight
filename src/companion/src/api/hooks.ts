@@ -151,6 +151,16 @@ export function useChecklistMutations() {
   }
 }
 
+/** The game time log, newest first: one kid, or everyone. */
+export function useGameTimeLog(personId: string | null, limit: number) {
+  return useQuery({
+    queryKey: ['gameTimeLog', personId, limit],
+    queryFn: () => rpc('stars:log', { personId, limit }),
+    placeholderData: (prev) => prev,
+    ...LIVE
+  })
+}
+
 /** Controllers paid for each finished Video Games set. */
 export function useVideoGamesStars() {
   return useQuery({ queryKey: ['videoGamesStars'], queryFn: () => rpc('chores:videoGamesStars', undefined), ...LIVE })

@@ -17,6 +17,8 @@ export const COMPANION_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'listItems:clearChecked',
   'meals:getRange',
   'meals:set',
+  // the game time log, read-only (Chores → Game time → History)
+  'stars:log',
   'notes:list',
   'notes:add',
   'notes:done',

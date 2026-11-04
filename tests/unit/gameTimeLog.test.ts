@@ -6,6 +6,7 @@ import { people } from '../../src/main/db/schema'
 import { createChoresService } from '../../src/main/services/choresService'
 import { createRewardsService } from '../../src/main/services/rewardsService'
 import { VIDEO_GAMES_SET_ID } from '../../src/shared/types'
+import { COMPANION_CHANNELS } from '../../src/shared/ipc/companionChannels'
 
 const DAY = '2026-11-07'
 let handle: DbHandle
@@ -95,5 +96,11 @@ describe('game time log', () => {
     expect(sqlite.pragma('user_version', { simple: true })).toBe(6)
     expect(sqlite.prepare('SELECT delta, note FROM star_ledger').get()).toEqual({ delta: 5, note: null })
     sqlite.close()
+  })
+})
+
+describe('game time log on the phone', () => {
+  it('a paired phone may read the log', () => {
+    expect(COMPANION_CHANNELS.has('stars:log')).toBe(true)
   })
 })

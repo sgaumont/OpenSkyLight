@@ -12,6 +12,7 @@ import {
   useChoresDay,
   usePendingUnlocks,
   useVideoGamesStars,
+  useGameTimeLog,
   usePeople,
   useToday
 } from '../api/hooks'
@@ -34,12 +35,22 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
   const kids = people.filter((p) => p.role === 'child')
   const shown = kids.length > 0 ? kids : people
   const [editing, setEditing] = useState<PersonDto | null>(null)
+  const [history, setHistory] = useState(false)
   const adjust = useAdjustStars()
   if (shown.length === 0) return null
   return (
     <>
       <Card>
-        <h2 className="mb-1 font-display text-xl font-semibold">Game time</h2>
+        <div className="mb-1 flex items-center gap-2">
+          <h2 className="flex-1 font-display text-xl font-semibold">Game time</h2>
+          <button
+            type="button"
+            onClick={() => setHistory(true)}
+            className="pressable rounded-full border-2 border-line px-3 py-1 text-sm font-extrabold text-ink-soft"
+          >
+            History
+          </button>
+        </div>
         {shown.map((p) => {
           const stars = balanceOf(p.id)
           return (
@@ -74,7 +85,80 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
         })}
       </Card>
       {editing && <EditStarsSheet person={editing} current={balanceOf(editing.id)} onClose={() => setEditing(null)} />}
+      {history && <GameTimeLogSheet people={people} onClose={() => setHistory(false)} />}
     </>
+  )
+}
+
+const LOG_PAGE = 20
+
+/** Every game time gain, loss and use (newest first), with each kid's balance after — the kiosk's log, on the phone. */
+function GameTimeLogSheet({ people, onClose }: { people: PersonDto[]; onClose: () => void }) {
+  const [personId, setPersonId] = useState<string | null>(null)
+  const [limit, setLimit] = useState(LOG_PAGE)
+  const { data: entries = [] } = useGameTimeLog(personId, limit)
+  const kids = people.filter((p) => p.role === 'child')
+  const byId = new Map(people.map((p) => [p.id, p]))
+  return (
+    <Sheet onClose={onClose}>
+      <div className="mb-3 flex items-center gap-2">
+        <h2 className="flex-1 font-display text-xl font-semibold">Game time history</h2>
+        <GhostButton onClick={onClose}>Close</GhostButton>
+      </div>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {[{ id: null as string | null, name: 'Everyone' }, ...kids].map((p) => (
+          <button
+            key={p.id ?? 'all'}
+            type="button"
+            aria-pressed={personId === p.id}
+            onClick={() => {
+              setPersonId(p.id)
+              setLimit(LOG_PAGE)
+            }}
+            className={`pressable rounded-full px-3.5 py-1.5 text-sm font-extrabold ${
+              personId === p.id ? 'bg-ink text-paper' : 'bg-paper-deep text-ink-soft'
+            }`}
+          >
+            {p.name}
+          </button>
+        ))}
+      </div>
+      {entries.length === 0 ? (
+        <EmptyNote>Nothing yet — game time earned, spent or changed shows up here.</EmptyNote>
+      ) : (
+        <div className="flex flex-col divide-y divide-line/60">
+          {entries.map((e) => {
+            const p = byId.get(e.personId)
+            const t = DateTime.fromISO(e.at)
+            return (
+              <div key={e.id} className="flex items-start gap-2.5 py-2.5" data-log-entry>
+                {p && <PersonAvatar name={p.name} color={p.color} size="sm" />}
+                <div className="min-w-0 flex-1">
+                  <div className="text-base font-bold break-words">{e.note}</div>
+                  <div className="text-xs font-bold text-ink-faint">
+                    {t.toFormat('ccc LLL d')} · {t.toFormat('h:mm a').toLowerCase()}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className={`text-base font-extrabold tabular-nums ${e.delta > 0 ? 'text-[#2F8A3E]' : 'text-ember-deep'}`}>
+                    {e.delta > 0 ? '+' : '−'}
+                    {Math.abs(e.delta)}
+                  </div>
+                  <div className="text-xs font-bold text-ink-faint tabular-nums">
+                    → <GameIcon /> {e.balanceAfter}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {entries.length === limit && (
+        <div className="mt-3">
+          <GhostButton onClick={() => setLimit(limit + LOG_PAGE * 2)}>Show more</GhostButton>
+        </div>
+      )}
+    </Sheet>
   )
 }
 
