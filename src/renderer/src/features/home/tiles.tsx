@@ -207,7 +207,8 @@ export function WeekAgendaTile({ compact }: TileProps) {
               const gap = i === 0 && dayIndex > 0 ? 'mt-1' : ''
               return (
                 <Fragment key={`${key}|${occ.key}`}>
-                  <span className={`pr-1 text-xs font-extrabold text-ink-faint uppercase ${gap}`}>
+                  {/* weekdays in capitals; "Tmrw" as written */}
+                  <span className={`pr-1 text-xs font-extrabold text-ink-faint ${dayIndex === 0 ? '' : 'uppercase'} ${gap}`}>
                     {i === 0 ? (dayIndex === 0 ? 'Tmrw' : day.toFormat('ccc')) : ''}
                   </span>
                   {/* the dot sits in a text-sized line so it has a baseline to align on */}

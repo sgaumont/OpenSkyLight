@@ -162,7 +162,7 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
       {upcoming.slice(0, 3).map(({ o, tomorrow }, i) => (
         <div key={o.key} className={`flex items-baseline gap-3 ${right ? 'justify-end' : ''} ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
           <span className="shrink-0 tabular-nums">
-            {tomorrow && <span className="mr-2 text-white/60 uppercase">Tmrw</span>}
+            {tomorrow && <span className="mr-2 text-white/60">Tmrw</span>}
             {Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}
           </span>
           <span className="truncate">{o.title}</span>
