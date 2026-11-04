@@ -404,8 +404,9 @@ export function ChoresProgressTile() {
   /**
    * A filled circle with the doer's initial once done; an empty outline (faint initial when we
    * know whose) until then; `partial` (part-way through a count) outlines it in their colour.
+   * `white` forces a white initial on the filled circle (Video Games), whatever their colour.
    */
-  const circle = (key: string, done: PersonDto | undefined, owner?: PersonDto, partial?: boolean) => (
+  const circle = (key: string, done: PersonDto | undefined, owner?: PersonDto, partial?: boolean, white?: boolean) => (
     <span
       key={key}
       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${done || partial ? '' : 'border-line'}`}
@@ -420,7 +421,7 @@ export function ChoresProgressTile() {
       {(done ?? owner) && (
         <span
           className={`text-[10px] leading-none font-extrabold ${done || partial ? '' : 'text-ink-faint'}`}
-          style={done ? { color: textOn(done.color) } : partial && owner ? { color: owner.color } : undefined}
+          style={done ? { color: white ? '#FFFFFF' : textOn(done.color) } : partial && owner ? { color: owner.color } : undefined}
         >
           {initials((done ?? owner)!.name)}
         </span>
@@ -449,6 +450,12 @@ export function ChoresProgressTile() {
         {c.mode !== 'anyone'
           ? c.assignees.map((id) => {
               const p = peopleById.get(id)
+              if (c.mode === 'videogames') {
+                // Video Games: outlined part-way (1/2), filled with a white initial once all done (2/2)
+                const n = countOf(c, id)
+                const full = n >= (c.times ?? 1)
+                return circle(id, full ? p : undefined, p, n > 0 && !full, true)
+              }
               return circle(id, c.doneBy.includes(id) ? p : undefined, p, countOf(c, id) > 0)
             })
           : anyoneSlots(c).map((id, i) => circle(`claim${i}`, id ? peopleById.get(id) : undefined))}

@@ -459,6 +459,8 @@ Add unit tests where sensible.
 - v0.8.99: the kiosk "Who did it?" popup now finds a Video Games task / checklist item in `checklistsDay` (it only
   looked in `getDay`, which leaves them out), so its count updates live; same lookup on the phone. Home tile: Video
   Games shows only this set's x/y per kid, never "+N" (Chores tab and phone still show controllers earned).
+- v0.8.100: home tile, Video Games task circles: part-way (1/2) = outline + initial in the kid's colour; complete
+  (count ≥ times, e.g. 2/2) = filled in their colour with a white initial (`circle(..., white)`). Everyone chores unchanged.
   the phone redraws each photo to ≤2560px JPEG on a canvas (drops EXIF/GPS, turns HEIC into JPEG) and POSTs raw bytes to
   `/api/photos` (bearer token; not the 64 KB JSON rpc). Server routes in companionServer.ts (`authorize()` shared with rpc):
   GET/POST /api/photos, GET /api/photos/:name/thumb (nativeImage thumbnail; phone shows it via blob: URL — CSP img-src
