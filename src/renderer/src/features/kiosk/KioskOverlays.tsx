@@ -127,7 +127,7 @@ function ScreensaverWeather() {
 
 /** The frosted card the screensaver's Next up and Countdowns sit on. */
 /** (Position is per card: Countdowns top-right, Next up bottom-right.) */
-const GLANCE_CARD = 'absolute max-w-[40rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
+const GLANCE_CARD = 'absolute max-w-[40rem] rounded-3xl bg-black/34 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
 
 /**
  * What's next (five timed events, all one size), bottom-right over the photos: the rest of today, running into
