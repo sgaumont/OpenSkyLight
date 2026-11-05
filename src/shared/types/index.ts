@@ -475,6 +475,29 @@ export interface AppSettings {
   homeLayout: HomeTile[]
   /** LAN companion web app (phones editing lists/meals/chores) */
   companion: { enabled: boolean; port: number }
+  /** "Leave by" drive times from home (Google Routes API; the key is stored separately, encrypted) */
+  travel: { enabled: boolean; homeAddress: string; bufferMinutes: number }
+}
+
+/** When to leave home for an event with a location. */
+export interface LeaveTimeDto {
+  /** OccurrenceDto.key */
+  key: string
+  title: string
+  location: string
+  /** UTC ISO */
+  start: string
+  leaveAt: string
+  driveMinutes: number
+}
+
+export interface TravelStatus {
+  keySet: boolean
+  callsToday: number
+  callsThisMonth: number
+  dailyCap: number
+  monthlyCap: number
+  lastError: string | null
 }
 
 import { DEFAULT_HOME_LAYOUT } from '../home'
@@ -492,7 +515,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   screensaver: { folder: null, idleMinutes: 10 },
   launchOnStartup: false,
   homeLayout: DEFAULT_HOME_LAYOUT,
-  companion: { enabled: false, port: 8420 }
+  companion: { enabled: false, port: 8420 },
+  travel: { enabled: false, homeAddress: '', bufferMinutes: 5 }
 }
 
 /** Touch-friendly person color palette (Skylight-style) */

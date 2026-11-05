@@ -391,6 +391,29 @@ export function useCountdownMutations() {
   }
 }
 
+/** "Leave by" times for the next day's located events; re-read every few minutes as they refresh. */
+export function useLeaveTimes() {
+  return useQuery({ queryKey: ['travel', 'leaveTimes'], queryFn: () => ipcInvoke('travel:leaveTimes', undefined), refetchInterval: 5 * 60_000 })
+}
+
+/** The leave-by time for one occurrence, if there is one. */
+export function useLeaveTime(occurrenceKey: string) {
+  const { data } = useLeaveTimes()
+  return data?.find((t) => t.key === occurrenceKey) ?? null
+}
+
+export function useTravelStatus() {
+  return useQuery({ queryKey: ['travel', 'status'], queryFn: () => ipcInvoke('travel:status', undefined), refetchInterval: 60_000 })
+}
+
+export function useTravelMutations() {
+  const keys = [['travel']]
+  return {
+    setApiKey: useInvalidatingMutation((input: { apiKey: string | null }) => ipcInvoke('travel:setApiKey', input), keys),
+    test: useInvalidatingMutation((input: { destination: string }) => ipcInvoke('travel:test', input), keys)
+  }
+}
+
 export function useNotes() {
   // re-checked every minute so "until tonight" notes drop off at midnight
   return useQuery({ queryKey: ['notes'], queryFn: () => ipcInvoke('notes:list', undefined), refetchInterval: 60_000 })
@@ -447,6 +470,10 @@ export function usePushInvalidation(): void {
       if (domain === 'events') void queryClient.invalidateQueries({ queryKey: ['occurrences'] })
       else if (domain) void queryClient.invalidateQueries({ queryKey: [domain] })
       if (domain === 'calendars') void queryClient.invalidateQueries({ queryKey: ['occurrences'] })
+      // leave-by times follow event and travel-settings changes
+      if (domain === 'events' || domain === 'calendars' || domain === 'settings') {
+        void queryClient.invalidateQueries({ queryKey: ['travel'] })
+      }
       if (domain === 'chores') {
         // chore day views and star balances key off their own roots
         for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks', 'videoGamesStars', 'gameTimeLog', 'gameTimers']) {

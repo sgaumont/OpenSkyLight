@@ -161,7 +161,10 @@ export const settingsPatchSchema = z.object({
       sleep: z.object({ enabled: z.boolean(), start: z.string(), end: z.string() }).optional(),
       screensaver: z.object({ folder: z.string().nullable(), idleMinutes: z.number().int().min(1).max(120) }).optional(),
       launchOnStartup: z.boolean().optional(),
-      companion: z.object({ enabled: z.boolean(), port: z.number().int().min(1024).max(65535) }).optional()
+      companion: z.object({ enabled: z.boolean(), port: z.number().int().min(1024).max(65535) }).optional(),
+      travel: z
+        .object({ enabled: z.boolean(), homeAddress: z.string().trim().max(200), bufferMinutes: z.number().int().min(0).max(60) })
+        .optional()
     })
     .strict()
 })
@@ -304,6 +307,9 @@ export const mealSetSchema = z.object({
 export const backupRestoreSchema = z.object({
   name: z.string().regex(/^(openskylight-\d{4}-\d{2}-\d{2}|before-restore-\d{4}-\d{2}-\d{2}-\d{6})\.db$/)
 })
+
+export const travelKeySchema = z.object({ apiKey: z.string().trim().min(20).max(200).nullable() })
+export const travelTestSchema = z.object({ destination: z.string().trim().min(3).max(300) })
 
 export const citySearchSchema = z.object({ query: z.string().trim().min(2).max(80) })
 

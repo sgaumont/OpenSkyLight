@@ -24,6 +24,7 @@ import { createMainWindow } from './window'
 import { createBackupService } from './backup/backupService'
 import { createNotesService } from './services/notesService'
 import { createCountdownsService } from './services/countdownsService'
+import { createTravelService } from './services/travelService'
 import { createPhonePhotos } from './companion/phonePhotos'
 import { applyPendingRestore } from './backup/backupFiles'
 import { createWeatherService } from './services/weatherService'
@@ -142,11 +143,18 @@ if (!gotLock) {
       if (channel === 'push:dataChanged') companion.push((payload as { domain: string }).domain)
     })
 
+    const eventsService = createEventService(db, deviceTz)
+    // "Leave by" drive times for upcoming events (Google Routes API)
+    const travel = createTravelService({
+      settings,
+      events: eventsService,
+      onChange: () => broadcast('push:dataChanged', { domain: 'travel' })
+    })
     const services: Services = {
       settings,
       people: createPeopleService(db),
       calendars: createCalendarService(db),
-      events: createEventService(db, deviceTz),
+      events: eventsService,
       googleAuth,
       googleSync,
       icsSync,
@@ -165,7 +173,8 @@ if (!gotLock) {
       rss: createRssService(),
       camera: cameraService,
       birdnet: createBirdNetService(),
-      companion
+      companion,
+      travel
     }
     channelTable = buildChannelTable(services)
     registerIpcHandlers(services, channelTable)
@@ -186,6 +195,16 @@ if (!gotLock) {
     setInterval(purgeChoreHistory, 60 * 60_000).unref()
     updater.start()
     companion.applySettings()
+    travel.start()
+    // a moved event, a new location or new travel settings: look again shortly (batched)
+    let travelSoon: NodeJS.Timeout | null = null
+    onBroadcast((channel, payload) => {
+      const domain = (payload as { domain?: string } | null)?.domain
+      if (channel !== 'push:dataChanged' || !domain || !['events', 'calendars', 'settings'].includes(domain)) return
+      if (travelSoon) clearTimeout(travelSoon)
+      travelSoon = setTimeout(() => void travel.refresh(), 5_000)
+    })
+    app.on('will-quit', () => travel.stop())
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow()

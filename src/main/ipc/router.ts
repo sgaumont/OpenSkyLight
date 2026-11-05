@@ -28,6 +28,7 @@ import type { RssService } from '../services/rssService'
 import type { CameraService } from '../services/cameraService'
 import type { BirdNetService } from '../services/birdnetService'
 import type { CompanionServer } from '../companion/companionServer'
+import type { TravelService } from '../services/travelService'
 
 export interface Services {
   settings: SettingsService
@@ -53,6 +54,7 @@ export interface Services {
   camera: CameraService
   birdnet: BirdNetService
   companion: CompanionServer
+  travel: TravelService
 }
 
 /**
@@ -61,6 +63,8 @@ export interface Services {
  */
 const PARENT_GATED: Set<IpcChannel> = new Set([
   'settings:set',
+  'travel:setApiKey',
+  'travel:test',
   'auth:setPin',
   'google:setCredentials',
   'google:connect',
@@ -103,9 +107,11 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
 ])
 
 /** Channels that mutate data, mapped to the domain the renderer should refetch. */
-type MutationDomain = 'events' | 'people' | 'calendars' | 'settings' | 'lists' | 'meals' | 'chores' | 'notes' | 'countdowns'
+type MutationDomain = 'events' | 'people' | 'calendars' | 'settings' | 'lists' | 'meals' | 'chores' | 'notes' | 'countdowns' | 'travel'
 const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'settings:set': 'settings',
+  'travel:setApiKey': 'travel',
+  'travel:test': 'travel',
   'people:create': 'people',
   'people:update': 'people',
   'people:delete': 'people',
@@ -341,6 +347,10 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('countdowns:create', s.countdownSchema, (req) => services.countdowns.create(req))
   handle('countdowns:update', s.countdownUpdateSchema, (req) => services.countdowns.update(req))
   handle('countdowns:delete', s.countdownDeleteSchema, (req) => services.countdowns.remove(req.id))
+  handle('travel:leaveTimes', null, () => services.travel.leaveTimes())
+  handle('travel:status', null, () => services.travel.status())
+  handle('travel:setApiKey', s.travelKeySchema, (req) => services.travel.setApiKey(req.apiKey))
+  handle('travel:test', s.travelTestSchema, (req) => services.travel.test(req.destination))
   handle('notes:list', null, () => services.notes.list())
   handle('notes:add', s.noteAddSchema, (req) => services.notes.add(req))
   handle('notes:done', s.noteDoneSchema, (req) => services.notes.done(req.id))

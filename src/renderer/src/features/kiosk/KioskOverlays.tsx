@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
-import { useCountdowns, useGameTimers, useSettings, useWeather } from '../../api/hooks'
+import { useCountdowns, useGameTimers, useLeaveTimes, useSettings, useWeather } from '../../api/hooks'
 import { countdownLabel } from '@shared/countdown'
 import { useCalendarData } from '../calendar/useCalendarData'
 import { agendaRange } from '@shared/dates'
@@ -135,6 +135,7 @@ const GLANCE_CARD = 'absolute max-w-[40rem] rounded-3xl bg-black/34 px-7 py-6 te
  */
 function ScreensaverGlance({ now }: { now: DateTime }) {
   const { data: timers = [] } = useGameTimers()
+  const { data: leaveTimes = [] } = useLeaveTimes()
   const todayKey = now.toISODate()!
   const tomorrowKey = now.plus({ days: 1 }).toISODate()!
   const range = useMemo(() => agendaRange(todayKey, ZONE, 2), [todayKey])
@@ -151,6 +152,7 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
   ]
   if (upcoming.length === 0) return null
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
+  const leaveFor = (key: string) => leaveTimes.find((t) => t.key === key)
   return (
     // bottom-right; lifted while a game timer pill sits at the bottom of the screen
     <div className={`${GLANCE_CARD} right-6 ${timers.length > 0 ? 'bottom-28' : 'bottom-2.5'}`} style={{ animation: 'fade-in 1.2s ease both' }}>
@@ -162,6 +164,11 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
             {Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}
           </span>
           <span className="truncate">{o.title}</span>
+          {leaveFor(o.key) && (
+            <span className="ml-auto shrink-0 pl-2 text-white/70 tabular-nums" data-next-up-leave>
+              🚗 {time(leaveFor(o.key)!.leaveAt)}
+            </span>
+          )}
         </div>
       ))}
     </div>

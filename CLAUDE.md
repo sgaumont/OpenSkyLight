@@ -506,6 +506,16 @@ Add unit tests where sensible.
   queries on each event, reconnects after 3s or at once when the phone wakes, and refetches on reconnect. The 20s poll
   stays as the fallback. Measured: kiosk note → phone ≈ 50 ms (was up to 20 s).
   Note pop-up quick replies are now 👍, 👎, Not Yet, On my way, Thanks! (`QUICK_REPLIES` in NoteOverlay.tsx).
+- v0.8.128: "Leave by" drive times (Settings → Calendars → Leave-by times: on/off, home address, 0/5/10/15 min
+  buffer, Google Maps API key stored encrypted via safeStorage under raw key `travel.apiKeyEnc`, Test lookup, usage).
+  `main/services/travelService.ts` ticks every 5 min: timed events in the next 24 h whose location
+  `isRoutableLocation` (not Teams/Zoom/URLs/bare city) get a Google Routes API `computeRoutes` lookup
+  (DRIVE, TRAFFIC_AWARE, departureTime = expected leave time). `refreshDue` (shared/travel.ts) ≈ 5 calls a trip:
+  once within a day, every 6 h, hourly from 3 h before leaving, every 20 min in the last 90, none after leave time;
+  unroutable places are retried after 24 h. Caps 250/day and 4,000/month (`travel.usage`); cache in `travel.cache`.
+  Shown as "🚗 Leave 3:40" on event cards (Week/Day/Agenda), the Today tile and screensaver Next up; `LeaveOverlay`
+  shows a top banner with a chime every minute (`startLeaveChime`) from leave time until start or Got it (not during
+  sleep). Event/calendar/settings changes trigger a refresh 5 s later (`onBroadcast`).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

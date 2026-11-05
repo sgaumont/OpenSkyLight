@@ -23,6 +23,7 @@ import {
   useWeather
 } from '../../api/hooks'
 import { useCalendarData } from '../calendar/useCalendarData'
+import { LeaveBy } from '../calendar/EventCard'
 import { useKioskState } from '../../stores/kioskStore'
 import { useTimers } from '../../stores/timerStore'
 import { formatDuration } from '@shared/timer'
@@ -141,6 +142,7 @@ export function TodayEventsTile({ compact }: TileProps) {
                     <span className="block text-xs font-bold text-ink-faint">
                       {occ.allDay ? 'All day' : formatTime(occ.start, settings?.timeFormat ?? '12h')}
                     </span>
+                    {!occ.allDay && <LeaveBy occKey={occ.key} timeFormat={settings?.timeFormat ?? '12h'} className="text-xs" />}
                   </span>
                 </div>
               )

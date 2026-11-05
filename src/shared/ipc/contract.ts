@@ -3,6 +3,8 @@ import type {
   AppSettings,
   BackupStatus,
   CountdownDto,
+  LeaveTimeDto,
+  TravelStatus,
   CountdownInput,
   GameTimeLogEntry,
   GameTimerDto,
@@ -142,6 +144,14 @@ export type IpcContract = {
   'countdowns:update': { req: CountdownInput & { id: string }; res: CountdownDto }
   'countdowns:delete': { req: { id: string }; res: void }
 
+  /** "Leave by" times for events in the next day that have a location and a known drive */
+  'travel:leaveTimes': { req: void; res: LeaveTimeDto[] }
+  'travel:status': { req: void; res: TravelStatus }
+  /** null removes the key */
+  'travel:setApiKey': { req: { apiKey: string | null }; res: void }
+  /** one live lookup from home, to check the key and the address */
+  'travel:test': { req: { destination: string }; res: { minutes: number | null } }
+
   'notes:list': { req: void; res: NoteDto[] }
   'notes:add': { req: NoteInput; res: NoteDto }
   /** the phone's conversations: on the kiosk now, plus the last couple of days' */
@@ -277,6 +287,7 @@ export const ALLOWED_CHANNEL_PREFIXES = [
   'meals:',
   'notes:',
   'countdowns:',
+  'travel:',
   'screensaver:',
   'backup:',
   'kiosk:',

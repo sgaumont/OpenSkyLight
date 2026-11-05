@@ -48,6 +48,7 @@ import {
 } from '../../api/hooks'
 import { GameTimeLog } from '../chores/GameTimeLog'
 import { CountdownsSection } from '../countdowns/CountdownsSection'
+import { TravelSection } from '../travel/TravelSection'
 import { PinDialog } from '../../components/PinDialog'
 import { TimeField } from '../../components/DateTimePickers'
 import { ipcInvoke } from '../../api/client'
@@ -519,6 +520,7 @@ function CalendarsTab() {
           </div>
         </div>
       </Dialog>
+      <TravelSection />
     </div>
   )
 }

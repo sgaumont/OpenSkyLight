@@ -60,3 +60,8 @@ export const NOTE_CHIME_MS = 10_000
 const noteChime = chimeLoop(NOTE_CHIME_MS, 1.2)
 export const startNoteChime = noteChime.start
 export const stopNoteChime = noteChime.stop
+
+/** Time to leave for an event: a ring now and again every minute until someone taps Got it. */
+const leaveChime = chimeLoop(60_000, 1.2)
+export const startLeaveChime = leaveChime.start
+export const stopLeaveChime = leaveChime.stop
