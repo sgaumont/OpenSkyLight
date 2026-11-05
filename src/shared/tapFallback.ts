@@ -49,14 +49,16 @@ export function installTapFallback(
     pending = null
   }
 
-  const onPointerDown = (e: PointerLike): void => {
+  const onPointerDown = (ev: Event): void => {
+    const e = ev as PointerLike
     down = null
     if (e.pointerType !== 'touch' || e.isPrimary === false) return
     const control = controlAt(e)
     if (control) down = { id: e.pointerId, x: e.clientX ?? 0, y: e.clientY ?? 0, at: now(), control }
   }
 
-  const onPointerUp = (e: PointerLike): void => {
+  const onPointerUp = (ev: Event): void => {
+    const e = ev as PointerLike
     const d = down
     down = null
     if (!d || e.pointerId !== d.id) return
@@ -100,14 +102,14 @@ export function installTapFallback(
   }
 
   const options = { capture: true }
-  target.addEventListener('pointerdown', onPointerDown as EventListener, options)
-  target.addEventListener('pointerup', onPointerUp as EventListener, options)
+  target.addEventListener('pointerdown', onPointerDown, options)
+  target.addEventListener('pointerup', onPointerUp, options)
   target.addEventListener('pointercancel', onCancel, options)
   target.addEventListener('click', onClick, options)
   return () => {
     clearPending()
-    target.removeEventListener('pointerdown', onPointerDown as EventListener, options)
-    target.removeEventListener('pointerup', onPointerUp as EventListener, options)
+    target.removeEventListener('pointerdown', onPointerDown, options)
+    target.removeEventListener('pointerup', onPointerUp, options)
     target.removeEventListener('pointercancel', onCancel, options)
     target.removeEventListener('click', onClick, options)
   }
