@@ -522,6 +522,13 @@ Add unit tests where sensible.
   local, Google and ICS (`ArriveOffsetChip`: 0/15/30/45/60 or any 0–240). Shown as "⏱ Arrive 5:14" on event cards
   and the Today tile, and "Arrive by … · N min early, set on the X calendar" in the event editor. Leave-by counts back
   from arrive-by (travelService uses `arriveBy ?? start`); the banner says "arrive by". No per-event override yet.
+- v0.8.130: Notes are now "Chat" everywhere the family sees it (phone tab 💬 Chat, "Send to kiosk"; tablet
+  pop-up labelled Chat). Code, channels and tables keep the `notes` names. New tablet Chat screen
+  (`features/notes/ChatSheet.tsx`) from a 💬 header button at the top right (before the pencil/gear), with a count of
+  chats waiting for an answer. It lists `notes:recent`, answers with quick replies or typing, marks done, and starts
+  chats from the tablet (`notes:kioskAdd`, not a companion channel). DB v10 adds `notes.from_kiosk`. Rules live in
+  `shared/chat.ts`: `popsUp` (tablet-started chats pop up on the tablet only once a phone answers) and `waiting`
+  (the last message isn't the tablet's).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

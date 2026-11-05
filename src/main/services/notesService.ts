@@ -47,6 +47,7 @@ export function createNotesService(db: AppDb, deviceTz: () => string, now: () =>
       createdAt: n.createdAt,
       expiresAt: n.expiresAt,
       doneAt: n.doneAt,
+      fromKiosk: n.fromKiosk,
       replies: byNote.get(n.id) ?? []
     }))
   }
@@ -93,8 +94,8 @@ export function createNotesService(db: AppDb, deviceTz: () => string, now: () =>
     return [...ids]
   }
 
-  function add(input: NoteInput): NoteDto {
-    const text = cleanText(input.text, 'note')
+  function add(input: NoteInput, fromKiosk = false): NoteDto {
+    const text = cleanText(input.text, 'message')
     const at = now()
     const row = {
       id: uuidv7(),
@@ -102,7 +103,8 @@ export function createNotesService(db: AppDb, deviceTz: () => string, now: () =>
       authorId: input.authorId,
       createdAt: isoUtc(at),
       expiresAt: input.untilTonight ? isoUtc(at.setZone(deviceTz()).endOf('day')) : null,
-      doneAt: null
+      doneAt: null,
+      fromKiosk
     }
     db.insert(notes).values(row).run()
     return { ...row, replies: [] }
@@ -115,7 +117,7 @@ export function createNotesService(db: AppDb, deviceTz: () => string, now: () =>
   function reply(input: { noteId: string; text: string; authorId: string | null; fromKiosk: boolean }): NoteReplyDto {
     const text = cleanText(input.text, 'reply')
     const [note] = db.select().from(notes).where(eq(notes.id, input.noteId)).all()
-    if (!note) throw notFound('Note')
+    if (!note) throw notFound('Chat')
     const at = now()
     const row = {
       id: uuidv7(),

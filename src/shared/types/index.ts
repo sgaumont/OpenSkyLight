@@ -422,6 +422,8 @@ export interface NoteDto {
   expiresAt: string | null
   /** set once it's off the kiosk (only the phone's recent list shows these) */
   doneAt: string | null
+  /** started on the tablet (a chat to the phones) rather than from a phone */
+  fromKiosk: boolean
   /** the conversation under it, oldest first */
   replies: NoteReplyDto[]
 }

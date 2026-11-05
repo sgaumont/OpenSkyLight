@@ -19,7 +19,7 @@ const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
   { id: 'lists', label: 'Lists', icon: '✓' },
   { id: 'meals', label: 'Meals', icon: '🍽' },
   { id: 'photos', label: 'Photos', icon: '🖼' },
-  { id: 'notes', label: 'Notes', icon: '📝' }
+  { id: 'notes', label: 'Chat', icon: '💬' }
 ]
 
 export default function App() {

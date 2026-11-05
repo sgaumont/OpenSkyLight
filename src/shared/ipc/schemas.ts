@@ -291,6 +291,7 @@ export const noteReplySchema = z.object({
   authorId: z.string().min(1).nullable()
 })
 export const noteKioskReplySchema = z.object({ noteId: z.string().min(1), text: z.string().trim().min(1).max(280) })
+export const noteKioskAddSchema = z.object({ text: z.string().trim().min(1).max(280), untilTonight: z.boolean() })
 export const countdownSchema = z.object({
   title: z.string().trim().min(1).max(60),
   emoji: z.string().max(8).nullable(),

@@ -16,7 +16,7 @@ function rememberedAuthor(): string | null {
   }
 }
 
-/** Notes for the kiosk: post one from here, follow the conversation with the tablet, clear what's done. */
+/** Chat with the kiosk: start one from here, follow the conversations with the tablet, clear what's done. */
 export function NotesPage() {
   const { data: notes = [] } = useNotes()
   const { data: people = [] } = usePeople()
@@ -91,13 +91,13 @@ export function NotesPage() {
             {text.length > MAX_LENGTH - 40 ? `${MAX_LENGTH - text.length} left` : ''}
           </span>
           <PrimaryButton onClick={post} disabled={text.trim() === '' || add.isPending}>
-            {add.isPending ? 'Posting…' : 'Post to kiosk'}
+            {add.isPending ? 'Sending…' : 'Send to kiosk'}
           </PrimaryButton>
         </div>
       </Card>
 
       {notes.length === 0 ? (
-        <EmptyNote>No notes on the kiosk right now.</EmptyNote>
+        <EmptyNote>No chats yet — send one to the kiosk above.</EmptyNote>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="text-xs font-extrabold tracking-wide text-ink-faint uppercase">Conversations</div>
@@ -135,7 +135,7 @@ function Conversation({
   const [draft, setDraft] = useState('')
   const open = note.doneAt === null
   const messages = [
-    { id: note.id, text: note.text, authorId: note.authorId, fromKiosk: false, createdAt: note.createdAt },
+    { id: note.id, text: note.text, authorId: note.authorId, fromKiosk: note.fromKiosk, createdAt: note.createdAt },
     ...note.replies
   ]
   function send(): void {

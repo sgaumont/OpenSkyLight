@@ -6,6 +6,7 @@ import { initials, textOn } from '../../lib/format'
 import { ZONE } from '../../stores/uiStore'
 import { useKioskState } from '../../stores/kioskStore'
 import { startNoteChime, stopNoteChime } from '../../lib/alarm'
+import { popsUp, waiting } from '@shared/chat'
 
 /** "2:15 pm", or "Mon 2:15 pm" for an older note. */
 function noteTime(iso: string): string {
@@ -15,12 +16,10 @@ function noteTime(iso: string): string {
 }
 
 /** One-tap answers on the tablet. */
-const QUICK_REPLIES = ['👍', '👎', 'Not Yet', 'On my way', 'Thanks!']
+export const QUICK_REPLIES = ['👍', '👎', 'Not Yet', 'On my way', 'Thanks!']
 /** How many of the latest replies fit under the note. */
 const SHOWN_REPLIES = 4
 
-/** The phone has the last word: the tablet hasn't answered since. */
-const waiting = (n: NoteDto): boolean => !(n.replies.at(-1)?.fromKiosk ?? false)
 
 /**
  * A family note from a phone, centred over everything — the home screen, other screens and the
@@ -30,7 +29,8 @@ const waiting = (n: NoteDto): boolean => !(n.replies.at(-1)?.fromKiosk ?? false)
  * while a note waits for the tablet to answer (quiet during sleep hours).
  */
 export function NoteOverlay() {
-  const { data: notes = [] } = useNotes()
+  const { data: allNotes = [] } = useNotes()
+  const notes = allNotes.filter(popsUp)
   const { data: people = [] } = usePeople()
   const { done, reply } = useNoteMutations()
   // two taps, so a passing kid can't clear "Grandma's picking you up"; keyed to the note shown
@@ -65,11 +65,11 @@ export function NoteOverlay() {
     >
       <div
         role="alertdialog"
-        aria-label="Family note"
+        aria-label="Family chat"
         className="animate-pop flex max-h-full w-full max-w-3xl flex-col gap-6 overflow-y-auto rounded-3xl bg-sun-soft px-10 py-9 text-ink shadow-float ring-2 ring-sun"
       >
         <div className="flex items-center gap-3 text-base font-extrabold tracking-wider text-ink-faint uppercase">
-          <span className="flex-1">Note</span>
+          <span className="flex-1">Chat</span>
           {notes.length > 1 && <span className="normal-case">1 of {notes.length}</span>}
         </div>
         <p className="text-4xl leading-tight font-bold break-words whitespace-pre-line">{note.text}</p>
@@ -140,7 +140,7 @@ export function NoteOverlay() {
             </span>
           )}
           <span className="min-w-0 flex-1 text-lg font-bold text-ink-soft">
-            {author ? `${author.name} · ` : ''}
+            {author ? `${author.name} · ` : note.fromKiosk ? 'Tablet · ' : ''}
             {noteTime(note.createdAt)}
             {note.expiresAt && ' · until tonight'}
           </span>

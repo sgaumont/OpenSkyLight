@@ -249,7 +249,9 @@ export const notes = sqliteTable(
     createdAt: text('created_at').notNull(),
     /** UTC ISO; set for "until tonight" notes (end of the posting day) */
     expiresAt: text('expires_at'),
-    doneAt: text('done_at')
+    doneAt: text('done_at'),
+    /** started on the tablet (a chat to the phones), so it doesn't pop up on the tablet itself */
+    fromKiosk: integer('from_kiosk', { mode: 'boolean' }).notNull().default(false)
   },
   (t) => [index('idx_notes_open').on(t.doneAt)]
 )

@@ -318,6 +318,10 @@ const MIGRATIONS: string[] = [
   // v9: per-calendar arrival offset — events show "Arrive by" this many minutes before they start
   `
   ALTER TABLE calendars ADD COLUMN arrive_offset_min INTEGER NOT NULL DEFAULT 0;
+  `,
+  // v10: chats can start on the tablet too (Notes became Chat)
+  `
+  ALTER TABLE notes ADD COLUMN from_kiosk INTEGER NOT NULL DEFAULT 0;
   `
 ]
 

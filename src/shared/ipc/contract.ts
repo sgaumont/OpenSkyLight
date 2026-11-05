@@ -160,6 +160,8 @@ export type IpcContract = {
   'notes:reply': { req: NoteReplyInput; res: NoteReplyDto }
   /** a reply tapped or typed on the tablet — kiosk-only, so a phone can't post as the tablet */
   'notes:kioskReply': { req: { noteId: string; text: string }; res: NoteReplyDto }
+  /** a chat started on the tablet (to the phones) */
+  'notes:kioskAdd': { req: { text: string; untilTonight: boolean }; res: NoteDto }
   'notes:done': { req: { id: string }; res: void }
 
   'rewards:list': { req: void; res: RewardDto[] }

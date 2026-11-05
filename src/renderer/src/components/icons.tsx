@@ -142,6 +142,13 @@ export const StormIcon = (p: IconProps) => (
   </svg>
 )
 
+export const ChatIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12Z" />
+    <path d="M8.5 12h.01M12 12h.01M15.5 12h.01" />
+  </svg>
+)
+
 export const PencilIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />

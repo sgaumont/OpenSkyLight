@@ -140,6 +140,7 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'notes:done': 'notes',
   'notes:reply': 'notes',
   'notes:kioskReply': 'notes',
+  'notes:kioskAdd': 'notes',
   'chores:create': 'chores',
   'chores:update': 'chores',
   'chores:delete': 'chores',
@@ -354,6 +355,7 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('travel:test', s.travelTestSchema, (req) => services.travel.test(req.destination))
   handle('notes:list', null, () => services.notes.list())
   handle('notes:add', s.noteAddSchema, (req) => services.notes.add(req))
+  handle('notes:kioskAdd', s.noteKioskAddSchema, (req) => services.notes.add({ text: req.text, authorId: null, untilTonight: req.untilTonight }, true))
   handle('notes:done', s.noteDoneSchema, (req) => services.notes.done(req.id))
   handle('notes:recent', null, () => services.notes.recent())
   handle('notes:reply', s.noteReplySchema, (req) => services.notes.reply({ ...req, fromKiosk: false }))

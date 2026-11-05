@@ -419,8 +419,17 @@ export function useNotes() {
   return useQuery({ queryKey: ['notes'], queryFn: () => ipcInvoke('notes:list', undefined), refetchInterval: 60_000 })
 }
 
+/** The Chat screen: chats on the kiosk plus the last couple of days', newest activity first. */
+export function useRecentChats(enabled: boolean) {
+  return useQuery({ queryKey: ['notes', 'recent'], queryFn: () => ipcInvoke('notes:recent', undefined), enabled })
+}
+
 export function useNoteMutations() {
   return {
+    start: useInvalidatingMutation(
+      (input: { text: string; untilTonight: boolean }) => ipcInvoke('notes:kioskAdd', input),
+      [['notes']]
+    ),
     done: useInvalidatingMutation((input: { id: string }) => ipcInvoke('notes:done', input), [['notes']]),
     reply: useInvalidatingMutation(
       (input: { noteId: string; text: string }) => ipcInvoke('notes:kioskReply', input),
