@@ -130,7 +130,7 @@ function ScreensaverWeather() {
 const GLANCE_CARD = 'absolute max-w-[40rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
 
 /**
- * What's next (four timed events, all one size), bottom-right over the photos: the rest of today, running into
+ * What's next (five timed events, all one size), bottom-right over the photos: the rest of today, running into
  * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
  */
 function ScreensaverGlance({ now }: { now: DateTime }) {
@@ -155,7 +155,7 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
     // bottom-right; lifted while a game timer pill sits at the bottom of the screen
     <div className={`${GLANCE_CARD} right-12 ${timers.length > 0 ? 'bottom-28' : 'bottom-10'}`} style={{ animation: 'fade-in 1.2s ease both' }}>
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
-      {upcoming.slice(0, 4).map(({ o, tomorrow }) => (
+      {upcoming.slice(0, 5).map(({ o, tomorrow }) => (
         <div key={o.key} className="mt-1 flex items-baseline gap-3 text-2xl font-bold" data-next-up-line>
           <span className="shrink-0 tabular-nums">
             {tomorrow && <span className="mr-2 text-white/60">Tmrw</span>}

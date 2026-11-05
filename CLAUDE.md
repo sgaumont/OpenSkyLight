@@ -473,6 +473,8 @@ Add unit tests where sensible.
 - v0.8.117: screensaver bottom-left 1.5× v0.8.115 — time text-[108px], date text-4xl (36px), weather icon 66px,
   temperature 54px, high/low 27px. Next up shows four events, every line text-2xl and full white (was a big first
   line and smaller dimmed ones; `data-next-up-line`). With a game timer the pill only shares a row with the date.
+- v0.8.118: screensaver Next up shows five events (Linear OPE-15). Card is ~248px tall at the bottom-right; with a
+  game timer it lifts to bottom-28 and still clears the pill and the Countdowns card.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
