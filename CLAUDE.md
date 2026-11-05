@@ -466,6 +466,10 @@ Add unit tests where sensible.
   `bottom-28` while a game timer pill (bottom-centre) is showing, so they never overlap.
 - v0.8.115: screensaver bottom-left: the weather is small (temp text-4xl 36px, icon h-11, high/low text-lg; was
   72px) and sits just right of the time on the clock's row, with the date underneath both.
+- v0.8.116: meals editor always opens on what's saved for the day tapped (blank if nothing is set). It kept
+  its typed text forever, so Week view showed the last day's typing on another day — and Save could write it there
+  — and cancelled text or stale text after a phone edit came back. `MealsDialog` now mounts a fresh `MealsEditor`
+  (keyed by date) on every open.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

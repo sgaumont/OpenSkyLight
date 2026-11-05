@@ -73,6 +73,7 @@ export function MealStrip({
   )
 }
 
+/** The meals editor for one day; null `date` = closed. */
 export function MealsDialog({
   date,
   meals,
@@ -82,9 +83,16 @@ export function MealsDialog({
   meals: MealSlotDto[]
   onClose: () => void
 }) {
-  const mutations = useMealMutations()
-  const [values, setValues] = useState<Record<MealSlotKind, string> | null>(null)
+  // a fresh editor on every open (and per day), so it always starts from what's saved for the
+  // day tapped — never the last day's typing or text that was cancelled
   if (!date) return null
+  return <MealsEditor key={date} date={date} meals={meals} onClose={onClose} />
+}
+
+function MealsEditor({ date, meals, onClose }: { date: string; meals: MealSlotDto[]; onClose: () => void }) {
+  const mutations = useMealMutations()
+  // null until the first keystroke: until then the fields show the saved meals
+  const [values, setValues] = useState<Record<MealSlotKind, string> | null>(null)
 
   const current: Record<MealSlotKind, string> =
     values ??
