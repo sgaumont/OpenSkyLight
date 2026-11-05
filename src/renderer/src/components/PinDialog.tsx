@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { ipcInvoke } from '../api/client'
 import { Dialog } from './ui'
 import { LockIcon } from './icons'
 
@@ -10,7 +11,8 @@ export function PinDialog({
   title,
   error,
   onClose,
-  onSubmit
+  onSubmit,
+  autoAccept = false
 }: {
   open: boolean
   title: string
@@ -18,26 +20,49 @@ export function PinDialog({
   error?: string | null
   onClose: () => void
   onSubmit: (pin: string) => void
+  /**
+   * Checking the parent PIN: submit as soon as the digits typed are the PIN, with no OK
+   * press (a wrong PIN still waits for OK, which shows the error). Off for choosing a new PIN.
+   */
+  autoAccept?: boolean
 }) {
   const [pin, setPin] = useState('')
   const [localError, setLocalError] = useState<string | null>(null)
   const shownError = localError ?? error
+  // the digits as last typed: a slow check for an earlier prefix must not submit
+  const typed = useRef('')
 
+  const update = (next: string): void => {
+    typed.current = next
+    setPin(next)
+  }
   const press = (d: string): void => {
     setLocalError(null)
-    if (pin.length < MAX_LEN) setPin(pin + d)
+    if (pin.length >= MAX_LEN) return
+    const next = pin + d
+    update(next)
+    if (autoAccept && next.length >= MIN_LEN) {
+      void ipcInvoke('auth:verifyPin', { pin: next })
+        .then((res) => {
+          if (res.valid && typed.current === next) {
+            onSubmit(next)
+            update('')
+          }
+        })
+        .catch(() => {})
+    }
   }
   const submit = (): void => {
     if (pin.length < MIN_LEN) return
     onSubmit(pin)
-    setPin('')
+    update('')
   }
 
   return (
     <Dialog
       open={open}
       onClose={() => {
-        setPin('')
+        update('')
         setLocalError(null)
         onClose()
       }}
@@ -60,7 +85,7 @@ export function PinDialog({
               key={key}
               type="button"
               onClick={() => {
-                if (key === '⌫') setPin(pin.slice(0, -1))
+                if (key === '⌫') update(pin.slice(0, -1))
                 else if (key === 'OK') submit()
                 else press(key)
               }}

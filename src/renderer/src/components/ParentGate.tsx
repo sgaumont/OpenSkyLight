@@ -45,6 +45,7 @@ export function useParentGate(): {
       <PinDialog
         open={open}
         title="Enter parent PIN"
+        autoAccept
         error={error}
         onClose={() => {
           setOpen(false)

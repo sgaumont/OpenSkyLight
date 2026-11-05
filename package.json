@@ -1,6 +1,6 @@
 {
   "name": "openskylight",
-  "version": "0.8.123",
+  "version": "0.8.124",
   "description": "OpenSkyLight — an open-source standalone family calendar display (Skylight Calendar clone)",
   "main": "./out/main/index.js",
   "author": "Tyler",

@@ -57,8 +57,8 @@ function formTimes(form: FormState): { start: string; end: string } {
 }
 
 /**
- * Changing events is for parents: a new event asks for the PIN before the editor opens;
- * an existing one opens for anyone to read, and Save / Delete ask for the PIN.
+ * Changing events is for parents: the editor — new event or existing one — asks for the PIN
+ * before it opens (Save / Delete re-check, in case the unlock window ran out meanwhile).
  * Closing the editor locks again if it was unlocked here.
  */
 export function EventEditor() {
@@ -71,7 +71,11 @@ export function EventEditor() {
 
   // key stands in for the editor state as the dependency
   useEffect(() => {
-    if (editor.mode !== 'create' || !key) return
+    // closed: forget the unlock, so reopening the same event asks again
+    if (!key) {
+      setAllowedKey(null)
+      return
+    }
     gate.guard(() => setAllowedKey(key), closeEditor)
   }, [key])
 
@@ -79,7 +83,7 @@ export function EventEditor() {
     gate.relock()
     closeEditor()
   }
-  const shown = editor.mode === 'closed' || (editor.mode === 'create' && allowedKey !== key) ? null : editor
+  const shown = editor.mode === 'closed' || allowedKey !== key ? null : editor
   return (
     <>
       {shown && <EditorSheet key={key} editor={shown} onClose={close} guard={gate.guard} />}
@@ -215,7 +219,7 @@ function EditorSheet({
 
   const onSaveTap = (): void => {
     if (!valid) return
-    // a new event was already unlocked to open the editor
+    // already unlocked to open the editor; this only asks again if the unlock ran out
     guard(() => {
       if (editor.mode === 'edit' && isRecurringSeries) setScopeAsk('save')
       else save()

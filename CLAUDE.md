@@ -486,6 +486,11 @@ Add unit tests where sensible.
   `notes:reply` and `notes:recent` (open notes + last 2 days by latest message, newest first). A phone reply to a done/
   expired note reopens it (an "until tonight" one gets the rest of today). NoteOverlay: thread + quick replies + "Write…";
   chimes only while the phone has the last word. Phone has no push — it sees replies on its 20s poll while open.
+- v0.8.124: parent PIN — `PinDialog autoAccept` (the four "check the PIN" dialogs: ParentGate, Settings, Home edit,
+  approvals) quietly calls `auth:verifyPin` after each digit from the 4th and submits as soon as the digits are the
+  PIN; a wrong PIN still waits for OK, which shows the error. Off for choosing a new PIN. Events: tapping an existing
+  event now asks for the PIN before the editor opens (was only on Save/Delete); `allowedKey` resets on close, so
+  reopening the same event asks again.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

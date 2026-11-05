@@ -96,6 +96,7 @@ export function ApprovalOverlay() {
       <PinDialog
         open={askPin}
         title="Parent PIN to approve"
+        autoAccept
         error={pinError}
         onClose={() => {
           setAskPin(false)

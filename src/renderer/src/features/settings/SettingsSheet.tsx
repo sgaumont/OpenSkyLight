@@ -96,6 +96,7 @@ export function SettingsSheet() {
       <PinDialog
         open
         title="Enter parent PIN"
+        autoAccept
         error={pinError}
         onClose={close}
         onSubmit={(pin) =>

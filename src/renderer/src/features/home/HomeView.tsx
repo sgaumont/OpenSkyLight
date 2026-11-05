@@ -251,6 +251,7 @@ export function HomeView() {
       <PinDialog
         open={pinPrompt}
         title="Enter parent PIN"
+        autoAccept
         error={pinError}
         onClose={() => setPinPrompt(false)}
         onSubmit={(pin) =>
