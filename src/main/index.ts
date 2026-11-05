@@ -14,6 +14,7 @@ import {
   dispatch,
   registerIpcHandlers,
   broadcast,
+  onBroadcast,
   type ChannelTable,
   type Services
 } from './ipc/router'
@@ -137,6 +138,9 @@ if (!gotLock) {
       photos: createPhonePhotos({ settings, onChange: (domain) => broadcast('push:dataChanged', { domain }) })
     })
     app.on('will-quit', () => companion.shutdown())
+    onBroadcast((channel, payload) => {
+      if (channel === 'push:dataChanged') companion.push((payload as { domain: string }).domain)
+    })
 
     const services: Services = {
       settings,

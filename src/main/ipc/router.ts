@@ -150,10 +150,18 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'stars:stopTimer': 'chores'
 }
 
+const broadcastListeners = new Set<(channel: string, payload: unknown) => void>()
+
+/** Also hear every broadcast outside the windows (the companion relays dataChanged to phones). */
+export function onBroadcast(fn: (channel: string, payload: unknown) => void): void {
+  broadcastListeners.add(fn)
+}
+
 export function broadcast(channel: string, payload: unknown): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send(channel, payload)
   }
+  for (const fn of broadcastListeners) fn(channel, payload)
 }
 
 interface ChannelEntry {

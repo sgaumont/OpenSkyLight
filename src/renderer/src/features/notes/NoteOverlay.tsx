@@ -15,7 +15,7 @@ function noteTime(iso: string): string {
 }
 
 /** One-tap answers on the tablet. */
-const QUICK_REPLIES = ['👍', 'OK', 'On my way', 'Not yet', 'Thanks!']
+const QUICK_REPLIES = ['👍', '👎', 'Not Yet', 'On my way', 'Thanks!']
 /** How many of the latest replies fit under the note. */
 const SHOWN_REPLIES = 4
 

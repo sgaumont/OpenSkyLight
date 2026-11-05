@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { GameIcon } from './components/ui'
 import { DateTime } from 'luxon'
 import { getToken, setUnauthorizedHandler } from './api/client'
+import { useLiveUpdates } from './api/live'
 import { usePeople, useToday } from './api/hooks'
 import { ListsPage } from './pages/ListsPage'
 import { MealsPage } from './pages/MealsPage'
@@ -25,6 +26,8 @@ export default function App() {
   const [paired, setPaired] = useState(() => getToken() !== null)
   const [tab, setTab] = useState<TabId>('chores')
   const today = useToday()
+  // kiosk changes (a new note, a reply, a ticked chore) arrive instantly
+  useLiveUpdates(paired)
 
   useEffect(() => {
     // any 401 (unpaired on the kiosk, evicted storage) drops back to pairing

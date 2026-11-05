@@ -500,6 +500,12 @@ Add unit tests where sensible.
   Wi-Fi", IP beside it) that redraws the QR for that host with the same token; a line says which network the code
   uses (`networkLabel`: 100.64/10 = Tailscale, RFC1918 = home Wi-Fi). Pair phones on the Tailscale address to use
   the companion away from home (the phone's Tailscale app must be on).
+- v0.8.127: phones update live. Companion `GET /api/events` (Bearer auth) streams `data: {"domain"}` for every
+  `push:dataChanged` (router `onBroadcast` → `companion.push`), with a `: ping` every 25s. The phone
+  (`companion/src/api/live.ts`, fetch + header, not EventSource, so the token stays out of URLs) invalidates all
+  queries on each event, reconnects after 3s or at once when the phone wakes, and refetches on reconnect. The 20s poll
+  stays as the fallback. Measured: kiosk note → phone ≈ 50 ms (was up to 20 s).
+  Note pop-up quick replies are now 👍, 👎, Not Yet, On my way, Thanks! (`QUICK_REPLIES` in NoteOverlay.tsx).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

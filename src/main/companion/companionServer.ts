@@ -51,6 +51,9 @@ export function createCompanionServer(deps: CompanionServerDeps) {
   let boundPort: number | null = null
   let lastError: string | null = null
   const authFails = new Map<string, { count: number; windowStart: number }>()
+  // phones listening on /api/events for "something changed" (instant refresh instead of the 20s poll)
+  const listeners = new Set<ServerResponse>()
+  let heartbeat: NodeJS.Timeout | null = null
 
   function rateLimited(ip: string): boolean {
     const now = Date.now()
@@ -232,8 +235,42 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     res.end(data)
   }
 
+  /** GET /api/events: a stream of `data: {"domain":…}` lines, one per kiosk data change. */
+  function handleEvents(req: IncomingMessage, res: ServerResponse): void {
+    if (!authorize(req, res)) return
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-store',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    })
+    res.write(': connected\n\n')
+    listeners.add(res)
+    // a comment every 25s keeps phones and Wi-Fi/Tailscale paths from dropping an idle stream
+    heartbeat ??= setInterval(() => {
+      for (const l of listeners) l.write(': ping\n\n')
+    }, 25_000)
+    req.on('close', () => {
+      listeners.delete(res)
+      if (listeners.size === 0 && heartbeat) {
+        clearInterval(heartbeat)
+        heartbeat = null
+      }
+    })
+  }
+
+  /** Tell every listening phone that a data domain changed (they refetch). */
+  function push(domain: string): void {
+    const line = `data: ${JSON.stringify({ domain })}\n\n`
+    for (const l of listeners) l.write(line)
+  }
+
   function onRequest(req: IncomingMessage, res: ServerResponse): void {
     const url = req.url ?? '/'
+    if (url === '/api/events' && req.method === 'GET') {
+      handleEvents(req, res)
+      return
+    }
     if (url === '/api/health' && req.method === 'GET') {
       sendJson(res, 200, { app: 'openskylight', version: deps.version })
       return
@@ -286,6 +323,10 @@ export function createCompanionServer(deps: CompanionServerDeps) {
   }
 
   function stop(): void {
+    for (const l of listeners) l.end()
+    listeners.clear()
+    if (heartbeat) clearInterval(heartbeat)
+    heartbeat = null
     server?.close()
     server = null
     boundPort = null
@@ -327,7 +368,7 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     deps.tokens.revokeAll()
   }
 
-  return { applySettings, getStatus, issueToken, unpairAll, stop, shutdown: stop }
+  return { applySettings, getStatus, issueToken, unpairAll, push, stop, shutdown: stop }
 }
 
 export type CompanionServer = ReturnType<typeof createCompanionServer>

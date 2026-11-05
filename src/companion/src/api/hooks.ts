@@ -4,8 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ChecklistInput, ChoreCreateInput, ChoreUpdateInput, CountdownInput, NoteInput, NoteReplyInput } from '@shared/types'
 import { rpc } from './client'
 
-/** Phone tabs get suspended constantly — focus/reconnect refetch is the real
- * freshness mechanism; the 20s interval covers a phone left on the counter. */
+/** Changes arrive instantly over the /api/events stream (api/live.ts); focus/reconnect refetch
+ * and the 20s interval are the fallback for a dropped stream or a suspended tab. */
 const LIVE = { refetchInterval: 20_000, refetchOnWindowFocus: true, refetchOnReconnect: true } as const
 
 const todayIso = (): string => DateTime.now().toISODate()!
