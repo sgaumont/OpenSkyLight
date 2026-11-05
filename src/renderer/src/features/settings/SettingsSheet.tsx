@@ -1024,9 +1024,21 @@ function CompanionSection() {
 
   const pair = async (): Promise<void> => {
     const { url } = await companionMutations.issueToken.mutateAsync(undefined)
+    await showQr(url)
+  }
+  const showQr = async (url: string): Promise<void> => {
     const dataUrl = await QRCode.toDataURL(url, { width: 480, margin: 1 })
     setQr({ url, dataUrl })
   }
+  // the same pairing link at another of this computer's addresses (e.g. Tailscale instead of home Wi-Fi)
+  const switchTo = (host: string): void => {
+    if (!qr) return
+    const next = new URL(qr.url)
+    next.hostname = host
+    void showQr(next.toString())
+  }
+  const qrHost = qr ? new URL(qr.url).hostname : null
+  const otherHosts = (status?.urls ?? []).map((u) => new URL(u).hostname).filter((h) => h !== qrHost)
 
   const draftPort = portDraft === null ? companion.port : Number(portDraft)
   const portValid = Number.isInteger(draftPort) && draftPort >= 1024 && draftPort <= 65535
@@ -1098,11 +1110,22 @@ function CompanionSection() {
           <div className="flex flex-col items-center gap-3">
             <img src={qr.dataUrl} alt="Pairing QR code" className="h-64 w-64 rounded-xl bg-white p-2" />
             <p className="max-w-sm text-center text-sm font-semibold break-all text-ink-faint">{qr.url}</p>
-            {(status?.urls.length ?? 0) > 1 && (
-              <p className="max-w-sm text-center text-xs font-semibold text-ink-faint">
-                Wrong network? This computer is also reachable at{' '}
-                {status?.urls.slice(1).map((u) => new URL(u).hostname).join(', ')}
+            {qrHost && (
+              <p className="text-sm font-bold text-ink-soft" data-qr-network>
+                This code uses {networkLabel(qrHost)}
+                {networkLabel(qrHost) === 'Tailscale' && ' — works at home and away'}
               </p>
+            )}
+            {otherHosts.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-2" data-switch-address>
+                <span className="text-sm font-semibold text-ink-faint">Wrong network?</span>
+                {otherHosts.map((h) => (
+                  <BigButton key={h} variant="ghost" onClick={() => switchTo(h)}>
+                    Use {networkLabel(h)}
+                    <span className="ml-2 text-sm font-semibold opacity-60">{h}</span>
+                  </BigButton>
+                ))}
+              </div>
             )}
             <p className="max-w-sm text-center text-sm font-semibold text-ink-soft">
               Then use the phone browser's “Add to Home Screen” to keep it like an app. Each scan pairs one
@@ -1114,6 +1137,14 @@ function CompanionSection() {
       </Dialog>
     </div>
   )
+}
+
+/** Which network an address belongs to: Tailscale hands out 100.64.0.0/10. */
+function networkLabel(host: string): string {
+  const [a, b] = host.split('.').map(Number)
+  if (a === 100 && b >= 64 && b <= 127) return 'Tailscale'
+  if (a === 10 || a === 192 || (a === 172 && b >= 16 && b <= 31)) return 'home Wi-Fi'
+  return host
 }
 
 function minutesToHhMm(minutes: number): string {

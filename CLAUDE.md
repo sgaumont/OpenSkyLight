@@ -496,6 +496,10 @@ Add unit tests where sensible.
   didn't help). `src/shared/tapFallback.ts`, installed in renderer main.tsx for `<button>`s: a still touch tap (≤10px,
   ≤700ms, lifted on the same button) with no click within 120ms gets `button.click()`; a late real click within
   600ms is swallowed. Repro: CDP touch — Home → Week → 2 swipes → tap header date; was 5–7/16 lost, now 0/16.
+- v0.8.126: pairing QR dialog — "Wrong network?" is now a button per other address ("Use Tailscale" / "Use home
+  Wi-Fi", IP beside it) that redraws the QR for that host with the same token; a line says which network the code
+  uses (`networkLabel`: 100.64/10 = Tailscale, RFC1918 = home Wi-Fi). Pair phones on the Tailscale address to use
+  the companion away from home (the phone's Tailscale app must be on).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
