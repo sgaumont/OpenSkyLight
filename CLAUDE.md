@@ -530,7 +530,12 @@ Add unit tests where sensible.
 
 ## Wishlist (not started)
 
-- (empty)
+Added 2026-11-05:
+
+- [ ] Add a Today button at the top
+- [ ] Make meals load properly when clicked on
+- [ ] Enlarge the date/time and forecast on the screensaver
+- [ ] Screensaver Next Up panel: make all lines the same size and add a fourth line
 
 ## Release checklist
 
