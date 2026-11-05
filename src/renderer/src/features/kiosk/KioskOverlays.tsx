@@ -82,15 +82,16 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
       )}
       {/* preload the next slide so the crossfade never flashes */}
       {next && <img src={next} alt="" className="hidden" />}
-      {/* bottom-left: the clock with a small weather just right of it, the date underneath */}
+      {/* bottom-left: the clock with the weather just right of it, the date underneath
+          (all 1.5× v0.8.115's sizes: time 108px, date 36px, temperature 54px) */}
       <div className="absolute bottom-10 left-12 select-none" data-screensaver-clock>
-        <div className="flex items-center gap-6">
-          <div className="font-display text-7xl font-semibold text-white/90 drop-shadow-lg">
+        <div className="flex items-center gap-9">
+          <div className="font-display text-[108px] leading-none font-semibold text-white/90 drop-shadow-lg">
             {timeFormat === '24h' ? now.toFormat('HH:mm') : now.toFormat('h:mm')}
           </div>
           <ScreensaverWeather />
         </div>
-        <div className="mt-1 text-2xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
+        <div className="mt-1.5 text-4xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
       </div>
       <ScreensaverGlance now={now} />
       <ScreensaverCountdowns today={now.toISODate()!} />
@@ -108,12 +109,12 @@ function ScreensaverWeather() {
   const Icon = weatherIcon(weather.code, weather.isDay)
   const today = weather.daily[0]
   return (
-    <div className="flex items-center gap-2.5 text-white/90 drop-shadow-lg" data-screensaver-weather>
-      <Icon className="h-11 w-11" />
-      <span className="font-display text-4xl leading-none font-semibold">{weather.temperature}°</span>
+    <div className="flex items-center gap-[15px] text-white/90 drop-shadow-lg" data-screensaver-weather>
+      <Icon className="h-[66px] w-[66px]" />
+      <span className="font-display text-[54px] leading-none font-semibold">{weather.temperature}°</span>
       {today && (
         <span
-          className="flex flex-col items-end gap-0.5 text-lg leading-none font-bold tabular-nums"
+          className="flex flex-col items-end gap-[3px] text-[27px] leading-none font-bold tabular-nums"
           aria-label={`Today: high ${today.high}°, low ${today.low}°`}
         >
           <span>{today.high}°</span>
@@ -129,7 +130,7 @@ function ScreensaverWeather() {
 const GLANCE_CARD = 'absolute max-w-[40rem] rounded-3xl bg-black/45 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
 
 /**
- * What's next (three timed events), bottom-right over the photos: the rest of today, running into
+ * What's next (four timed events, all one size), bottom-right over the photos: the rest of today, running into
  * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
  */
 function ScreensaverGlance({ now }: { now: DateTime }) {
@@ -154,8 +155,8 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
     // bottom-right; lifted while a game timer pill sits at the bottom of the screen
     <div className={`${GLANCE_CARD} right-12 ${timers.length > 0 ? 'bottom-28' : 'bottom-10'}`} style={{ animation: 'fade-in 1.2s ease both' }}>
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
-      {upcoming.slice(0, 3).map(({ o, tomorrow }, i) => (
-        <div key={o.key} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
+      {upcoming.slice(0, 4).map(({ o, tomorrow }) => (
+        <div key={o.key} className="mt-1 flex items-baseline gap-3 text-2xl font-bold" data-next-up-line>
           <span className="shrink-0 tabular-nums">
             {tomorrow && <span className="mr-2 text-white/60">Tmrw</span>}
             {Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}

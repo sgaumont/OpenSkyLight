@@ -470,6 +470,9 @@ Add unit tests where sensible.
   its typed text forever, so Week view showed the last day's typing on another day — and Save could write it there
   — and cancelled text or stale text after a phone edit came back. `MealsDialog` now mounts a fresh `MealsEditor`
   (keyed by date) on every open.
+- v0.8.117: screensaver bottom-left 1.5× v0.8.115 — time text-[108px], date text-4xl (36px), weather icon 66px,
+  temperature 54px, high/low 27px. Next up shows four events, every line text-2xl and full white (was a big first
+  line and smaller dimmed ones; `data-next-up-line`). With a game timer the pill only shares a row with the date.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
@@ -534,10 +537,7 @@ Add unit tests where sensible.
 
 ## Wishlist (not started)
 
-Added 2026-11-05:
-
-- [ ] Enlarge the date/time and forecast on the screensaver
-- [ ] Screensaver Next Up panel: make all lines the same size and add a fourth line
+Empty (the 2026-11-05 items are done or dropped).
 
 ## Release checklist
 
