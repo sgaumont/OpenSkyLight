@@ -132,6 +132,8 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'countdowns:update': 'countdowns',
   'countdowns:delete': 'countdowns',
   'notes:done': 'notes',
+  'notes:reply': 'notes',
+  'notes:kioskReply': 'notes',
   'chores:create': 'chores',
   'chores:update': 'chores',
   'chores:delete': 'chores',
@@ -334,6 +336,11 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('notes:list', null, () => services.notes.list())
   handle('notes:add', s.noteAddSchema, (req) => services.notes.add(req))
   handle('notes:done', s.noteDoneSchema, (req) => services.notes.done(req.id))
+  handle('notes:recent', null, () => services.notes.recent())
+  handle('notes:reply', s.noteReplySchema, (req) => services.notes.reply({ ...req, fromKiosk: false }))
+  handle('notes:kioskReply', s.noteKioskReplySchema, (req) =>
+    services.notes.reply({ ...req, authorId: null, fromKiosk: true })
+  )
 
   handle('rss:getFeed', s.rssFeedSchema, (req) => services.rss.getFeed(req.feedId))
 

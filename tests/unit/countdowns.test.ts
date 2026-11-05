@@ -58,7 +58,7 @@ describe('countdowns service', () => {
   it('a v6 database upgrades to v7 with an empty countdowns table', () => {
     const sqlite = new Database(':memory:')
     runMigrations(sqlite, 6)
-    runMigrations(sqlite)
+    runMigrations(sqlite, 7)
     expect(sqlite.pragma('user_version', { simple: true })).toBe(7)
     expect(sqlite.prepare('SELECT COUNT(*) AS n FROM countdowns').get()).toEqual({ n: 0 })
     sqlite.close()

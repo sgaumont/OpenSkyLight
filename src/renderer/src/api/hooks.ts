@@ -398,7 +398,11 @@ export function useNotes() {
 
 export function useNoteMutations() {
   return {
-    done: useInvalidatingMutation((input: { id: string }) => ipcInvoke('notes:done', input), [['notes']])
+    done: useInvalidatingMutation((input: { id: string }) => ipcInvoke('notes:done', input), [['notes']]),
+    reply: useInvalidatingMutation(
+      (input: { noteId: string; text: string }) => ipcInvoke('notes:kioskReply', input),
+      [['notes']]
+    )
   }
 }
 

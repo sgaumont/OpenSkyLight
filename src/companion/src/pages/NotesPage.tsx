@@ -16,7 +16,7 @@ function rememberedAuthor(): string | null {
   }
 }
 
-/** Notes for the kiosk: post one from here, see what's up there, clear what's done. */
+/** Notes for the kiosk: post one from here, follow the conversation with the tablet, clear what's done. */
 export function NotesPage() {
   const { data: notes = [] } = useNotes()
   const { data: people = [] } = usePeople()
@@ -99,10 +99,10 @@ export function NotesPage() {
       {notes.length === 0 ? (
         <EmptyNote>No notes on the kiosk right now.</EmptyNote>
       ) : (
-        <div className="flex flex-col gap-2">
-          <div className="text-xs font-extrabold tracking-wide text-ink-faint uppercase">On the kiosk now</div>
+        <div className="flex flex-col gap-3">
+          <div className="text-xs font-extrabold tracking-wide text-ink-faint uppercase">Conversations</div>
           {notes.map((n) => (
-            <NoteRow key={n.id} note={n} author={n.authorId ? byId.get(n.authorId) : undefined} />
+            <Conversation key={n.id} note={n} byId={byId} replyAs={author} />
           ))}
         </div>
       )}
@@ -111,28 +111,95 @@ export function NotesPage() {
   )
 }
 
-function NoteRow({ note, author }: { note: NoteDto; author: PersonDto | undefined }) {
-  const { done } = useNoteMutations()
+/** "2:15 pm", or "Mon 2:15 pm" for an older message. */
+function when(iso: string): string {
+  const t = DateTime.fromISO(iso)
+  return (t.hasSame(DateTime.now(), 'day') ? t.toFormat('h:mm a') : t.toFormat('ccc h:mm a')).toLowerCase()
+}
+
+/**
+ * A note and its replies, like a text thread: phone messages on the right, the tablet's on the
+ * left. Replying to a done note puts it back on the kiosk.
+ */
+function Conversation({
+  note,
+  byId,
+  replyAs
+}: {
+  note: NoteDto
+  byId: Map<string, PersonDto>
+  replyAs: PersonDto | null
+}) {
+  const { done, reply } = useNoteMutations()
   const [confirming, setConfirming] = useState(false)
-  const t = DateTime.fromISO(note.createdAt)
-  const when = t.hasSame(DateTime.now(), 'day') ? t.toFormat('h:mm a').toLowerCase() : t.toFormat('ccc h:mm a').toLowerCase()
+  const [draft, setDraft] = useState('')
+  const open = note.doneAt === null
+  const messages = [
+    { id: note.id, text: note.text, authorId: note.authorId, fromKiosk: false, createdAt: note.createdAt },
+    ...note.replies
+  ]
+  function send(): void {
+    reply.mutate({ noteId: note.id, text: draft.trim(), authorId: replyAs?.id ?? null }, { onSuccess: () => setDraft('') })
+  }
   return (
-    <div className="flex items-start gap-3 rounded-2xl bg-sun-soft px-4 py-3 ring-1 ring-sun">
-      <div className="min-w-0 flex-1">
-        <p className="text-base font-bold break-words whitespace-pre-line text-ink">{note.text}</p>
-        <p className="mt-1 text-xs font-bold text-ink-soft">
-          {author ? `${author.name} · ` : ''}
-          {when}
-          {note.expiresAt && ' · until tonight'}
-        </p>
+    <div className={`rounded-2xl px-3 py-3 ${open ? 'bg-sun-soft ring-1 ring-sun' : 'bg-card'}`}>
+      <div className="mb-2 flex items-center gap-2 px-1">
+        <span className="flex-1 text-xs font-extrabold tracking-wide text-ink-faint uppercase">
+          {open ? `On the kiosk${note.expiresAt ? ' · until tonight' : ''}` : 'Done'}
+        </span>
+        {open && (
+          <button
+            type="button"
+            onClick={() => (confirming ? done.mutate({ id: note.id }) : setConfirming(true))}
+            className={`pressable shrink-0 rounded-full px-3 py-1 text-sm font-extrabold ${confirming ? 'bg-ember text-white' : 'bg-card text-ink'}`}
+          >
+            {confirming ? 'Tap again' : '✓ Done'}
+          </button>
+        )}
       </div>
-      <button
-        type="button"
-        onClick={() => (confirming ? done.mutate({ id: note.id }) : setConfirming(true))}
-        className={`pressable shrink-0 rounded-full px-3 py-1.5 text-sm font-extrabold ${confirming ? 'bg-ember text-white' : 'bg-card text-ink'}`}
+      <div className="flex flex-col gap-1.5">
+        {messages.map((m) => {
+          const who = m.fromKiosk ? 'Tablet' : (m.authorId ? byId.get(m.authorId)?.name : undefined)
+          return (
+            <div key={m.id} className={`flex max-w-[85%] flex-col ${m.fromKiosk ? 'items-start self-start' : 'items-end self-end'}`}>
+              <p
+                className={`rounded-2xl px-3 py-2 text-base font-bold break-words whitespace-pre-line ${
+                  m.fromKiosk ? 'bg-ink text-paper' : 'bg-paper text-ink'
+                }`}
+              >
+                {m.text}
+              </p>
+              <span className="mt-0.5 px-1 text-[11px] font-bold text-ink-faint">
+                {who ? `${who} · ` : ''}
+                {when(m.createdAt)}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      <form
+        className="mt-2 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (draft.trim()) send()
+        }}
       >
-        {confirming ? 'Tap again' : '✓ Done'}
-      </button>
+        <input
+          value={draft}
+          maxLength={MAX_LENGTH}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={open ? 'Reply…' : 'Reply (puts it back on the kiosk)…'}
+          className="min-w-0 flex-1 rounded-full border-2 border-line bg-paper px-3 py-1.5 text-base font-semibold text-ink outline-none focus:border-ember"
+        />
+        <button
+          type="submit"
+          disabled={!draft.trim() || reply.isPending}
+          className="pressable shrink-0 rounded-full bg-ember px-4 text-sm font-extrabold text-white disabled:opacity-40"
+        >
+          Send
+        </button>
+      </form>
+      {reply.error && <p className="mt-1 px-1 text-xs font-bold text-ember-deep">{reply.error.message}</p>}
     </div>
   )
 }

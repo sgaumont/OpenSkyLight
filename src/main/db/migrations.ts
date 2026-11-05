@@ -301,6 +301,19 @@ const MIGRATIONS: string[] = [
     created_at TEXT NOT NULL,
     deleted_at TEXT
   );
+  `,
+  // v8: note replies — a note becomes a short conversation between the tablet and the phones.
+  // from_kiosk marks replies typed or tapped on the tablet; note_id is a plain id like author_id.
+  `
+  CREATE TABLE note_replies (
+    id TEXT PRIMARY KEY,
+    note_id TEXT NOT NULL,
+    text TEXT NOT NULL,
+    author_id TEXT,
+    from_kiosk INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX idx_note_replies_note ON note_replies(note_id, created_at);
   `
 ]
 

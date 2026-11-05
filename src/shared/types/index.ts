@@ -415,6 +415,26 @@ export interface NoteDto {
   createdAt: string
   /** set for "until tonight" notes */
   expiresAt: string | null
+  /** set once it's off the kiosk (only the phone's recent list shows these) */
+  doneAt: string | null
+  /** the conversation under it, oldest first */
+  replies: NoteReplyDto[]
+}
+
+export interface NoteReplyDto {
+  id: string
+  text: string
+  /** who on a phone; null from the tablet or when no one was picked */
+  authorId: string | null
+  /** tapped or typed on the tablet */
+  fromKiosk: boolean
+  createdAt: string
+}
+
+export interface NoteReplyInput {
+  noteId: string
+  text: string
+  authorId: string | null
 }
 
 export interface NoteInput {

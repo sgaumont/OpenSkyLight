@@ -252,6 +252,20 @@ export const notes = sqliteTable(
   (t) => [index('idx_notes_open').on(t.doneAt)]
 )
 
+/** One message in a note's conversation, from the tablet (`fromKiosk`) or a phone. */
+export const noteReplies = sqliteTable(
+  'note_replies',
+  {
+    id: text('id').primaryKey(),
+    noteId: text('note_id').notNull(),
+    text: text('text').notNull(),
+    authorId: text('author_id'),
+    fromKiosk: integer('from_kiosk', { mode: 'boolean' }).notNull().default(false),
+    createdAt: text('created_at').notNull()
+  },
+  (t) => [index('idx_note_replies_note').on(t.noteId, t.createdAt)]
+)
+
 /** A date the family is counting down to ("5 days until Christmas"). */
 export const countdowns = sqliteTable('countdowns', {
   id: text('id').primaryKey(),

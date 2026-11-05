@@ -27,6 +27,8 @@ import type {
   MealSlotKind,
   NoteDto,
   NoteInput,
+  NoteReplyDto,
+  NoteReplyInput,
   OccurrenceDto,
   PendingUnlockDto,
   PersonCreateInput,
@@ -142,6 +144,12 @@ export type IpcContract = {
 
   'notes:list': { req: void; res: NoteDto[] }
   'notes:add': { req: NoteInput; res: NoteDto }
+  /** the phone's conversations: on the kiosk now, plus the last couple of days' */
+  'notes:recent': { req: void; res: NoteDto[] }
+  /** a reply from a phone (puts a done note back on the kiosk) */
+  'notes:reply': { req: NoteReplyInput; res: NoteReplyDto }
+  /** a reply tapped or typed on the tablet — kiosk-only, so a phone can't post as the tablet */
+  'notes:kioskReply': { req: { noteId: string; text: string }; res: NoteReplyDto }
   'notes:done': { req: { id: string }; res: void }
 
   'rewards:list': { req: void; res: RewardDto[] }

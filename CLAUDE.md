@@ -481,6 +481,11 @@ Add unit tests where sensible.
 - v0.8.121: and the sides — clock block `left-6`, Next up and Countdowns `right-6` (24px, was 48).
 - v0.8.122: screensaver top/bottom gaps halved again — Countdowns `top-2.5`, clock block and Next up `bottom-2.5`
   (10px). Sides stay 24px; Next up still lifts to `bottom-28` over a game timer pill.
+- v0.8.123: two-way Notes — DB migration v8 `note_replies` (note_id, text, author_id, from_kiosk). Tablet replies go
+  through kiosk-only `notes:kioskReply` (not in COMPANION_CHANNELS, so a phone can't post as the tablet); phones use
+  `notes:reply` and `notes:recent` (open notes + last 2 days by latest message, newest first). A phone reply to a done/
+  expired note reopens it (an "until tonight" one gets the rest of today). NoteOverlay: thread + quick replies + "Write…";
+  chimes only while the phone has the last word. Phone has no push — it sees replies on its 20s poll while open.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
