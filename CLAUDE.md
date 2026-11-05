@@ -491,6 +491,11 @@ Add unit tests where sensible.
   PIN; a wrong PIN still waits for OK, which shows the error. Off for choosing a new PIN. Events: tapping an existing
   event now asks for the PIN before the editor opens (was only on Save/Delete); `allowedKey` resets on close, so
   reopening the same event asks again.
+- v0.8.125 (OPE-16): after swiping the Week view, Chromium sometimes drops the *click* of the next touch tap
+  (pointerdown/up reach the button, no click; ~40% of runs, gone after ~1 s; Month unaffected; animation/overflow CSS
+  didn't help). `src/shared/tapFallback.ts`, installed in renderer main.tsx for `<button>`s: a still touch tap (≤10px,
+  ≤700ms, lifted on the same button) with no click within 120ms gets `button.click()`; a late real click within
+  600ms is swallowed. Repro: CDP touch — Home → Week → 2 swipes → tap header date; was 5–7/16 lost, now 0/16.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
