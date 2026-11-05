@@ -84,7 +84,7 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
       {next && <img src={next} alt="" className="hidden" />}
       {/* bottom-left: the clock with the weather just right of it, the date underneath
           (all 1.5× v0.8.115's sizes: time 108px, date 36px, temperature 54px) */}
-      <div className="absolute bottom-10 left-12 select-none" data-screensaver-clock>
+      <div className="absolute bottom-5 left-12 select-none" data-screensaver-clock>
         <div className="flex items-center gap-9">
           <div className="font-display text-[108px] leading-none font-semibold text-white/90 drop-shadow-lg">
             {timeFormat === '24h' ? now.toFormat('HH:mm') : now.toFormat('h:mm')}
@@ -153,7 +153,7 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   return (
     // bottom-right; lifted while a game timer pill sits at the bottom of the screen
-    <div className={`${GLANCE_CARD} right-12 ${timers.length > 0 ? 'bottom-28' : 'bottom-10'}`} style={{ animation: 'fade-in 1.2s ease both' }}>
+    <div className={`${GLANCE_CARD} right-12 ${timers.length > 0 ? 'bottom-28' : 'bottom-5'}`} style={{ animation: 'fade-in 1.2s ease both' }}>
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
       {upcoming.slice(0, 5).map(({ o, tomorrow }) => (
         <div key={o.key} className="mt-1 flex items-baseline gap-3 text-2xl font-bold" data-next-up-line>
@@ -177,7 +177,7 @@ function ScreensaverCountdowns({ today }: { today: string }) {
     .slice(0, 3)
   if (shown.length === 0) return null
   return (
-    <div className={`${GLANCE_CARD} top-10 right-12`} style={{ animation: 'fade-in 1.2s ease both' }}>
+    <div className={`${GLANCE_CARD} top-5 right-12`} style={{ animation: 'fade-in 1.2s ease both' }}>
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Countdowns</div>
       {shown.map(({ c, label }, i) => (
         <div key={c.id} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>

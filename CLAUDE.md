@@ -476,6 +476,8 @@ Add unit tests where sensible.
 - v0.8.118: screensaver Next up shows five events (Linear OPE-15). Card is ~248px tall at the bottom-right; with a
   game timer it lifts to bottom-28 and still clears the pill and the Countdowns card.
 - v0.8.119: screensaver Next up + Countdowns cards 25% less opaque — `bg-black/34`, was `/45`.
+- v0.8.120: screensaver items hug the edges — Countdowns `top-5` (20px, was 40), clock/date/weather and Next up
+  `bottom-5` (was `bottom-10`). Next up still lifts to `bottom-28` while a game timer pill shows.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
