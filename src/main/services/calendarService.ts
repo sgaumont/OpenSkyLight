@@ -14,7 +14,8 @@ function toDto(row: typeof calendars.$inferSelect): CalendarDto {
     name: row.name,
     color: row.color,
     readOnly: row.readOnly,
-    visible: row.visible
+    visible: row.visible,
+    arriveOffsetMinutes: row.arriveOffsetMin
   }
 }
 
@@ -48,6 +49,7 @@ export function createCalendarService(db: AppDb) {
     if (input.name !== undefined) patch.name = input.name
     if (input.color !== undefined) patch.color = input.color
     if (input.visible !== undefined) patch.visible = input.visible
+    if (input.arriveOffsetMinutes !== undefined) patch.arriveOffsetMin = input.arriveOffsetMinutes
     const result = db
       .update(calendars)
       .set(patch)

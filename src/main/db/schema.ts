@@ -37,7 +37,9 @@ export const calendars = sqliteTable('calendars', {
   icsLastModified: text('ics_last_modified'),
   lastSyncedAt: text('last_synced_at'),
   syncError: text('sync_error'),
-  deletedAt: text('deleted_at')
+  deletedAt: text('deleted_at'),
+  /** "Arrive by": be there this many minutes before an event starts (0 = no arrive-by time) */
+  arriveOffsetMin: integer('arrive_offset_min').notNull().default(0)
 })
 
 export const events = sqliteTable(

@@ -516,6 +516,12 @@ Add unit tests where sensible.
   Shown as "🚗 Leave 3:40" on event cards (Week/Day/Agenda), the Today tile and screensaver Next up; `LeaveOverlay`
   shows a top banner with a chime every minute (`startLeaveChime`) from leave time until start or Got it (not during
   sleep). Event/calendar/settings changes trigger a refresh 5 s later (`onBroadcast`).
+- v0.8.129: per-calendar "arrive by" offset (Linear OPE-17). DB v9 adds `calendars.arrive_offset_min` (default 0);
+  `CalendarDto.arriveOffsetMinutes`, `OccurrenceDto.arriveBy` (start − offset; null for 0 or all-day), set in
+  eventService.getOccurrences. Settings → Calendars: an "⏱ Arrive on time / N min early" chip on every calendar row,
+  local, Google and ICS (`ArriveOffsetChip`: 0/15/30/45/60 or any 0–240). Shown as "⏱ Arrive 5:14" on event cards
+  and the Today tile, and "Arrive by … · N min early, set on the X calendar" in the event editor. Leave-by counts back
+  from arrive-by (travelService uses `arriveBy ?? start`); the banner says "arrive by". No per-event override yet.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

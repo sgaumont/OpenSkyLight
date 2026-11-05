@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
 import type { EditScope, EventPatch, OccurrenceDto, RecurrenceInput } from '@shared/types'
 import { describeRecurrence } from '@shared/recurrence/build'
+import { formatTime } from '../../lib/format'
 import { useCalendars, useEventDetail, useEventMutations, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE, type EditorState } from '../../stores/uiStore'
 import { BigButton, Dialog, FieldLabel, Sheet, Toggle } from '../../components/ui'
@@ -250,6 +251,16 @@ function EditorSheet({
           placeholder="What's happening?"
           autoFocus={editor.mode === 'create'}
         />
+        {occ?.arriveBy && (
+          <p className="-mt-2 text-base font-bold text-ink-soft" data-arrive-detail>
+            ⏱ Arrive by {formatTime(occ.arriveBy, timeFormat)}
+            <span className="font-semibold text-ink-faint">
+              {' '}
+              · {Math.round((Date.parse(occ.start) - Date.parse(occ.arriveBy)) / 60_000)} min early, set on the{' '}
+              {calendars.find((c) => c.id === occ.calendarId)?.name ?? 'calendar'} calendar
+            </span>
+          </p>
+        )}
 
         {people.length > 0 && (
           <div>

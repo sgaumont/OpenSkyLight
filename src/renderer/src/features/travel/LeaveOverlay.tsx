@@ -46,7 +46,8 @@ export function LeaveOverlay() {
         <div className="min-w-0">
           <div className="truncate text-3xl font-extrabold">Time to leave for {due.title}</div>
           <div className="truncate text-lg font-bold text-white/85">
-            {due.driveMinutes} min drive to {due.location} · starts {formatTime(due.start, timeFormat)}
+            {due.driveMinutes} min drive to {due.location} ·{' '}
+            {due.arriveBy ? `arrive by ${formatTime(due.arriveBy, timeFormat)}` : `starts ${formatTime(due.start, timeFormat)}`}
           </div>
         </div>
         <button

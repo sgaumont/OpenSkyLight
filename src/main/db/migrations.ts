@@ -314,6 +314,10 @@ const MIGRATIONS: string[] = [
     created_at TEXT NOT NULL
   );
   CREATE INDEX idx_note_replies_note ON note_replies(note_id, created_at);
+  `,
+  // v9: per-calendar arrival offset — events show "Arrive by" this many minutes before they start
+  `
+  ALTER TABLE calendars ADD COLUMN arrive_offset_min INTEGER NOT NULL DEFAULT 0;
   `
 ]
 

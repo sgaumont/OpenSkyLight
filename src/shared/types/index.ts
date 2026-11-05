@@ -31,6 +31,8 @@ export interface CalendarDto {
   color: string
   readOnly: boolean
   visible: boolean
+  /** be there this many minutes before an event starts; 0 = no arrive-by time */
+  arriveOffsetMinutes: number
 }
 
 export interface CalendarCreateInput {
@@ -43,6 +45,7 @@ export interface CalendarUpdateInput {
   name?: string
   color?: string
   visible?: boolean
+  arriveOffsetMinutes?: number
 }
 
 export type RecurrenceFreq = 'daily' | 'weekly' | 'monthly' | 'yearly'
@@ -100,6 +103,8 @@ export interface OccurrenceDto {
   /** Original (pre-override) start; the key used for `this`/`following` edits */
   occurrenceStart: string
   personIds: string[]
+  /** UTC ISO: when to be there (start − the calendar's arrival offset); null when it has none or all day */
+  arriveBy: string | null
 }
 
 export interface EventPatch {
@@ -487,6 +492,8 @@ export interface LeaveTimeDto {
   location: string
   /** UTC ISO */
   start: string
+  /** when to be there, if the calendar has an arrival offset (the leave time counts back from this) */
+  arriveBy: string | null
   leaveAt: string
   driveMinutes: number
 }

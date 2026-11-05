@@ -71,6 +71,12 @@ export function allDayInZone(startIso: string, endIso: string, tz: string, zone:
   return { start: at(startIso), end: at(endIso) }
 }
 
+/** Start minus the calendar's arrival offset; all-day events and a 0 offset have none. */
+function arriveByFor(startIso: string, allDay: boolean, offsetMin: number): string | null {
+  if (allDay || offsetMin <= 0) return null
+  return new Date(Date.parse(startIso) - offsetMin * 60_000).toISOString()
+}
+
 export function createEventService(db: AppDb, deviceTz: () => string = () => DateTime.local().zoneName ?? 'UTC') {
   const now = () => isoUtc(DateTime.utc())
   const norm = (iso: string) => isoUtc(fromIso(iso))
@@ -183,6 +189,7 @@ export function createEventService(db: AppDb, deviceTz: () => string = () => Dat
     if (cals.length === 0) return []
     const calIds = cals.map((c) => c.id)
     const readOnlyByCal = new Map(cals.map((c) => [c.id, c.readOnly]))
+    const offsetByCal = new Map(cals.map((c) => [c.id, c.arriveOffsetMin]))
 
     const masters = db
       .select()
@@ -246,7 +253,8 @@ export function createEventService(db: AppDb, deviceTz: () => string = () => Dat
           isRecurring: master.rrule !== null,
           readOnly: readOnlyByCal.get(row.calendarId) ?? false,
           occurrenceStart: occ.occurrenceStart,
-          personIds
+          personIds,
+          arriveBy: arriveByFor(start, row.allDay, offsetByCal.get(row.calendarId) ?? 0)
         })
       }
     }

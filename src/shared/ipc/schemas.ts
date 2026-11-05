@@ -30,7 +30,8 @@ export const calendarUpdateSchema = z.object({
   id,
   name: z.string().trim().min(1).max(80).optional(),
   color: hexColor.optional(),
-  visible: z.boolean().optional()
+  visible: z.boolean().optional(),
+  arriveOffsetMinutes: z.number().int().min(0).max(240).optional()
 })
 
 export const recurrenceSchema = z.object({

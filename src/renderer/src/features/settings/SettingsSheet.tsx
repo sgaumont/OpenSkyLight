@@ -49,6 +49,7 @@ import {
 import { GameTimeLog } from '../chores/GameTimeLog'
 import { CountdownsSection } from '../countdowns/CountdownsSection'
 import { TravelSection } from '../travel/TravelSection'
+import { ArriveOffsetChip } from '../calendar/ArriveOffset'
 import { PinDialog } from '../../components/PinDialog'
 import { TimeField } from '../../components/DateTimePickers'
 import { ipcInvoke } from '../../api/client'
@@ -405,6 +406,7 @@ function IcsSection() {
           <div key={c.id} className="flex items-center gap-3 rounded-2xl bg-paper-deep/50 p-3">
             <span className="h-6 w-6 rounded-full" style={{ backgroundColor: c.color }} />
             <span className="min-w-0 flex-1 truncate text-lg font-bold">{c.name}</span>
+            <ArriveOffsetChip calendar={c} />
             <Toggle
               checked={c.visible}
               onChange={(visible) => calendarMutations.update.mutate({ id: c.id, visible })}
@@ -473,6 +475,7 @@ function CalendarsTab() {
                   <span className="block text-sm font-bold text-ink-faint capitalize">{c.provider}</span>
                 </span>
               </button>
+              <ArriveOffsetChip calendar={c} />
               <Toggle
                 checked={c.visible}
                 onChange={(visible) => mutations.update.mutate({ id: c.id, visible })}

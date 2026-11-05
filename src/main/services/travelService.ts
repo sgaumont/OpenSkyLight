@@ -131,7 +131,7 @@ export function createTravelService(deps: {
     const homeCity = s.weather?.label.split(',')[0] ?? ''
     return deps.events
       .getOccurrences({ start: new Date(t).toISOString(), end: new Date(t + LOOKAHEAD_HOURS * 3600_000).toISOString() })
-      .filter((o) => !o.allDay && Date.parse(o.start) > t && isRoutableLocation(o.location, homeCity))
+      .filter((o) => !o.allDay && Date.parse(o.arriveBy ?? o.start) > t && isRoutableLocation(o.location, homeCity))
   }
 
   /** Look up whatever is due. Returns how many lookups were made. */
@@ -148,7 +148,8 @@ export function createTravelService(deps: {
       const live = new Set(occs.map((o) => o.key))
       for (const k of Object.keys(cache)) if (!live.has(k)) delete cache[k]
       for (const o of occs) {
-        const startMs = Date.parse(o.start)
+        // the time to be there: arrive-by when the calendar has an offset, else the start
+        const startMs = Date.parse(o.arriveBy ?? o.start)
         const location = o.location!.trim()
         if (!refreshDue(now(), startMs, s.bufferMinutes, cache[o.key], location)) continue
         if (!underCap(usage())) {
@@ -188,7 +189,8 @@ export function createTravelService(deps: {
         title: o.title,
         location: c.location,
         start: o.start,
-        leaveAt: new Date(leaveAtMs(Date.parse(o.start), c.minutes, s.bufferMinutes)).toISOString(),
+        arriveBy: o.arriveBy,
+        leaveAt: new Date(leaveAtMs(Date.parse(o.arriveBy ?? o.start), c.minutes, s.bufferMinutes)).toISOString(),
         driveMinutes: c.minutes
       })
     }

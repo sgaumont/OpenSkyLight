@@ -289,7 +289,8 @@ export function buildChannelTable(services: Services): ChannelTable {
       name: row.name,
       color: row.color,
       readOnly: row.readOnly,
-      visible: row.visible
+      visible: row.visible,
+      arriveOffsetMinutes: row.arriveOffsetMin
     }
   })
 

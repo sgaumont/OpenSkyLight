@@ -2,6 +2,7 @@ import type { OccurrenceDto, PersonDto } from '@shared/types'
 import { formatTime, textOn } from '../../lib/format'
 import { MapPinIcon, RepeatIcon } from '../../components/icons'
 import { useLeaveTime } from '../../api/hooks'
+import { ArriveBy } from './ArriveOffset'
 
 /** "🚗 Leave 3:40" (or "· 18 min" too on a big card), for events with a known drive from home. */
 export function LeaveBy({ occKey, timeFormat, long = false, className = '' }: { occKey: string; timeFormat: '12h' | '24h'; long?: boolean; className?: string }) {
@@ -86,7 +87,8 @@ export function EventCard({
         <PersonDots personIds={occ.personIds} peopleById={peopleById} />
       </div>
       <div className={`${titleFit} font-bold text-ink ${size === 'lg' ? 'text-xl' : 'text-[15px]'}`}>{occ.title}</div>
-      <LeaveBy occKey={occ.key} timeFormat={timeFormat} long={size === 'lg'} className={size === 'lg' ? 'mt-1 text-sm' : 'text-[12px]'} />
+      <ArriveBy occ={occ} timeFormat={timeFormat} long={size === 'lg'} className={size === 'lg' ? 'mt-1 text-sm' : 'text-[12px]'} />
+      <LeaveBy occKey={occ.key} timeFormat={timeFormat} long={size === 'lg'} className={size === 'lg' ? 'mt-0.5 text-sm' : 'text-[12px]'} />
       {size === 'lg' && occ.location && (
         <div className="mt-1 flex items-center gap-1 text-sm font-semibold text-ink-soft">
           <MapPinIcon size={14} />
