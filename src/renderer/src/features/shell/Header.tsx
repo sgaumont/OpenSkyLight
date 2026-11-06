@@ -6,7 +6,6 @@ import { SegmentedControl, IconButton } from '../../components/ui'
 import { ChevronLeftIcon, ChevronRightIcon, StarIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
 import { WeatherButton } from '../weather/WeatherHeader'
 import { IssueLine } from './IssueLine'
-import { UseTimeDialog } from './UseTimeDialog'
 import { initials, textOn } from '../../lib/format'
 import type { CalendarViewKind, PersonDto } from '@shared/types'
 import { eachDay, weekViewRange } from '@shared/dates'
@@ -56,7 +55,6 @@ export function Header() {
   const { data: balances = [] } = useBalances()
   const kids = people.filter((p) => p.role === 'child')
   // the kid whose "use your time?" question is open
-  const [usingTime, setUsingTime] = useState<string | null>(null)
   // phone messages the tablet hasn't seen yet
   const { data: chat = [] } = useChat()
   const waitingChats = chat.filter((m) => m.unseen).length
@@ -154,21 +152,16 @@ export function Header() {
       )}
 
       {/* each child's star balance, in their colour, beside the screen selector on every screen —
-          a tap asks whether they want to use their time (spend it all) */}
+          a tap opens the Shop, where time is spent */}
       {kids.length > 0 && (
         // a little tighter beside the date controls (Week/Month), where the header is fullest
         <div className={`flex shrink-0 items-center ${NO_PAGING.includes(view) ? 'gap-4.5' : 'gap-3'}`}>
           {kids.map((p) => {
             const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
-            return <GameTimeBadge key={p.id} person={p} stars={stars} onClick={() => setUsingTime(p.id)} />
+            return <GameTimeBadge key={p.id} person={p} stars={stars} onClick={() => setView('shop')} />
           })}
         </div>
       )}
-      <UseTimeDialog
-        person={kids.find((k) => k.id === usingTime) ?? null}
-        balance={balances.find((b) => b.personId === usingTime)?.balance ?? 0}
-        onClose={() => setUsingTime(null)}
-      />
 
       <SegmentedControl
         value={view}
@@ -212,7 +205,8 @@ export function Header() {
 
 /**
  * A kid's game time: a circle in their colour with the star icon and their balance. In the
- * header (as tall as the banner) and on the Shop screen; a tap opens UseTimeDialog for them.
+ * header (as tall as the banner), where a tap opens the Shop, and on the Shop screen, where a
+ * tap opens UseTimeDialog for them.
  */
 export function GameTimeBadge({ person, stars, onClick }: { person: PersonDto; stars: number; onClick: () => void }) {
   return (

@@ -610,6 +610,8 @@ Add unit tests where sensible.
 - v0.8.153: ⭐ replaces every 🎮 emoji (chore type, titles, toasts, push titles; old ledger notes mapped in
   rewardsService.log). Screensaver cards tighter (GLANCE_CARD px-4 py-3, rounded-2xl). Screensaver weather alert:
   `ScreensaverAlert` under the date, alert colour at 35% alpha (`${bg}59`), "+N" via alertSummary.
+- v0.8.154: header star badges open the Shop (`setView('shop')`) instead of the use-time pop-up; the Shop's own
+  badges still open UseTimeDialog.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
