@@ -67,7 +67,7 @@ export function NotesPage() {
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: 'end' })
   }, [messages.length])
-  // the 🔔 screen can rename this phone while Chat is open
+  // the 📱 screen can rename this phone while Chat is open
   useEffect(() => {
     const onName = (): void => setPhoneNameState(getPhoneName())
     window.addEventListener('osl-phone-name', onName)
@@ -145,7 +145,7 @@ export function NotesPage() {
             {send.isPending ? 'Sending…' : ring ? 'Send 🔔' : 'Send'}
           </PrimaryButton>
         </div>
-        {!phoneName && <p className="mt-2 text-xs font-bold text-ink-faint" data-name-hint>Name this phone in 🔔 (top right) so others see who's writing.</p>}
+        {!phoneName && <p className="mt-2 text-xs font-bold text-ink-faint" data-name-hint>Name this phone in 📱 (top right) so others see who's writing.</p>}
         {send.error && <p className="mt-1 text-xs font-bold text-ember-deep">{send.error.message}</p>}
       </Card>
       <div ref={bottom} />

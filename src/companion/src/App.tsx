@@ -82,10 +82,10 @@ export default function App() {
         <button
           type="button"
           onClick={() => setNotifications(true)}
-          aria-label="Notifications"
+          aria-label="This phone: name and notifications"
           className="pressable self-center rounded-full bg-paper-deep px-2.5 py-1.5 text-lg leading-none"
         >
-          🔔
+          📱
         </button>
       </header>
       {notifications && <NotificationsSheet onClose={() => setNotifications(false)} />}
