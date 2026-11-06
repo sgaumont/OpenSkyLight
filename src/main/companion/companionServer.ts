@@ -7,6 +7,7 @@ import type { SettingsService } from '../services/settingsService'
 import type { CompanionTokens } from './companionTokens'
 import { pickLanAddresses } from './lanAddress'
 import { MAX_PHOTO_BYTES } from './photoUpload'
+import { createTailscaleHttps, NO_TAILSCALE, type TailscaleHttps } from './tailscaleHttps'
 
 const MAX_BODY_BYTES = 64 * 1024
 const AUTH_FAIL_LIMIT = 30 // failures per IP per minute → 429
@@ -47,6 +48,7 @@ export interface CompanionServerDeps {
  * Auth is a bearer token minted from the (PIN-gated) kiosk settings QR.
  */
 export function createCompanionServer(deps: CompanionServerDeps) {
+  const tailscale = createTailscaleHttps()
   let server: Server | null = null
   let boundPort: number | null = null
   let lastError: string | null = null
@@ -356,6 +358,11 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     }
   }
 
+  /** The secure Tailscale address (needed for phone notifications), when Tailscale is here. */
+  function secure(): Promise<TailscaleHttps> {
+    return server !== null && boundPort !== null ? tailscale(boundPort) : Promise.resolve(NO_TAILSCALE)
+  }
+
   /** Mint a pairing URL — token rides in the fragment so it never reaches server logs. */
   function issueToken(): { url: string } {
     const { port } = deps.settings.getAll().companion
@@ -368,7 +375,7 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     deps.tokens.revokeAll()
   }
 
-  return { applySettings, getStatus, issueToken, unpairAll, push, stop, shutdown: stop }
+  return { applySettings, getStatus, secure, issueToken, unpairAll, push, stop, shutdown: stop }
 }
 
 export type CompanionServer = ReturnType<typeof createCompanionServer>

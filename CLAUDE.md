@@ -570,6 +570,15 @@ Add unit tests where sensible.
 - v0.8.140: back from the screensaver or sleep, the tablet goes to the default screen (Settings → Default screen,
   Home) on today, and closes Settings or an event editor left open (KioskOverlays covered→uncovered effect;
   extends OPE-19).
+- v0.8.141: phone notifications (Web Push, Android-first). Needs https: `tailscale serve --bg <companion port>` on the
+  kiosk → `https://<host>.<tailnet>.ts.net/`; the pairing QR offers "Use Tailscale (https)" (companion:getStatus `secure`,
+  from `tailscale status/serve status --json`, main/companion/tailscaleHttps.ts) or shows that command. DB v11
+  `push_subscriptions` (endpoint, keys, person_id, prefs JSON). main/services/notifyService.ts: VAPID keys in raw
+  `push.vapid`, sent-once keys in `push.sent` (pruned after 3 days), `web-push` sender (404/410 drop the phone).
+  Rules in shared/pushAlerts.ts: chat (not to the sender's own phone), leave-by, approvals, weather warnings/watches,
+  game timer up — all opt-in per phone, time-based ones skipped if >10 min late; start-up check is quiet. Checked on
+  notes/chores dataChanged + every 30 s. Phone: public/sw.js (show + open `/?tab=`), 🔔 header button →
+  NotificationsSheet (api/push.ts). notify:* channels are companion-only.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

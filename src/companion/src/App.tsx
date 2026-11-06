@@ -11,6 +11,7 @@ import { ChoresPage, PendingUnlocksCard } from './pages/ChoresPage'
 import { PhotosPage } from './pages/PhotosPage'
 import { NotesPage } from './pages/NotesPage'
 import { PairScreen } from './pages/PairScreen'
+import { NotificationsSheet } from './pages/NotificationsSheet'
 
 // no Agenda tab (pages/AgendaPage.tsx is kept, unused, in case it comes back)
 type TabId = 'lists' | 'meals' | 'chores' | 'photos' | 'notes'
@@ -23,9 +24,16 @@ const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
   { id: 'notes', label: 'Chat', icon: '💬' }
 ]
 
+/** A tab named in the address (?tab=notes) — where a tapped notification opens the app. */
+function tabFromUrl(): TabId | null {
+  const t = new URLSearchParams(window.location.search).get('tab')
+  return TABS.some((x) => x.id === t) ? (t as TabId) : null
+}
+
 export default function App() {
   const [paired, setPaired] = useState(() => getToken() !== null)
-  const [tab, setTab] = useState<TabId>('chores')
+  const [tab, setTab] = useState<TabId>(() => tabFromUrl() ?? 'chores')
+  const [notifications, setNotifications] = useState(false)
   // which way the last change went, so the new tab slides in from that side (taps just rise)
   const [slide, setSlide] = useState<'from-right' | 'from-left' | null>(null)
   const mainRef = useRef<HTMLElement>(null)
@@ -53,14 +61,34 @@ export default function App() {
     setUnauthorizedHandler(() => setPaired(false))
   }, [])
 
+  // a notification tapped while the app is already open: its service worker says which tab
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    const onMessage = (e: MessageEvent): void => {
+      const t = (e.data as { type?: string; tab?: string } | null)?.tab
+      if ((e.data as { type?: string } | null)?.type === 'open-tab' && TABS.some((x) => x.id === t)) pick(t as TabId)
+    }
+    navigator.serviceWorker.addEventListener('message', onMessage)
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage)
+  }, [])
+
   if (!paired) return <PairScreen onRetry={() => setPaired(getToken() !== null)} />
 
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-baseline gap-2 px-5 pt-5 pb-3" style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}>
         <h1 className="font-display text-2xl font-semibold">{TABS.find((t) => t.id === tab)?.label}</h1>
-        <span className="text-sm font-bold text-ink-faint">{DateTime.fromISO(today).toFormat('ccc, LLL d')}</span>
+        <span className="flex-1 text-sm font-bold text-ink-faint">{DateTime.fromISO(today).toFormat('ccc, LLL d')}</span>
+        <button
+          type="button"
+          onClick={() => setNotifications(true)}
+          aria-label="Notifications"
+          className="pressable self-center rounded-full bg-paper-deep px-2.5 py-1.5 text-lg leading-none"
+        >
+          🔔
+        </button>
       </header>
+      {notifications && <NotificationsSheet onClose={() => setNotifications(false)} />}
 
       <main ref={mainRef} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4" data-tab-main>
         {/* sign-offs (checklists, Video Games) prompt on every tab, not just Chores (which has its own) */}

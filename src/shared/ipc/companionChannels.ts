@@ -49,5 +49,10 @@ export const COMPANION_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'stars:balances',
   'stars:adjust',
   'events:getOccurrences',
-  'people:list'
+  'people:list',
+  'notify:publicKey',
+  'notify:get',
+  'notify:subscribe',
+  'notify:unsubscribe',
+  'notify:test'
 ])

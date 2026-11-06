@@ -25,6 +25,7 @@ import { createBackupService } from './backup/backupService'
 import { createNotesService } from './services/notesService'
 import { createCountdownsService } from './services/countdownsService'
 import { createTravelService } from './services/travelService'
+import { createNotifyService } from './services/notifyService'
 import { createPhonePhotos } from './companion/phonePhotos'
 import { applyPendingRestore } from './backup/backupFiles'
 import { createWeatherService } from './services/weatherService'
@@ -150,6 +151,21 @@ if (!gotLock) {
       events: eventsService,
       onChange: () => broadcast('push:dataChanged', { domain: 'travel' })
     })
+    // phone notifications; the sources read the services below, which exist before the first check
+    const notify = createNotifyService({
+      db,
+      settings,
+      deviceTz,
+      sources: {
+        names: () => new Map(services.people.list().map((p) => [p.id, p.name])),
+        chat: () => services.notes.timeline(20),
+        approvals: (today) => services.chores.pendingUnlocks(today),
+        leaves: () => services.travel.leaveTimes(),
+        timers: () => services.rewards.timers(),
+        weather: async () =>
+          ((await services.weather.get())?.alerts ?? []).filter((a) => a.kind === 'warning' || a.kind === 'watch')
+      }
+    })
     const services: Services = {
       settings,
       people: createPeopleService(db),
@@ -174,7 +190,8 @@ if (!gotLock) {
       camera: cameraService,
       birdnet: createBirdNetService(),
       companion,
-      travel
+      travel,
+      notify
     }
     channelTable = buildChannelTable(services)
     registerIpcHandlers(services, channelTable)
@@ -205,6 +222,13 @@ if (!gotLock) {
       travelSoon = setTimeout(() => void travel.refresh(), 5_000)
     })
     app.on('will-quit', () => travel.stop())
+    // phones: a new chat message or a chore waiting for approval goes out right away, the rest on a timer
+    notify.start()
+    onBroadcast((channel, payload) => {
+      const domain = (payload as { domain?: string } | null)?.domain
+      if (channel === 'push:dataChanged' && (domain === 'notes' || domain === 'chores')) void notify.check()
+    })
+    app.on('will-quit', () => notify.stop())
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow()

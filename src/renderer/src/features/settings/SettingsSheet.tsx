@@ -1037,14 +1037,21 @@ function CompanionSection() {
     setQr({ url, dataUrl })
   }
   // the same pairing link at another of this computer's addresses (e.g. Tailscale instead of home Wi-Fi)
-  const switchTo = (host: string): void => {
+  // (each address keeps its own scheme and port: http://ip:port/, or https://<name>.ts.net/)
+  const switchTo = (address: string): void => {
     if (!qr) return
     const next = new URL(qr.url)
-    next.hostname = host
+    const to = new URL(address)
+    next.protocol = to.protocol
+    next.host = to.host
     void showQr(next.toString())
   }
   const qrHost = qr ? new URL(qr.url).hostname : null
-  const otherHosts = (status?.urls ?? []).map((u) => new URL(u).hostname).filter((h) => h !== qrHost)
+  const otherAddresses = (status?.urls ?? []).filter((u) => new URL(u).hostname !== qrHost)
+  // the secure Tailscale address — the one phone notifications need
+  const secure = status?.secure
+  const secureUrl = secure?.host && secure.serving ? `https://${secure.host}/` : null
+  if (secureUrl && secure?.host !== qrHost) otherAddresses.unshift(secureUrl)
 
   const draftPort = portDraft === null ? companion.port : Number(portDraft)
   const portValid = Number.isInteger(draftPort) && draftPort >= 1024 && draftPort <= 65535
@@ -1119,19 +1126,28 @@ function CompanionSection() {
             {qrHost && (
               <p className="text-sm font-bold text-ink-soft" data-qr-network>
                 This code uses {networkLabel(qrHost)}
-                {networkLabel(qrHost) === 'Tailscale' && ' — works at home and away'}
+                {networkLabel(qrHost).startsWith('Tailscale') && ' — works at home and away'}
+                {qrHost.endsWith('.ts.net') && ', with phone notifications'}
               </p>
             )}
-            {otherHosts.length > 0 && (
+            {otherAddresses.length > 0 && (
               <div className="flex flex-wrap items-center justify-center gap-2" data-switch-address>
                 <span className="text-sm font-semibold text-ink-faint">Wrong network?</span>
-                {otherHosts.map((h) => (
-                  <BigButton key={h} variant="ghost" onClick={() => switchTo(h)}>
-                    Use {networkLabel(h)}
-                    <span className="ml-2 text-sm font-semibold opacity-60">{h}</span>
+                {otherAddresses.map((u) => (
+                  <BigButton key={u} variant="ghost" onClick={() => switchTo(u)}>
+                    Use {networkLabel(new URL(u).hostname)}
+                    <span className="ml-2 text-sm font-semibold opacity-60">{new URL(u).hostname}</span>
                   </BigButton>
                 ))}
               </div>
+            )}
+            {/* phone notifications need https: say how to get it when Tailscale is here but not serving */}
+            {secure?.host && !secure.serving && (
+              <p className="max-w-sm text-center text-sm font-semibold text-ink-soft" data-secure-hint>
+                For phone notifications, set up the secure address once on this PC
+                {secure.certs ? '' : ' (and turn on HTTPS certificates in the Tailscale admin console)'}:{' '}
+                <code className="font-bold">tailscale serve --bg {status?.port}</code>
+              </p>
             )}
             <p className="max-w-sm text-center text-sm font-semibold text-ink-soft">
               Then use the phone browser's “Add to Home Screen” to keep it like an app. Each scan pairs one
@@ -1147,6 +1163,7 @@ function CompanionSection() {
 
 /** Which network an address belongs to: Tailscale hands out 100.64.0.0/10. */
 function networkLabel(host: string): string {
+  if (host.endsWith('.ts.net')) return 'Tailscale (https)'
   const [a, b] = host.split('.').map(Number)
   if (a === 100 && b >= 64 && b <= 127) return 'Tailscale'
   if (a === 10 || a === 192 || (a === 172 && b >= 16 && b <= 31)) return 'home Wi-Fi'

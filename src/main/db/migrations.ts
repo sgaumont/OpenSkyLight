@@ -322,6 +322,19 @@ const MIGRATIONS: string[] = [
   // v10: chats can start on the tablet too (Notes became Chat)
   `
   ALTER TABLE notes ADD COLUMN from_kiosk INTEGER NOT NULL DEFAULT 0;
+  `,
+  // v11: phone notifications (Web Push) — one row per phone that turned them on, with which
+  // alerts it wants (JSON) and whose phone it is (so it isn't told about its own messages)
+  `
+  CREATE TABLE push_subscriptions (
+    id TEXT PRIMARY KEY,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    person_id TEXT,
+    prefs TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
   `
 ]
 

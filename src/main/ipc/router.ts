@@ -29,6 +29,7 @@ import type { CameraService } from '../services/cameraService'
 import type { BirdNetService } from '../services/birdnetService'
 import type { CompanionServer } from '../companion/companionServer'
 import type { TravelService } from '../services/travelService'
+import type { NotifyService } from '../services/notifyService'
 
 export interface Services {
   settings: SettingsService
@@ -55,6 +56,7 @@ export interface Services {
   birdnet: BirdNetService
   companion: CompanionServer
   travel: TravelService
+  notify: NotifyService
 }
 
 /**
@@ -355,6 +357,11 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('travel:leaveTimes', null, () => services.travel.leaveTimes())
   handle('travel:status', null, () => services.travel.status())
   handle('travel:setApiKey', s.travelKeySchema, (req) => services.travel.setApiKey(req.apiKey))
+  handle('notify:publicKey', null, () => services.notify.publicKey())
+  handle('notify:get', s.notifyEndpointSchema, (req) => services.notify.get(req.endpoint))
+  handle('notify:subscribe', s.notifySubscribeSchema, (req) => services.notify.subscribe(req))
+  handle('notify:unsubscribe', s.notifyEndpointSchema, (req) => services.notify.unsubscribe(req.endpoint))
+  handle('notify:test', s.notifyEndpointSchema, (req) => services.notify.test(req.endpoint))
   handle('travel:test', s.travelTestSchema, (req) => services.travel.test(req.destination))
   handle('notes:list', null, () => services.notes.list())
   handle('notes:add', s.noteAddSchema, (req) => services.notes.add(req))
@@ -393,7 +400,7 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('kiosk:previewScreensaver', null, () => services.kiosk.previewScreensaver())
   handle('kiosk:wake', null, () => services.kiosk.wake())
 
-  handle('companion:getStatus', null, () => services.companion.getStatus())
+  handle('companion:getStatus', null, async () => ({ ...services.companion.getStatus(), secure: await services.companion.secure() }))
   handle('companion:issueToken', null, () => services.companion.issueToken())
   handle('companion:unpairAll', null, () => services.companion.unpairAll())
 

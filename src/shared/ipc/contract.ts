@@ -1,4 +1,5 @@
 import type { WeatherAlert } from '../weatherAlerts'
+import type { PushPrefs } from '../pushAlerts'
 import type {
   AppSettings,
   BackupStatus,
@@ -150,6 +151,18 @@ export type IpcContract = {
   'travel:status': { req: void; res: TravelStatus }
   /** null removes the key */
   'travel:setApiKey': { req: { apiKey: string | null }; res: void }
+
+  /** phone notifications (Web Push): the kiosk's public key, for the phone to subscribe with */
+  'notify:publicKey': { req: void; res: { publicKey: string } }
+  /** this phone's settings, or null when it hasn't turned notifications on */
+  'notify:get': { req: { endpoint: string }; res: { personId: string | null; prefs: PushPrefs } | null }
+  /** turn on / update: whose phone it is and which alerts it wants */
+  'notify:subscribe': {
+    req: { endpoint: string; p256dh: string; auth: string; personId: string | null; prefs: PushPrefs }
+    res: void
+  }
+  'notify:unsubscribe': { req: { endpoint: string }; res: void }
+  'notify:test': { req: { endpoint: string }; res: { delivered: boolean } }
   /** one live lookup from home, to check the key and the address */
   'travel:test': { req: { destination: string }; res: { minutes: number | null } }
 
@@ -246,7 +259,15 @@ export type IpcContract = {
 
   'companion:getStatus': {
     req: void
-    res: { running: boolean; port: number; urls: string[]; pairedCount: number; lastError: string | null }
+    res: {
+      running: boolean
+      port: number
+      urls: string[]
+      pairedCount: number
+      lastError: string | null
+      /** the secure Tailscale address (https://<host>/ via `tailscale serve`) that phone notifications need */
+      secure: { host: string | null; certs: boolean; serving: boolean }
+    }
   }
   /** Mints a fresh pairing token (parent-gated); the token only ever lives in the URL fragment. */
   'companion:issueToken': { req: void; res: { url: string } }

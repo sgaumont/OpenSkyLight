@@ -270,6 +270,18 @@ export const noteReplies = sqliteTable(
   (t) => [index('idx_note_replies_note').on(t.noteId, t.createdAt)]
 )
 
+/** A phone that gets notifications (Web Push): its push endpoint and keys, and which alerts it wants. */
+export const pushSubscriptions = sqliteTable('push_subscriptions', {
+  id: text('id').primaryKey(),
+  endpoint: text('endpoint').notNull().unique(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  personId: text('person_id'),
+  /** JSON PushPrefs */
+  prefs: text('prefs').notNull(),
+  createdAt: text('created_at').notNull()
+})
+
 /** A date the family is counting down to ("5 days until Christmas"). */
 export const countdowns = sqliteTable('countdowns', {
   id: text('id').primaryKey(),
