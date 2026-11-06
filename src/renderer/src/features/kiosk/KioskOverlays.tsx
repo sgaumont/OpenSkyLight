@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
@@ -9,7 +9,7 @@ import { useCalendarData } from '../calendar/useCalendarData'
 import { agendaRange } from '@shared/dates'
 import { withoutEnded } from '@shared/occurrences'
 import { weatherIcon } from '../weather/WeatherHeader'
-import { ZONE } from '../../stores/uiStore'
+import { useUi, ZONE } from '../../stores/uiStore'
 import { useKioskState } from '../../stores/kioskStore'
 import { guardInput } from '@shared/inputGuard'
 import { ShuffleDeck } from '@shared/shuffleDeck'
@@ -248,6 +248,14 @@ export function KioskOverlays() {
   useEffect(() => {
     setCovered(covered)
   }, [covered, setCovered])
+  // back from the screensaver or sleep: Week / Month (and Day) show today again, not wherever
+  // someone left them (OPE-19)
+  const goToday = useUi((s) => s.goToday)
+  const wasCovered = useRef(false)
+  useEffect(() => {
+    if (wasCovered.current && !covered) goToday()
+    wasCovered.current = covered
+  }, [covered, goToday])
   useEffect(() => {
     setSleepingState(sleeping)
   }, [sleeping, setSleepingState])

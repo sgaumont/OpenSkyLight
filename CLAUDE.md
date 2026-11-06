@@ -539,6 +539,12 @@ Add unit tests where sensible.
   number boxes line up.
 - v0.8.133: what-to-wear emoji moved on the regular screen: off the Home weather tile badge, into the header's
   WeatherButton right of the forecast (white disc — Windows' dark-grey 🧥 vanishes on the dark theme). Screensaver unchanged.
+- v0.8.134: phone app — swipe left or right on the page to change tabs (Linear OPE-18). `companion/src/lib/useTabSwipe.ts`
+  uses the shared `swipeStep` (60px+, mostly sideways, quick). It ignores inputs and textareas, `[data-no-swipe]` and
+  anything that scrolls sideways, and doesn't wrap around. The new tab slides in from that side
+  (`animate-slide-from-right/left`); taps keep `animate-rise`. Kiosk (Linear OPE-19): when the screensaver or the
+  sleep screen goes away, `goToday()` puts Week / Month / Day back on today (KioskOverlays, the `covered` true→false
+  edge).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

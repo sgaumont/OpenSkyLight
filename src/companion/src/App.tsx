@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useTabSwipe } from './lib/useTabSwipe'
 import { GameIcon } from './components/ui'
 import { DateTime } from 'luxon'
 import { getToken, setUnauthorizedHandler } from './api/client'
@@ -25,9 +26,27 @@ const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
 export default function App() {
   const [paired, setPaired] = useState(() => getToken() !== null)
   const [tab, setTab] = useState<TabId>('chores')
+  // which way the last change went, so the new tab slides in from that side (taps just rise)
+  const [slide, setSlide] = useState<'from-right' | 'from-left' | null>(null)
+  const mainRef = useRef<HTMLElement>(null)
+  const pick = (id: TabId): void => {
+    setSlide(null)
+    setTab(id)
+  }
+  const tabRef = useRef(tab)
+  tabRef.current = tab
+  const step = useCallback((dir: 1 | -1): void => {
+    // no wrap-around: a swipe past the first or last tab does nothing
+    const i = TABS.findIndex((t) => t.id === tabRef.current) + dir
+    if (i < 0 || i >= TABS.length) return
+    setSlide(dir === 1 ? 'from-right' : 'from-left')
+    setTab(TABS[i].id)
+  }, [])
   const today = useToday()
   // kiosk changes (a new note, a reply, a ticked chore) arrive instantly
   useLiveUpdates(paired)
+  // swipe left / right anywhere on the page to change tabs (OPE-18)
+  useTabSwipe(mainRef, step, paired)
 
   useEffect(() => {
     // any 401 (unpaired on the kiosk, evicted storage) drops back to pairing
@@ -43,10 +62,10 @@ export default function App() {
         <span className="text-sm font-bold text-ink-faint">{DateTime.fromISO(today).toFormat('ccc, LLL d')}</span>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+      <main ref={mainRef} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4" data-tab-main>
         {/* sign-offs (checklists, Video Games) prompt on every tab, not just Chores (which has its own) */}
         {tab !== 'chores' && <ApprovalPrompt today={today} />}
-        <div key={tab} className="animate-rise">
+        <div key={tab} className={slide === 'from-right' ? 'animate-slide-from-right' : slide === 'from-left' ? 'animate-slide-from-left' : 'animate-rise'}>
           {tab === 'lists' && <ListsPage />}
           {tab === 'meals' && <MealsPage />}
           {tab === 'chores' && <ChoresPage />}
@@ -63,7 +82,8 @@ export default function App() {
           <button
             key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => pick(t.id)}
+            aria-current={tab === t.id ? 'page' : undefined}
             className={`pressable flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs font-extrabold ${
               tab === t.id ? 'text-ember' : 'text-ink-faint'
             }`}
