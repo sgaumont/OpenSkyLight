@@ -537,6 +537,8 @@ Add unit tests where sensible.
   there because Windows draws 🧥 dark grey.
 - v0.8.132: What to wear settings — the shorts and pants rows share one grid (`data-clothing-rows`), so the two
   number boxes line up.
+- v0.8.133: what-to-wear emoji moved on the regular screen: off the Home weather tile badge, into the header's
+  WeatherButton right of the forecast (white disc — Windows' dark-grey 🧥 vanishes on the dark theme). Screensaver unchanged.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

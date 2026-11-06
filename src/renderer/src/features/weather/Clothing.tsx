@@ -62,7 +62,7 @@ export function ClothingSection() {
       <div className="flex flex-col gap-3 rounded-2xl bg-paper-deep/50 p-4">
         <div className="flex items-center gap-3">
           <span className="flex-1 text-base font-semibold text-ink-soft">
-            Show shorts, pants or a jacket from today's forecast high, on the screensaver and the weather tile
+            Show shorts, pants or a jacket from today's forecast high, on the screensaver and in the header beside the forecast
           </span>
           <Toggle checked={c.enabled} onChange={(enabled) => mutation.mutate({ clothing: { ...c, enabled } })} label="What to wear" />
         </div>

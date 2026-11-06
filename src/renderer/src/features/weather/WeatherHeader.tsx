@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import { useWeather } from '../../api/hooks'
 import { Dialog } from '../../components/ui'
 import { AlertDetails, alertColours } from './WeatherAlerts'
+import { ClothingEmoji } from './Clothing'
 import {
   AlertIcon,
   CloudIcon,
@@ -85,6 +86,9 @@ export function WeatherButton() {
             })}
           </span>
         )}
+        {/* today's shorts / pants / jacket, right of the forecast (when that's on); a light disc
+            because Windows draws the jacket dark grey, lost on the dark theme otherwise */}
+        <ClothingEmoji className="ml-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-[2.1rem] leading-none shadow-card max-[1300px]:h-11 max-[1300px]:w-11 max-[1300px]:text-[1.6rem] max-[1150px]:h-9 max-[1150px]:w-9 max-[1150px]:text-[1.3rem]" />
       </button>
 
       <Dialog open={open} onClose={() => setOpen(false)} title={weather.label}>
