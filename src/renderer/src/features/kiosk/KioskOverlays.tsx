@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
 import { useCountdowns, useGameTimers, useLeaveTimes, useSettings, useWeather } from '../../api/hooks'
+import { ClothingEmoji } from '../weather/Clothing'
 import { countdownLabel } from '@shared/countdown'
 import { useCalendarData } from '../calendar/useCalendarData'
 import { agendaRange } from '@shared/dates'
@@ -90,6 +91,8 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
             {timeFormat === '24h' ? now.toFormat('HH:mm') : now.toFormat('h:mm')}
           </div>
           <ScreensaverWeather />
+          {/* a light disc: Windows draws the jacket dark grey, lost on a dark photo otherwise */}
+          <ClothingEmoji className="flex h-[78px] w-[78px] items-center justify-center rounded-full bg-white/85 text-[48px] leading-none shadow-lg" />
         </div>
         <div className="mt-1.5 text-4xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
       </div>

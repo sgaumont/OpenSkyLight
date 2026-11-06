@@ -50,6 +50,7 @@ import { GameTimeLog } from '../chores/GameTimeLog'
 import { CountdownsSection } from '../countdowns/CountdownsSection'
 import { TravelSection } from '../travel/TravelSection'
 import { ArriveOffsetChip } from '../calendar/ArriveOffset'
+import { ClothingSection } from '../weather/Clothing'
 import { PinDialog } from '../../components/PinDialog'
 import { TimeField } from '../../components/DateTimePickers'
 import { ipcInvoke } from '../../api/client'
@@ -1485,6 +1486,7 @@ function GeneralTab() {
       </div>
       <TextSizeSection />
       <WeatherSection />
+      <ClothingSection />
       <ScreensaverSection />
       <SleepSection />
       <CountdownsSection />

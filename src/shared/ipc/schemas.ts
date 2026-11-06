@@ -165,6 +165,10 @@ export const settingsPatchSchema = z.object({
       companion: z.object({ enabled: z.boolean(), port: z.number().int().min(1024).max(65535) }).optional(),
       travel: z
         .object({ enabled: z.boolean(), homeAddress: z.string().trim().max(200), bufferMinutes: z.number().int().min(0).max(60) })
+        .optional(),
+      clothing: z
+        .object({ enabled: z.boolean(), shortsMinC: z.number().min(-60).max(60), pantsMinC: z.number().min(-60).max(60) })
+        .refine((c) => c.shortsMinC > c.pantsMinC, 'Shorts need a higher minimum than pants')
         .optional()
     })
     .strict()

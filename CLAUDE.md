@@ -529,6 +529,12 @@ Add unit tests where sensible.
   chats from the tablet (`notes:kioskAdd`, not a companion channel). DB v10 adds `notes.from_kiosk`. Rules live in
   `shared/chat.ts`: `popsUp` (tablet-started chats pop up on the tablet only once a phone answers) and `waiting`
   (the last message isn't the tablet's).
+- v0.8.131: "What to wear" (Linear OPE-20). Setting `clothing: { enabled, shortsMinC: 20, pantsMinC: 10 }`, off by
+  default. Minimums are stored in °C and shown and edited in the kiosk's unit (Settings → General → 👕 What to wear;
+  shorts must stay above pants). `shared/clothing.ts` `pickClothing(high, unit, s)` picks the highest minimum today's
+  forecast high meets (at or above) → 🩳 / 👖 / 🧥 (jacket below pants). Shown on the screensaver right of the weather
+  (78px white disc) and as a white-disc badge on today's icon in the Home weather tile (`ClothingEmoji`). The disc is
+  there because Windows draws 🧥 dark grey.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

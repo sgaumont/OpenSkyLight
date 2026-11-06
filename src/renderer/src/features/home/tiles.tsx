@@ -22,6 +22,7 @@ import {
   useSettings,
   useWeather
 } from '../../api/hooks'
+import { ClothingEmoji } from '../weather/Clothing'
 import { useCalendarData } from '../calendar/useCalendarData'
 import { LeaveBy } from '../calendar/EventCard'
 import { ArriveBy } from '../calendar/ArriveOffset'
@@ -275,9 +276,19 @@ export function WeatherTile({ tile }: TileProps) {
             const label = i === 0 ? 'Today' : DateTime.fromISO(d.date).toFormat('ccc')
             const rainy = d.precipProb !== null && d.precipProb >= 20
             const labelCls = 'font-extrabold text-ink-faint uppercase leading-none'
-            const icon = (size: string) => (
-              <Icon className="shrink-0 text-ember-deep" style={{ width: size, height: size }} />
-            )
+            // today's icon wears a small shorts / pants / jacket badge (when that's on)
+            const icon = (size: string) =>
+              i === 0 ? (
+                <span className="relative shrink-0" style={{ width: size, height: size }}>
+                  <Icon className="text-ember-deep" style={{ width: size, height: size }} />
+                  <ClothingEmoji
+                    className="absolute -right-[35%] -bottom-[25%] flex items-center justify-center rounded-full bg-white leading-none shadow-card"
+                    style={{ fontSize: `calc(${size} * 0.48)`, width: `calc(${size} * 0.7)`, height: `calc(${size} * 0.7)` }}
+                  />
+                </span>
+              ) : (
+                <Icon className="shrink-0 text-ember-deep" style={{ width: size, height: size }} />
+              )
 
             if (layout === 'stacked') {
               return (
