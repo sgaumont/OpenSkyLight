@@ -342,6 +342,15 @@ const MIGRATIONS: string[] = [
   ALTER TABLE notes ADD COLUMN ring INTEGER NOT NULL DEFAULT 1;
   ALTER TABLE notes ADD COLUMN device_name TEXT;
   ALTER TABLE notes ADD COLUMN sender_endpoint TEXT;
+  `,
+  // v13: rewards are static (a fixed cost, a parent grants it) or dynamic (the kid picks how many
+  // stars, 1 a minute, and a timer runs: minutes + bonus). Video Game Time, until now built in,
+  // becomes a dynamic reward with its 3 setup minutes as bonus time, first in the Shop.
+  `
+  ALTER TABLE rewards ADD COLUMN kind TEXT NOT NULL DEFAULT 'static';
+  ALTER TABLE rewards ADD COLUMN bonus_minutes INTEGER NOT NULL DEFAULT 0;
+  INSERT INTO rewards (id, title, icon, cost_stars, active, sort_order, kind, bonus_minutes)
+    VALUES ('video-game-time', 'Video Game Time', '🎮', 1, 1, -1, 'dynamic', 3);
   `
 ]
 

@@ -197,7 +197,7 @@ export function useStopGameTimer() {
 
 /** A kid spends all their controllers on game time (balance → 0). */
 export function useUseTime() {
-  return useInvalidatingMutation((input: { personId: string; stars?: number }) => ipcInvoke('stars:useTime', input), [['balances'], ['gameTimers']])
+  return useInvalidatingMutation((input: { personId: string; stars?: number; rewardId?: string }) => ipcInvoke('stars:useTime', input), [['balances'], ['gameTimers']])
 }
 
 export function useChecklists() {
@@ -283,12 +283,11 @@ export function useRedemptions() {
 export function useRewardMutations() {
   return {
     create: useInvalidatingMutation(
-      (input: { title: string; costStars: number }) => ipcInvoke('rewards:create', input),
+      (input: Parameters<typeof ipcInvoke<'rewards:create'>>[1]) => ipcInvoke('rewards:create', input),
       [['rewards']]
     ),
     update: useInvalidatingMutation(
-      (input: { id: string; title?: string; costStars?: number; active?: boolean }) =>
-        ipcInvoke('rewards:update', input),
+      (input: Parameters<typeof ipcInvoke<'rewards:update'>>[1]) => ipcInvoke('rewards:update', input),
       [['rewards']]
     ),
     remove: useInvalidatingMutation((input: { id: string }) => ipcInvoke('rewards:delete', input), [['rewards']]),

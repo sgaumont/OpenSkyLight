@@ -3,6 +3,7 @@ import type { GameTimerDto } from '@shared/types'
 import { formatDuration } from '@shared/timer'
 import { useGameTimers, usePeople, useStopGameTimer } from '../../api/hooks'
 import { StarIcon } from '../../components/icons'
+import { timerTitle } from '@shared/gameTime'
 import { startAlarm, stopAlarm } from '../../lib/alarm'
 import { initials, textOn } from '../../lib/format'
 import { useKioskState } from '../../stores/kioskStore'
@@ -67,8 +68,13 @@ export function GameTimers() {
                     {initials(p.name)}
                   </span>
                 )}
-                <span className="text-lg font-bold">
-                  <StarIcon /> {p?.name ?? 'Game time'}
+                <span className="flex flex-col leading-tight">
+                  <span className="text-lg font-bold">
+                    <StarIcon /> {p?.name ?? 'Timer'}
+                  </span>
+                  <span className="text-xs font-bold text-paper/60" data-timer-title>
+                    {timerTitle(t)}
+                  </span>
                 </span>
                 <span className="min-w-20 text-center font-display text-3xl tabular-nums" data-left>
                   {formatDuration(left(t))}
@@ -102,14 +108,14 @@ export function GameTimers() {
         >
           <div
             role="alertdialog"
-            aria-label="Game time is up"
+            aria-label={`${timerTitle(up)} is up`}
             className="animate-pop flex w-full max-w-xl flex-col items-center gap-6 rounded-3xl bg-card px-10 py-9 text-center shadow-float ring-2 ring-ember"
           >
             <span className="text-6xl text-ember">
               <StarIcon />
             </span>
             <p className="font-display text-4xl leading-tight">
-              {upPerson ? `${upPerson.name}'s` : 'Your'} game time is up!
+              {upPerson ? `${upPerson.name}'s` : 'Your'} {timerTitle(up)} is up!
             </p>
             <button
               type="button"

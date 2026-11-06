@@ -248,21 +248,31 @@ export const checklistUpdateSchema = z.object({ id, ...checklistFields })
 export const unlockApproveSchema = z.object({ checklistId: id, personId: id, date: isoDate, round: z.number().int().min(1).max(99).optional() })
 export const videoGamesStarsSchema = z.object({ stars: z.number().int().min(0).max(999) })
 
+const rewardKind = z.enum(['static', 'dynamic'])
+const bonusMinutes = z.number().int().min(0).max(240)
+const rewardIcon = z.string().trim().max(16).nullable()
+
 export const rewardCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),
-  costStars: z.number().int().min(1).max(9999)
+  costStars: z.number().int().min(1).max(9999),
+  kind: rewardKind.optional(),
+  bonusMinutes: bonusMinutes.optional(),
+  icon: rewardIcon.optional()
 })
 
 export const rewardUpdateSchema = z.object({
   id,
   title: z.string().trim().min(1).max(120).optional(),
   costStars: z.number().int().min(1).max(9999).optional(),
-  active: z.boolean().optional()
+  active: z.boolean().optional(),
+  kind: rewardKind.optional(),
+  bonusMinutes: bonusMinutes.optional(),
+  icon: rewardIcon.optional()
 })
 
 export const redeemSchema = z.object({ rewardId: id, personId: id })
 export const starsAdjustSchema = z.object({ personId: id, delta: z.number().int().min(-10_000).max(10_000) })
-export const useTimeSchema = z.object({ personId: id, stars: z.number().int().min(1).max(100_000).optional() })
+export const useTimeSchema = z.object({ personId: id, stars: z.number().int().min(1).max(100_000).optional(), rewardId: id.optional() })
 export const stopTimerSchema = z.object({ id })
 export const gameTimeLogSchema = z.object({ personId: id.nullable(), limit: z.number().int().min(1).max(5000) })
 export const grantSchema = z.object({ redemptionId: id })

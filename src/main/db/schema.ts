@@ -184,6 +184,10 @@ export const rewards = sqliteTable('rewards', {
   icon: text('icon'),
   costStars: integer('cost_stars').notNull(),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  /** static: a fixed cost, a parent grants it; dynamic: the kid picks how many stars (1 a minute) and a timer runs */
+  kind: text('kind', { enum: ['static', 'dynamic'] }).notNull().default('static'),
+  /** dynamic rewards: minutes added to every timer (getting the console going) */
+  bonusMinutes: integer('bonus_minutes').notNull().default(0),
   sortOrder: integer('sort_order').notNull().default(0),
   deletedAt: text('deleted_at')
 })

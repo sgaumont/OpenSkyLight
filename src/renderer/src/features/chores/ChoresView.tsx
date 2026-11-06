@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { DateTime } from 'luxon'
 import type { DayChecklistDto, DayChoreDto, PersonDto, UnlockState } from '@shared/types'
 import { useBalances, useChecklistsDay, useChoresDay, usePeople } from '../../api/hooks'
@@ -6,7 +5,6 @@ import { useUi, ZONE } from '../../stores/uiStore'
 import { initials, isToday, textOn } from '../../lib/format'
 import { CheckIcon, StarIcon, MoonIcon, SunIcon } from '../../components/icons'
 import { BigButton } from '../../components/ui'
-import { RewardsDialog } from './RewardsDialog'
 import { Avatar, useChoreClaim } from './ClaimChore'
 import { setProgressLabel } from '@shared/setProgress'
 import { claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
@@ -246,7 +244,7 @@ export function ChoresView() {
   const { data: chores = [] } = useChoresDay(focusedDate)
   const { data: checklists = [] } = useChecklistsDay(focusedDate)
   const { tap, toggle, dialog } = useChoreClaim(focusedDate)
-  const [rewardsOpen, setRewardsOpen] = useState(false)
+  const setView = useUi((s) => s.setView)
   const day = DateTime.fromISO(focusedDate, { zone: ZONE })
   // checking off chores for other days is allowed only for today and the past
   const canCheck = focusedDate <= DateTime.now().setZone(ZONE).toISODate()!
@@ -273,8 +271,9 @@ export function ChoresView() {
             </div>
           )}
         </div>
-        <BigButton variant="ghost" onClick={() => setRewardsOpen(true)}>
-          <StarIcon /> Rewards
+        {/* the rewards are bought in the Shop */}
+        <BigButton variant="ghost" onClick={() => setView('shop')}>
+          <StarIcon /> Shop
         </BigButton>
       </div>
 
@@ -333,7 +332,6 @@ export function ChoresView() {
       )}
 
       {dialog}
-      <RewardsDialog open={rewardsOpen} onClose={() => setRewardsOpen(false)} />
     </div>
   )
 }

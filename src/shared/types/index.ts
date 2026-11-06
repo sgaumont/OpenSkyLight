@@ -366,6 +366,12 @@ export interface GameTimerDto {
   minutes: number
   /** controllers spent on it — the most a stop-early refund gives back (the setup minutes were free) */
   points?: number
+  /** the dynamic reward it was bought with (absent on timers from before rewards had kinds: Video Game Time) */
+  rewardId?: string
+  /** that reward's name when it started, for the pill and "… is up" */
+  title?: string
+  /** its bonus minutes (absent: the old fixed 3 setup minutes) */
+  bonusMinutes?: number
 }
 
 /** One line of the game time log: a gain (+), loss or use (−), with the kid's balance right after. */
@@ -384,12 +390,22 @@ export interface StarBalanceDto {
   balance: number
 }
 
+export type RewardKind = 'static' | 'dynamic'
+
+/** The Video Game Time reward the database starts with (it was built into the Shop before rewards had kinds). */
+export const VIDEO_GAME_REWARD_ID = 'video-game-time'
+
 export interface RewardDto {
   id: string
   title: string
   icon: string | null
+  /** static: what it costs; dynamic: unused (the kid picks) */
   costStars: number
   active: boolean
+  /** static: a fixed cost, a parent grants it; dynamic: the kid picks how many stars (1 a minute) and a timer runs */
+  kind: RewardKind
+  /** dynamic: minutes added to the timer on top of the stars spent */
+  bonusMinutes: number
 }
 
 export interface RedemptionDto {

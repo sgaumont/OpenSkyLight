@@ -39,7 +39,7 @@ describe('push alert rules', () => {
         timers: [{ id: 't1', personId: 'ava', endsAt: ago(1) }]
       })
     )
-    expect(alerts.map((a) => a.title)).toEqual(['🚗 Time to leave for Hockey', "⏳ Ava's game time is up"])
+    expect(alerts.map((a) => a.title)).toEqual(['🚗 Time to leave for Hockey', "⏳ Ava's Video Game Time is up"])
     expect(alerts[0].body).toBe('12 min drive to Arena')
   })
 

@@ -4,7 +4,7 @@ import type { AppDb } from '../db/client'
 import { choreCompletions, chores, people, rewardRedemptions, rewards, settings, starLedger, videoGameRounds } from '../db/schema'
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
-import type { GameTimeLogEntry, GameTimerDto, RedemptionDto, RewardDto } from '@shared/types'
+import { VIDEO_GAME_REWARD_ID, type GameTimeLogEntry, type GameTimerDto, type RedemptionDto, type RewardDto, type RewardKind } from '@shared/types'
 import { SETUP_MINUTES, gameMinutes, minutesLabel, refundPoints } from '@shared/gameTime'
 import type { ChoresService } from './choresService'
 import { invalid, notFound } from './errors'
@@ -39,7 +39,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     const list = timers()
     const timer = list.find((t) => t.id === id)
     const now = DateTime.utc()
-    const spent = timer ? (timer.points ?? Math.max(0, timer.minutes - SETUP_MINUTES)) : 0
+    const spent = timer ? (timer.points ?? Math.max(0, timer.minutes - (timer.bonusMinutes ?? SETUP_MINUTES))) : 0
     const refunded = timer ? refundPoints(DateTime.fromISO(timer.endsAt).toMillis() - now.toMillis(), spent) : 0
     db.transaction(() => {
       if (timer && refunded > 0) {
@@ -51,7 +51,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
             reason: 'redemption',
             refId: timer.id,
             createdAt: isoUtc(now),
-            note: `Game time stopped early (${minutesLabel(refunded)} back)`
+            note: `${timer.title && timer.rewardId !== VIDEO_GAME_REWARD_ID ? timer.title : 'Game time'} stopped early (${minutesLabel(refunded)} back)`
           })
           .run()
       }
@@ -61,7 +61,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
   }
 
   function toDto(row: typeof rewards.$inferSelect): RewardDto {
-    return { id: row.id, title: row.title, icon: row.icon, costStars: row.costStars, active: row.active }
+    return { id: row.id, title: row.title, icon: row.icon, costStars: row.costStars, active: row.active, kind: row.kind, bonusMinutes: row.bonusMinutes }
   }
 
   function list(): RewardDto[] {
@@ -69,23 +69,43 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
       .select()
       .from(rewards)
       .where(and(isNull(rewards.deletedAt), eq(rewards.active, true)))
-      .orderBy(asc(rewards.costStars), asc(rewards.sortOrder))
+      // Video Game Time first (sort_order -1), then in the order they were added (ids are time-ordered)
+      .orderBy(asc(rewards.sortOrder), asc(rewards.id))
       .all()
       .map(toDto)
   }
 
-  function create(input: { title: string; costStars: number }): RewardDto {
+  type RewardInput = { title: string; costStars: number; kind?: RewardKind; bonusMinutes?: number; icon?: string | null }
+
+  function create(input: RewardInput): RewardDto {
     const id = uuidv7()
-    db.insert(rewards).values({ id, title: input.title, costStars: input.costStars, active: true }).run()
+    const kind = input.kind ?? 'static'
+    db.insert(rewards)
+      .values({
+        id,
+        title: input.title,
+        icon: input.icon ?? null,
+        costStars: kind === 'dynamic' ? 1 : input.costStars,
+        active: true,
+        kind,
+        bonusMinutes: kind === 'dynamic' ? (input.bonusMinutes ?? 0) : 0
+      })
+      .run()
     const [row] = db.select().from(rewards).where(eq(rewards.id, id)).all()
     return toDto(row)
   }
 
-  function update(input: { id: string; title?: string; costStars?: number; active?: boolean }): RewardDto {
+  function update(input: { id: string } & Partial<RewardInput> & { active?: boolean }): RewardDto {
     const patch: Partial<typeof rewards.$inferInsert> = {}
     if (input.title !== undefined) patch.title = input.title
     if (input.costStars !== undefined) patch.costStars = input.costStars
     if (input.active !== undefined) patch.active = input.active
+    if (input.kind !== undefined) patch.kind = input.kind
+    if (input.bonusMinutes !== undefined) patch.bonusMinutes = input.bonusMinutes
+    if (input.icon !== undefined) patch.icon = input.icon
+    // a static reward has no bonus time; a dynamic one's cost is picked by the kid
+    if (input.kind === 'static') patch.bonusMinutes = 0
+    if (input.kind === 'dynamic') patch.costStars = 1
     const result = db
       .update(rewards)
       .set(patch)
@@ -123,6 +143,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
   function redeem(rewardId: string, personId: string): RedemptionDto {
     const [reward] = db.select().from(rewards).where(and(eq(rewards.id, rewardId), isNull(rewards.deletedAt))).all()
     if (!reward) throw notFound('Reward')
+    if (reward.kind === 'dynamic') throw invalid(`${reward.title} is bought by the minute`)
     const balance = choresService.balanceOf(personId)
     if (balance < reward.costStars) {
       throw invalid(`Not enough game time yet — ${reward.costStars - balance} more to go!`)
@@ -190,28 +211,52 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
   }
 
   /**
-   * A kid spends some of their saved-up stars (all of them when `stars` is left out) on game time:
-   * that many come off their balance and a game timer starts (play minutes + setup). Only ever
-   * lowers a balance, so it needs no parent PIN. A kid already playing gets the new minutes added
-   * to their running timer. Asking for more than they have spends what they have.
+   * A kid spends some of their saved-up stars (all of them when `stars` is left out) on a dynamic
+   * reward (Video Game Time when none is named): that many come off their balance and a timer
+   * starts — 1 minute a star plus the reward's bonus minutes. Only ever lowers a balance, so it
+   * needs no parent PIN. A kid already on that reward gets the new minutes added to their running
+   * timer. Asking for more than they have spends what they have.
    */
-  function useTime(personId: string, stars?: number): { used: number; minutes: number; timer: GameTimerDto | null } {
+  function useTime(
+    personId: string,
+    stars?: number,
+    rewardId: string = VIDEO_GAME_REWARD_ID
+  ): { used: number; minutes: number; timer: GameTimerDto | null } {
     const [person] = db.select().from(people).where(and(eq(people.id, personId), isNull(people.deletedAt))).all()
     if (!person) throw notFound('Person')
+    const [reward] = db.select().from(rewards).where(and(eq(rewards.id, rewardId), isNull(rewards.deletedAt))).all()
+    if (!reward) throw notFound('Reward')
+    if (reward.kind !== 'dynamic') throw invalid(`${reward.title} has a set price`)
     const balance = Math.min(choresService.balanceOf(personId), stars ?? Infinity)
     if (balance <= 0) return { used: 0, minutes: 0, timer: null }
-    const { total } = gameMinutes(balance)
+    const bonus = reward.bonusMinutes
+    const total = gameMinutes(balance, bonus).total
     const now = DateTime.utc()
     const list = timers()
-    const running = list.find((t) => t.personId === personId && DateTime.fromISO(t.endsAt) > now)
+    // timers from before rewards had kinds were all Video Game Time
+    const sameReward = (t: GameTimerDto): boolean => t.personId === personId && (t.rewardId ?? VIDEO_GAME_REWARD_ID) === rewardId
+    const running = list.find((t) => sameReward(t) && DateTime.fromISO(t.endsAt) > now)
     const timer: GameTimerDto = running
       ? {
           ...running,
+          rewardId,
+          title: reward.title,
           minutes: running.minutes + total,
-          points: (running.points ?? Math.max(0, running.minutes - SETUP_MINUTES)) + balance,
+          points: (running.points ?? Math.max(0, running.minutes - (running.bonusMinutes ?? SETUP_MINUTES))) + balance,
+          bonusMinutes: (running.bonusMinutes ?? SETUP_MINUTES) + bonus,
           endsAt: isoUtc(DateTime.fromISO(running.endsAt).plus({ minutes: total }))
         }
-      : { id: uuidv7(), personId, startedAt: isoUtc(now), endsAt: isoUtc(now.plus({ minutes: total })), minutes: total, points: balance }
+      : {
+          id: uuidv7(),
+          personId,
+          startedAt: isoUtc(now),
+          endsAt: isoUtc(now.plus({ minutes: total })),
+          minutes: total,
+          points: balance,
+          rewardId,
+          title: reward.title,
+          bonusMinutes: bonus
+        }
     db.transaction(() => {
       db.insert(starLedger)
         .values({
@@ -221,11 +266,11 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
           reason: 'redemption',
           refId: timer.id,
           createdAt: isoUtc(now),
-          note: `Used game time (${minutesLabel(total)})`
+          note: `Used ${reward.id === VIDEO_GAME_REWARD_ID ? 'game time' : reward.title} (${minutesLabel(total)})`
         })
         .run()
-      // a finished, unacknowledged timer of theirs makes way for the new one
-      putSetting(KEY_TIMERS, JSON.stringify([...list.filter((t) => t.personId !== personId), timer]))
+      // a finished, unacknowledged timer of theirs for this reward makes way for the new one
+      putSetting(KEY_TIMERS, JSON.stringify([...list.filter((t) => !sameReward(t)), timer]))
     })
     return { used: balance, minutes: total, timer }
   }

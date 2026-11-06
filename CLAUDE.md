@@ -622,6 +622,10 @@ Add unit tests where sensible.
 - v0.8.159: Shop screen subheader "💵 Kid's Shop 💵" (top left, above the first item; `data-shop-title`).
 - v0.8.160: home Today tile's meal strip drops meals that are over (`mealsAhead`, same as the screensaver:
   breakfast 9 am, lunch 1 pm, dinner 6 pm; snack stays); the meals editor still gets the whole day.
+- v0.8.161: Shop is built from Settings → Chores rewards. DB v13: rewards.kind ('static' | 'dynamic') + bonus_minutes;
+  seeds Video Game Time (id `video-game-time`, dynamic, 3 bonus, 🎮, sort_order -1). Static: fixed cost, `rewards:redeem`,
+  parent Grants. Dynamic: − N + UseTimeDialog, `stars:useTime` {rewardId}, 1 star = 1 min + bonus; one timer per kid
+  per reward; GameTimerDto carries rewardId/title/bonusMinutes (`timerTitle`). Chores 'Rewards' button → Shop; RewardsDialog gone.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

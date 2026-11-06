@@ -7,7 +7,8 @@ import type {
   ChoreMode,
   PersonDto,
   PersonRole,
-  RewardDto
+  RewardDto,
+  RewardKind
 } from '@shared/types'
 import { DEFAULT_SETTINGS, PERSON_COLORS } from '@shared/types'
 import {
@@ -542,6 +543,9 @@ function VideoGamesStarsNote() {
   )
 }
 
+/** Icons a reward can have in the Shop (none = a star). */
+const REWARD_ICONS: (string | null)[] = [null, '🎮', '📺', '📱', '🍬', '🍦', '🍕', '🎬', '🧸', '🎨', '🚲', '💵']
+
 /** The Video Games set reward: controllers for each finished set (each time through, if repeatable). */
 function VideoGamesReward() {
   const { data } = useVideoGamesStars()
@@ -607,6 +611,17 @@ function ChoresTab() {
   const [editingReward, setEditingReward] = useState<RewardDto | 'new' | null>(null)
   const [rewardTitle, setRewardTitle] = useState('')
   const [rewardCost, setRewardCost] = useState(10)
+  const [rewardKind, setRewardKind] = useState<RewardKind>('static')
+  const [rewardBonus, setRewardBonus] = useState(0)
+  const [rewardIcon, setRewardIcon] = useState<string | null>(null)
+  const openRewardEditor = (r: RewardDto | 'new'): void => {
+    setEditingReward(r)
+    setRewardTitle(r === 'new' ? '' : r.title)
+    setRewardCost(r === 'new' || r.kind === 'dynamic' ? 10 : r.costStars)
+    setRewardKind(r === 'new' ? 'static' : r.kind)
+    setRewardBonus(r === 'new' ? 0 : r.bonusMinutes)
+    setRewardIcon(r === 'new' ? null : r.icon)
+  }
 
   const openChoreEditor = (c: ChoreDto | 'new'): void => {
     setEditingChore(c)
@@ -657,8 +672,15 @@ function ChoresTab() {
 
   const saveReward = (): void => {
     if (!rewardTitle.trim()) return
-    if (editingReward === 'new') rewardMutations.create.mutate({ title: rewardTitle.trim(), costStars: rewardCost })
-    else if (editingReward) rewardMutations.update.mutate({ id: editingReward.id, title: rewardTitle.trim(), costStars: rewardCost })
+    const input = {
+      title: rewardTitle.trim(),
+      kind: rewardKind,
+      costStars: rewardKind === 'static' ? rewardCost : 1,
+      bonusMinutes: rewardKind === 'dynamic' ? rewardBonus : 0,
+      icon: rewardIcon
+    }
+    if (editingReward === 'new') rewardMutations.create.mutate(input)
+    else if (editingReward) rewardMutations.update.mutate({ id: editingReward.id, ...input })
     setEditingReward(null)
   }
 
@@ -736,24 +758,29 @@ function ChoresTab() {
             <button
               key={r.id}
               type="button"
-              onClick={() => {
-                setEditingReward(r)
-                setRewardTitle(r.title)
-                setRewardCost(r.costStars)
-              }}
+              onClick={() => openRewardEditor(r)}
               className="pressable flex items-center gap-3 rounded-2xl bg-paper-deep/50 p-3 text-left"
+              data-reward-row={r.kind}
             >
-              <span className="min-w-0 flex-1 truncate text-lg font-bold">{r.title}</span>
-              <span className="text-base font-extrabold text-ember-deep"><StarIcon /> {r.costStars}</span>
+              <span className="w-8 shrink-0 text-center text-2xl">{r.icon ?? '⭐'}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-lg font-bold">{r.title}</span>
+                <span className="block text-sm font-bold text-ink-faint">
+                  {r.kind === 'dynamic'
+                    ? `Dynamic · kid picks the stars, 1 a minute${r.bonusMinutes > 0 ? ` · +${r.bonusMinutes} min bonus` : ''}`
+                    : 'Static · a parent hands it over'}
+                </span>
+              </span>
+              {r.kind === 'static' && (
+                <span className="text-base font-extrabold text-ember-deep">
+                  <StarIcon /> {r.costStars}
+                </span>
+              )}
             </button>
           ))}
           <BigButton
             variant="ghost"
-            onClick={() => {
-              setEditingReward('new')
-              setRewardTitle('')
-              setRewardCost(10)
-            }}
+            onClick={() => openRewardEditor('new')}
           >
             <span className="flex items-center justify-center gap-2">
               <PlusIcon size={20} /> Add reward
@@ -865,8 +892,48 @@ function ChoresTab() {
             <OskInput value={rewardTitle} onChange={setRewardTitle} placeholder="e.g. Movie night pick" autoFocus={editingReward === 'new'} />
           </div>
           <div>
-            <FieldLabel>Cost in game time</FieldLabel>
-            <Stepper value={rewardCost} onChange={setRewardCost} min={1} max={999} />
+            <FieldLabel>Type</FieldLabel>
+            <SegmentedControl
+              value={rewardKind}
+              onChange={setRewardKind}
+              options={[
+                { value: 'static', label: 'Static' },
+                { value: 'dynamic', label: 'Dynamic' }
+              ]}
+            />
+            <p className="mt-1.5 text-sm font-bold text-ink-faint">
+              {rewardKind === 'static'
+                ? 'A set price (a pack of gum for 5 stars). A parent hands it over from here.'
+                : 'The kid picks how many stars to spend, 1 a minute, and a timer runs (like Video Game Time).'}
+            </p>
+          </div>
+          {rewardKind === 'static' ? (
+            <div>
+              <FieldLabel>Cost in stars</FieldLabel>
+              <Stepper value={rewardCost} onChange={setRewardCost} min={1} max={999} />
+            </div>
+          ) : (
+            <div>
+              <FieldLabel>Bonus time (minutes)</FieldLabel>
+              <Stepper value={rewardBonus} onChange={setRewardBonus} min={0} max={60} />
+              <p className="mt-1.5 text-sm font-bold text-ink-faint">Added to every timer — e.g. 3 minutes to get the console going.</p>
+            </div>
+          )}
+          <div>
+            <FieldLabel>Icon</FieldLabel>
+            <div className="flex flex-wrap gap-2" data-reward-icons>
+              {REWARD_ICONS.map((e) => (
+                <button
+                  key={e ?? 'none'}
+                  type="button"
+                  aria-pressed={rewardIcon === e}
+                  onClick={() => setRewardIcon(e)}
+                  className={`pressable h-12 w-12 rounded-full text-2xl ${rewardIcon === e ? 'bg-ember-soft ring-2 ring-ember' : 'bg-paper-deep'}`}
+                >
+                  {e ?? '⭐'}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="mt-1 flex gap-3">
             {editingReward !== 'new' && editingReward && (

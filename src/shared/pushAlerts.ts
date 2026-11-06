@@ -1,3 +1,4 @@
+import { timerTitle } from './gameTime'
 /**
  * Phone notifications: which alerts are due, and what they say. Pure, so the rules are testable;
  * the main process gathers the state and does the sending (services/notifyService.ts).
@@ -16,7 +17,7 @@ export const PUSH_LABELS: Record<PushKind, string> = {
   leave: '🚗 Time to leave for an event',
   approvals: '⭐ Chores waiting for a parent to approve',
   weather: '⚠️ Weather warnings',
-  timers: "⏳ A kid's game time is up"
+  timers: "⏳ A kid's timer is up"
 }
 
 /** One notification to send. `key` makes it once-only; `tab` is where tapping it opens the phone app. */
@@ -53,7 +54,7 @@ export interface PushState {
   }[]
   approvals: { checklistId: string; title: string; personId: string; date: string; kind: string; round?: number }[]
   leaves: { key: string; title: string; location: string; leaveAt: string; driveMinutes: number }[]
-  timers: { id: string; personId: string; endsAt: string }[]
+  timers: { id: string; personId: string; endsAt: string; title?: string }[]
   /** weather warnings and watches (statements and advisories don't buzz a phone) */
   weather: { id: string; title: string; area: string }[]
 }
@@ -99,7 +100,7 @@ export function dueAlerts(s: PushState): PushAlert[] {
   }
   for (const t of s.timers) {
     if (!recent(t.endsAt)) continue
-    out.push({ key: `timer:${t.id}:${t.endsAt}`, kind: 'timers', title: `⏳ ${name(t.personId)}'s game time is up`, body: 'Time to put the controller down', tab: 'chores' })
+    out.push({ key: `timer:${t.id}:${t.endsAt}`, kind: 'timers', title: `⏳ ${name(t.personId)}'s ${timerTitle(t)} is up`, body: t.title && t.title !== 'Video Game Time' ? 'Time to stop' : 'Time to put the controller down', tab: 'chores' })
   }
   for (const w of s.weather) {
     out.push({ key: `weather:${w.id}`, kind: 'weather', title: `⚠️ ${w.title}`, body: w.area, tab: 'notes' })
