@@ -184,7 +184,6 @@ export function Header() {
               </span>
             )
           },
-          { value: 'shop', label: 'Shop' },
           { value: 'lists', label: 'Lists' }
         ]}
       />
