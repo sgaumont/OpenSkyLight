@@ -257,10 +257,15 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
             <span className="mt-1 text-2xl font-bold tabular-nums" data-next-up-line>
               {Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}
             </span>
-            <span className="mt-1 truncate text-2xl font-bold">{o.title}</span>
-            <span className="mt-1 pl-2 text-2xl font-bold text-white/70 tabular-nums">
-              {leaveFor(o.key) && <span data-next-up-leave>🚗 {time(leaveFor(o.key)!.leaveAt)}</span>}
+            {/* no leave-by time: the title runs on into that column instead of stopping short */}
+            <span className={`mt-1 truncate text-2xl font-bold ${leaveFor(o.key) ? '' : 'col-span-2'}`} data-next-up-title>
+              {o.title}
             </span>
+            {leaveFor(o.key) && (
+              <span className="mt-1 pl-2 text-2xl font-bold text-white/70 tabular-nums" data-next-up-leave>
+                🚗 {time(leaveFor(o.key)!.leaveAt)}
+              </span>
+            )}
           </Fragment>
         ))}
       </div>

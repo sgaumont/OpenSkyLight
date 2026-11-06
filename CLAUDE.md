@@ -636,6 +636,8 @@ Add unit tests where sensible.
   or Settings → Chores): `rewards:redeem` {stars?} charges nothing; `rewards:grant` takes the stars (dynamic → useTime starts
   the timer), `rewards:deny` spends nothing. DB v14: reward_redemptions.charged (old rows 1 = paid up front) + decided_at.
   Pending stars are held (rewards.held) so they can't be asked for twice; asking again replaces the request.
+- v0.8.165: screensaver Next up: a row with no 🚗 leave time lets its title span the leave column too (col-span-2),
+  so long titles stop being cut short when another row has a leave time.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
