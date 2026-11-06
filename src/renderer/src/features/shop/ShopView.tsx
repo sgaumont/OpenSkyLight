@@ -17,6 +17,9 @@ export function ShopView() {
   const balance = (id: string | null): number => balances.find((b) => b.personId === id)?.balance ?? 0
   return (
     <div className="h-full overflow-y-auto px-5 pb-4" data-shop-view>
+      <h2 className="mb-3 px-1 font-display text-3xl font-semibold text-ink" data-shop-title>
+        💵 Kid's Shop 💵
+      </h2>
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-5 rounded-3xl bg-card px-7 py-5 shadow-card" data-shop-item="videogames">
           <ControllerIcon className="shrink-0 text-4xl text-ember-deep" />

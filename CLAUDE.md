@@ -619,6 +619,7 @@ Add unit tests where sensible.
   minutes follow; `stars:useTime` takes optional `stars` (rewards.useTime spends min(stars, balance)).
 - v0.8.158: "Shop" removed from the top switcher (redundant: the header star badges open Shop since v0.8.154);
   the `shop` view stays, and the switcher shows nothing selected while it's open.
+- v0.8.159: Shop screen subheader "💵 Kid's Shop 💵" (top left, above the first item; `data-shop-title`).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
