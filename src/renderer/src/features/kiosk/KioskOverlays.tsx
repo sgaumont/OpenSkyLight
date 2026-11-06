@@ -158,12 +158,21 @@ function ScreensaverAlert() {
 /** The small uppercase label over a screensaver card's lines ("Next up", "Tomorrow", "Countdowns"). */
 const SMALL_HEADER = 'text-sm font-extrabold tracking-wider text-white/60 uppercase'
 
-/** The frosted card the screensaver's Next up, Meals and Countdowns sit on. */
-/** (Position is per card: Countdowns top-right, Meals bottom-left, Next up bottom-right.) */
-const GLANCE_CARD = 'max-w-[40rem] rounded-2xl bg-black/34 px-4 py-3 text-white drop-shadow-lg backdrop-blur-sm select-none'
+/** How big the screensaver cards are drawn (v0.8.162: 75% × 1.25). Zoom, so they lay out at that size. */
+const CARD_ZOOM = 0.9375
 
-/** The bottom cards are drawn at 75% (text, padding, corners); zoom, so the stack lays out at that size. */
-const STACK_CARD: React.CSSProperties = { zoom: 0.75, animation: 'fade-in 1.2s ease both' }
+/**
+ * The frosted card the screensaver's Next up, Meals and Countdowns sit on. (Position is per card, on
+ * a wrapper outside the zoom: Countdowns top-right, Meals bottom-left, Next up bottom-right.) Padding
+ * and corners are divided by the zoom so they stay 12px / 9px / 12px on screen whatever the card size.
+ */
+const GLANCE_CARD = 'max-w-[40rem] bg-black/34 text-white drop-shadow-lg backdrop-blur-sm select-none'
+const STACK_CARD: React.CSSProperties = {
+  zoom: CARD_ZOOM,
+  padding: `${9 / CARD_ZOOM}px ${12 / CARD_ZOOM}px`,
+  borderRadius: 12 / CARD_ZOOM,
+  animation: 'fade-in 1.2s ease both'
+}
 
 /**
  * The bottom corners, 10px / 24px from the edges: today's meals still to come bottom-left, Next up
