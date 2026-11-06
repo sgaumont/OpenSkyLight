@@ -28,6 +28,10 @@ export interface PushAlert {
   tab: 'notes' | 'chores'
   /** a family member's own phone doesn't get told about their own message */
   skipPersonId?: string | null
+  /** the sending phone (its push endpoint) isn't told about its own message */
+  skipEndpoint?: string | null
+  /** shows on the phone without a sound or vibration (a chat message sent Quiet) */
+  silent?: boolean
 }
 
 /** Too old to be news: a time-based alert missed by more than this (kiosk asleep, app restarted) is skipped. */
@@ -36,7 +40,17 @@ export const STALE_MS = 10 * 60_000
 export interface PushState {
   nowMs: number
   names: Map<string, string>
-  chat: { id: string; text: string; authorId: string | null; fromKiosk: boolean; createdAt: string }[]
+  chat: {
+    id: string
+    text: string
+    authorId: string | null
+    fromKiosk: boolean
+    createdAt: string
+    /** false = sent Quiet: still a notification, just silent (missing = rings, as before) */
+    ring?: boolean
+    deviceName?: string | null
+    senderEndpoint?: string | null
+  }[]
   approvals: { checklistId: string; title: string; personId: string; date: string; kind: string; round?: number }[]
   leaves: { key: string; title: string; location: string; leaveAt: string; driveMinutes: number }[]
   timers: { id: string; personId: string; endsAt: string }[]
@@ -56,8 +70,18 @@ export function dueAlerts(s: PushState): PushAlert[] {
   const out: PushAlert[] = []
   for (const m of s.chat) {
     if (!recent(m.createdAt)) continue
-    const from = m.fromKiosk ? 'Tablet' : m.authorId ? name(m.authorId) : 'Phone'
-    out.push({ key: `chat:${m.id}`, kind: 'chat', title: `💬 ${from}`, body: clip(m.text), tab: 'notes', skipPersonId: m.fromKiosk ? null : m.authorId })
+    const from = m.fromKiosk ? 'Tablet' : m.deviceName || (m.authorId ? name(m.authorId) : 'Phone')
+    out.push({
+      key: `chat:${m.id}`,
+      kind: 'chat',
+      title: `💬 ${from}`,
+      body: clip(m.text),
+      tab: 'notes',
+      skipPersonId: m.fromKiosk ? null : m.authorId,
+      skipEndpoint: m.fromKiosk ? null : (m.senderEndpoint ?? null),
+      // the tablet always rings; a phone message only when it was sent with 🔔 Ring
+      silent: !m.fromKiosk && m.ring === false
+    })
   }
   for (const a of s.approvals) {
     const what = a.kind === 'videogames' ? `${a.title}${a.round && a.round > 1 ? ` (round ${a.round})` : ''}` : a.title

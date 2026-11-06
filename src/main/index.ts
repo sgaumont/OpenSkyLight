@@ -158,7 +158,7 @@ if (!gotLock) {
       deviceTz,
       sources: {
         names: () => new Map(services.people.list().map((p) => [p.id, p.name])),
-        chat: () => services.notes.timeline(20),
+        chat: () => services.notes.pushFeed(20),
         approvals: (today) => services.chores.pendingUnlocks(today),
         leaves: () => services.travel.leaveTimes(),
         timers: () => services.rewards.timers(),

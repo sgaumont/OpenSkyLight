@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { NO_PUSH, PUSH_KINDS, PUSH_LABELS, type PushPrefs } from '@shared/pushAlerts'
 import { rpc } from '../api/client'
-import { usePeople } from '../api/hooks'
 import { currentSubscription, disablePush, enablePush, pushSupported, savePush } from '../api/push'
-import { GhostButton, PersonAvatar, PrimaryButton } from '../components/ui'
+import { GhostButton, PrimaryButton } from '../components/ui'
+import { getPhoneName, PHONE_NAME_MAX, setPhoneName } from '../lib/phoneName'
 
-/** Whose phone this is — shared with Chat's "From", so it's usually already set. */
+/** Whose phone this was (from the old Chat "From"); kept for phones that turned notifications on before names. */
 const AUTHOR_KEY = 'osl.noteAuthor'
 
 function rememberedPerson(): string | null {
@@ -21,7 +21,6 @@ function rememberedPerson(): string | null {
  * phone; changes after turning on save straight away.
  */
 export function NotificationsSheet({ onClose }: { onClose: () => void }) {
-  const { data: people = [] } = usePeople()
   const [sub, setSub] = useState<PushSubscription | null>(null)
   const [loaded, setLoaded] = useState(!pushSupported())
   const [prefs, setPrefs] = useState<PushPrefs>(NO_PUSH)
@@ -75,6 +74,7 @@ export function NotificationsSheet({ onClose }: { onClose: () => void }) {
         data-notifications-sheet
       >
         <h2 className="font-display text-xl font-semibold">🔔 Notifications</h2>
+        <PhoneNameField />
         {!pushSupported() ? (
           <p className="mt-2 mb-4 text-base font-semibold text-ink-soft">
             Notifications only work when this app is opened from the kiosk's <b>Tailscale (https)</b> address. On the
@@ -100,28 +100,6 @@ export function NotificationsSheet({ onClose }: { onClose: () => void }) {
                 </label>
               ))}
             </div>
-            {people.length > 0 && (
-              <div className="mb-4">
-                <div className="mb-1.5 text-xs font-extrabold tracking-wide text-ink-faint uppercase">Whose phone is this?</div>
-                <div className="flex flex-wrap gap-2">
-                  {people.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      aria-pressed={personId === p.id}
-                      onClick={() => update(prefs, personId === p.id ? null : p.id)}
-                      className={`pressable flex items-center gap-1.5 rounded-full py-1 pr-3 pl-1 text-sm font-bold ${
-                        personId === p.id ? 'bg-ink text-paper' : 'bg-paper-deep text-ink-soft'
-                      }`}
-                    >
-                      <PersonAvatar name={p.name} color={p.color} size="sm" />
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-1.5 text-xs font-bold text-ink-faint">So it isn't told about its own chat messages.</p>
-              </div>
-            )}
             {message && <p className="mb-3 text-sm font-bold text-ember-deep">{message}</p>}
             <div className="flex flex-wrap gap-2 [&>*]:flex-1">
               {sub ? (
@@ -163,6 +141,38 @@ export function NotificationsSheet({ onClose }: { onClose: () => void }) {
           <GhostButton onClick={onClose}>Close</GhostButton>
         </div>
       </div>
+    </div>
+  )
+}
+
+/** "This phone's name": shown on the messages it sends and in their notifications. Changeable any time. */
+function PhoneNameField() {
+  const [saved, setSaved] = useState(getPhoneName)
+  const [draft, setDraft] = useState(saved)
+  const changed = draft.trim() !== saved
+  return (
+    <div className="mt-3 mb-4" data-phone-name>
+      <div className="mb-1.5 text-xs font-extrabold tracking-wide text-ink-faint uppercase">This phone's name</div>
+      <div className="flex gap-2">
+        <input
+          value={draft}
+          maxLength={PHONE_NAME_MAX}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="e.g. Sean's phone"
+          className="min-h-11 min-w-0 flex-1 rounded-xl border-2 border-line bg-paper px-3 text-base font-semibold outline-none placeholder:text-ink-faint focus:border-ember"
+        />
+        {changed && (
+          <PrimaryButton
+            onClick={() => {
+              setPhoneName(draft)
+              setSaved(getPhoneName())
+            }}
+          >
+            Save
+          </PrimaryButton>
+        )}
+      </div>
+      <p className="mt-1 text-xs font-bold text-ink-faint">Shown on the chat messages this phone sends.</p>
     </div>
   )
 }

@@ -295,7 +295,13 @@ export const noteReplySchema = z.object({
   authorId: z.string().min(1).nullable()
 })
 export const noteKioskReplySchema = z.object({ noteId: z.string().min(1), text: z.string().trim().min(1).max(280) })
-export const chatSendSchema = z.object({ text: z.string().trim().min(1).max(280), authorId: z.string().min(1).nullable() })
+export const chatSendSchema = z.object({
+  text: z.string().trim().min(1).max(280),
+  authorId: z.string().min(1).nullable().optional(),
+  ring: z.boolean().optional(),
+  deviceName: z.string().trim().max(40).nullable().optional(),
+  endpoint: z.string().url().max(1000).nullable().optional()
+})
 export const chatKioskSendSchema = z.object({ text: z.string().trim().min(1).max(280) })
 export const noteKioskAddSchema = z.object({ text: z.string().trim().min(1).max(280), untilTonight: z.boolean() })
 export const countdownSchema = z.object({

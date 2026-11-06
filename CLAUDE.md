@@ -579,6 +579,13 @@ Add unit tests where sensible.
   game timer up — all opt-in per phone, time-based ones skipped if >10 min late; start-up check is quiet. Checked on
   notes/chores dataChanged + every 30 s. Phone: public/sw.js (show + open `/?tab=`), 🔔 header button →
   NotificationsSheet (api/push.ts). notify:* channels are companion-only.
+- v0.8.142: phone Chat — no "From" picker. Each message is 🔕 Quiet by default, or 🔔 Ring! (a toggle beside Send
+  that resets after every send; Send reads "Send 🔔"). DB v12 adds `notes.ring` (default 1, so older messages rang),
+  `device_name` and `sender_endpoint`. Quiet phone messages still notify the other phones, with `silent: true`
+  (sw.js), and still pop up on the tablet, but don't chime. Ring and tablet messages always sound. The sending phone
+  is skipped by `skipEndpoint` (its push endpoint), since names replace the person pick. "This phone's name" is at
+  the top of the phone's 🔔 screen (localStorage `osl.phoneName`); it's shown on its messages and notification
+  titles, and Chat shows a hint until it's set. `notes.pushFeed()` = timeline + senderEndpoint (main only).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

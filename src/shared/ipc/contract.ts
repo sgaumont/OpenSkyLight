@@ -177,7 +177,10 @@ export type IpcContract = {
   /** the one family conversation, oldest first */
   'chat:timeline': { req: void; res: ChatMessageDto[] }
   /** a message from a phone */
-  'chat:send': { req: { text: string; authorId: string | null }; res: ChatMessageDto }
+  'chat:send': {
+    req: { text: string; authorId?: string | null; ring?: boolean; deviceName?: string | null; endpoint?: string | null }
+    res: ChatMessageDto
+  }
   /** a message from the tablet (also marks the phones' messages seen) */
   'chat:kioskSend': { req: { text: string }; res: ChatMessageDto }
   /** the tablet has seen every phone message so far */

@@ -251,7 +251,13 @@ export const notes = sqliteTable(
     expiresAt: text('expires_at'),
     doneAt: text('done_at'),
     /** started on the tablet (a chat to the phones), so it doesn't pop up on the tablet itself */
-    fromKiosk: integer('from_kiosk', { mode: 'boolean' }).notNull().default(false)
+    fromKiosk: integer('from_kiosk', { mode: 'boolean' }).notNull().default(false),
+    /** make a sound where it arrives (phones choose Quiet / Ring per message; the tablet always rings) */
+    ring: integer('ring', { mode: 'boolean' }).notNull().default(true),
+    /** the sending phone's name ("Sean's phone"), set in its 🔔 screen */
+    deviceName: text('device_name'),
+    /** the sending phone's push endpoint, so it isn't notified of its own message */
+    senderEndpoint: text('sender_endpoint')
   },
   (t) => [index('idx_notes_open').on(t.doneAt)]
 )

@@ -147,8 +147,13 @@ export function createNotesService(db: AppDb, deviceTz: () => string, now: () =>
    * messages and everything from the old separate chats (their first message and replies) alike.
    */
   function timeline(limit = TIMELINE_MAX): ChatMessageDto[] {
+    return pushFeed(limit).map(({ senderEndpoint: _, ...m }) => m)
+  }
+
+  /** The conversation plus each phone message's sender endpoint — for notifications only, never sent to a page. */
+  function pushFeed(limit = TIMELINE_MAX): (ChatMessageDto & { senderEndpoint: string | null })[] {
     const nowIso = isoUtc(now())
-    const roots: ChatMessageDto[] = db
+    const roots = db
       .select()
       .from(notes)
       .all()
@@ -158,26 +163,54 @@ export function createNotesService(db: AppDb, deviceTz: () => string, now: () =>
         authorId: n.authorId,
         fromKiosk: n.fromKiosk,
         createdAt: n.createdAt,
-        unseen: !n.fromKiosk && isShowing(n, nowIso)
+        unseen: !n.fromKiosk && isShowing(n, nowIso),
+        ring: n.ring,
+        deviceName: n.deviceName,
+        senderEndpoint: n.senderEndpoint
       }))
-    const replies: ChatMessageDto[] = db
+    const replies = db
       .select()
       .from(noteReplies)
       .all()
-      .map((r) => ({ id: r.id, text: r.text, authorId: r.authorId, fromKiosk: r.fromKiosk, createdAt: r.createdAt, unseen: false }))
+      .map((r) => ({
+        id: r.id,
+        text: r.text,
+        authorId: r.authorId,
+        fromKiosk: r.fromKiosk,
+        createdAt: r.createdAt,
+        unseen: false,
+        ring: true,
+        deviceName: null,
+        senderEndpoint: null
+      }))
     return [...roots, ...replies].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)).slice(-limit)
   }
 
   /** A new message in the conversation. One from the tablet also counts as having seen the phones'. */
-  function send(input: { text: string; authorId: string | null }, fromKiosk: boolean): ChatMessageDto {
+  function send(
+    input: { text: string; authorId?: string | null; ring?: boolean; deviceName?: string | null; endpoint?: string | null },
+    fromKiosk: boolean
+  ): ChatMessageDto {
     const text = cleanText(input.text, 'message')
     const at = isoUtc(now())
-    const row = { id: uuidv7(), text, authorId: fromKiosk ? null : input.authorId, createdAt: at, expiresAt: null, doneAt: fromKiosk ? at : null, fromKiosk }
+    const row = {
+      id: uuidv7(),
+      text,
+      authorId: fromKiosk ? null : (input.authorId ?? null),
+      createdAt: at,
+      expiresAt: null,
+      doneAt: fromKiosk ? at : null,
+      fromKiosk,
+      // the tablet always rings; a phone message rings only when its 🔔 Ring was on
+      ring: fromKiosk ? true : input.ring === true,
+      deviceName: fromKiosk ? null : input.deviceName?.trim() || null,
+      senderEndpoint: fromKiosk ? null : (input.endpoint ?? null)
+    }
     db.transaction((tx) => {
       tx.insert(notes).values(row).run()
       if (fromKiosk) tx.update(notes).set({ doneAt: at }).where(isNull(notes.doneAt)).run()
     })
-    return { id: row.id, text, authorId: row.authorId, fromKiosk, createdAt: at, unseen: !fromKiosk }
+    return { id: row.id, text, authorId: row.authorId, fromKiosk, createdAt: at, unseen: !fromKiosk, ring: row.ring, deviceName: row.deviceName }
   }
 
   /** The tablet has seen every phone message so far (the pop-up's ✓ Seen). */
@@ -190,7 +223,7 @@ export function createNotesService(db: AppDb, deviceTz: () => string, now: () =>
     db.update(notes).set({ doneAt: isoUtc(now()) }).where(eq(notes.id, id)).run()
   }
 
-  return { list, recent, add, reply, done, timeline, send, seen }
+  return { list, recent, add, reply, done, timeline, pushFeed, send, seen }
 }
 
 export type NotesService = ReturnType<typeof createNotesService>

@@ -118,7 +118,10 @@ export function useChat() {
 }
 
 export function useChatSend() {
-  return useInvalidatingMutation((input: { text: string; authorId: string | null }) => rpc('chat:send', input), [['notes']])
+  return useInvalidatingMutation(
+    (input: { text: string; ring: boolean; deviceName: string | null; endpoint: string | null }) => rpc('chat:send', input),
+    [['notes']]
+  )
 }
 
 export function useNoteMutations() {

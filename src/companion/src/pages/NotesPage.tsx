@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { DateTime } from 'luxon'
 import type { ChatMessageDto, PersonDto } from '@shared/types'
 import { useChat, useChatSend, usePeople } from '../api/hooks'
-import { Card, EmptyNote, PersonAvatar, PrimaryButton } from '../components/ui'
+import { Card, EmptyNote, PrimaryButton } from '../components/ui'
+import { currentSubscription } from '../api/push'
+import { getPhoneName } from '../lib/phoneName'
 import { CountdownsCard } from './CountdownsCard'
 
 const AUTHOR_KEY = 'osl.noteAuthor'
-/** ids of the messages this phone sent, so they sit on the right even without a "From" pick */
+/** ids of the messages this phone sent, so they sit on the right */
 const SENT_KEY = 'osl.chatSent'
 const SENT_MAX = 500
 
@@ -23,7 +25,7 @@ function rememberSent(id: string): void {
     const ids = [...sentIds(), id].slice(-SENT_MAX)
     localStorage.setItem(SENT_KEY, JSON.stringify(ids))
   } catch {
-    // private browsing: falls back to the From pick
+    // private browsing: only the older From pick counts
   }
 }
 const MAX_LENGTH = 280
@@ -51,45 +53,48 @@ function dayLabel(iso: string): string {
 
 /**
  * Chat: one family conversation with the kiosk (and every other phone), newest at the bottom, like
- * a group text. Pick who you are once; it's remembered on this phone.
+ * a group text. Each message is 🔕 Quiet (shows everywhere, silently) unless 🔔 Ring is tapped for it.
  */
 export function NotesPage() {
   const { data: messages = [] } = useChat()
   const { data: people = [] } = usePeople()
   const send = useChatSend()
   const [text, setText] = useState('')
-  const [authorId, setAuthorId] = useState<string | null>(rememberedAuthor)
-  // a remembered author who has since been removed from the family no longer counts
-  const author = people.find((p) => p.id === authorId) ?? null
+  // this message only: back to Quiet after every send
+  const [ring, setRing] = useState(false)
+  const [phoneName, setPhoneNameState] = useState(getPhoneName)
   const bottom = useRef<HTMLDivElement>(null)
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: 'end' })
   }, [messages.length])
+  // the 🔔 screen can rename this phone while Chat is open
+  useEffect(() => {
+    const onName = (): void => setPhoneNameState(getPhoneName())
+    window.addEventListener('osl-phone-name', onName)
+    return () => window.removeEventListener('osl-phone-name', onName)
+  }, [])
 
-  function pickAuthor(id: string | null): void {
-    setAuthorId(id)
-    try {
-      if (id) localStorage.setItem(AUTHOR_KEY, id)
-      else localStorage.removeItem(AUTHOR_KEY)
-    } catch {
-      // private browsing: just not remembered
-    }
-  }
-
-  function post(): void {
+  async function post(): Promise<void> {
+    // this phone's notification address, so it isn't notified of its own message
+    const endpoint = await currentSubscription()
+      .then((s) => s?.endpoint ?? null)
+      .catch(() => null)
     send.mutate(
-      { text: text.trim(), authorId: author?.id ?? null },
+      { text: text.trim(), ring, deviceName: phoneName || null, endpoint },
       {
         onSuccess: (m) => {
           rememberSent(m.id)
           setText('')
+          setRing(false)
         }
       }
     )
   }
-  const sent = sentIds()
 
   const byId = new Map(people.map((p) => [p.id, p]))
+  // messages from before Ring/Quiet, written as this phone's old "From" person, are still mine
+  const legacyAuthor = rememberedAuthor()
+  const sent = sentIds()
   return (
     <div className="flex flex-col gap-4">
       {messages.length === 0 ? (
@@ -103,7 +108,11 @@ export function NotesPage() {
                   {dayLabel(m.createdAt)}
                 </div>
               )}
-              <Message m={m} byId={byId} mine={!m.fromKiosk && (sent.has(m.id) || (!!author && m.authorId === author.id))} />
+              <Message
+                m={m}
+                byId={byId}
+                mine={!m.fromKiosk && (sent.has(m.id) || (!!legacyAuthor && m.authorId === legacyAuthor && !m.deviceName))}
+              />
             </div>
           ))}
         </div>
@@ -118,35 +127,25 @@ export function NotesPage() {
           placeholder="Message the family…"
           className="w-full resize-none rounded-xl border-2 border-line bg-paper px-3 py-2 text-base font-semibold text-ink outline-none focus:border-ember"
         />
-        {people.length > 0 && (
-          <div className="mt-2">
-            <div className="mb-1.5 text-xs font-extrabold tracking-wide text-ink-faint uppercase">From</div>
-            <div className="flex flex-wrap gap-2">
-              {people.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  aria-pressed={author?.id === p.id}
-                  onClick={() => pickAuthor(author?.id === p.id ? null : p.id)}
-                  className={`pressable flex items-center gap-1.5 rounded-full py-1 pr-3 pl-1 text-sm font-bold ${
-                    author?.id === p.id ? 'bg-ink text-paper' : 'bg-paper-deep text-ink-soft'
-                  }`}
-                >
-                  <PersonAvatar name={p.name} color={p.color} size="sm" />
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         <div className="mt-3 flex items-center gap-3">
-          <span className="flex-1 text-xs font-bold text-ink-faint">
+          {/* per message: Quiet (default) shows silently everywhere; Ring makes it sound */}
+          <button
+            type="button"
+            aria-pressed={ring}
+            onClick={() => setRing((r) => !r)}
+            className={`pressable min-h-12 rounded-2xl px-4 text-base font-extrabold ${ring ? 'bg-ember text-white shadow-card' : 'bg-paper-deep text-ink-soft'}`}
+            data-ring-toggle
+          >
+            {ring ? '🔔 Ring!' : '🔕 Quiet'}
+          </button>
+          <span className="flex-1 text-right text-xs font-bold text-ink-faint">
             {text.length > MAX_LENGTH - 40 ? `${MAX_LENGTH - text.length} left` : ''}
           </span>
-          <PrimaryButton onClick={post} disabled={text.trim() === '' || send.isPending}>
-            {send.isPending ? 'Sending…' : 'Send'}
+          <PrimaryButton onClick={() => void post()} disabled={text.trim() === '' || send.isPending}>
+            {send.isPending ? 'Sending…' : ring ? 'Send 🔔' : 'Send'}
           </PrimaryButton>
         </div>
+        {!phoneName && <p className="mt-2 text-xs font-bold text-ink-faint" data-name-hint>Name this phone in 🔔 (top right) so others see who's writing.</p>}
         {send.error && <p className="mt-1 text-xs font-bold text-ember-deep">{send.error.message}</p>}
       </Card>
       <div ref={bottom} />
@@ -156,12 +155,12 @@ export function NotesPage() {
 }
 
 /**
- * A message: outgoing (sent from this phone, or as this phone's person) on the right; incoming —
+ * A message: outgoing (sent from this phone) on the right; incoming —
  * the tablet's and everyone else's — on the left.
  */
 function Message({ m, byId, mine }: { m: ChatMessageDto; byId: Map<string, PersonDto>; mine: boolean }) {
   const author = m.authorId ? byId.get(m.authorId) : undefined
-  const who = m.fromKiosk ? 'Tablet' : (author?.name ?? 'Phone')
+  const who = m.fromKiosk ? 'Tablet' : (m.deviceName ?? author?.name ?? 'Phone')
   return (
     <div className={`flex max-w-[85%] flex-col ${mine ? 'items-end self-end' : 'items-start self-start'}`} data-chat-message data-side={mine ? 'out' : 'in'}>
       <p

@@ -104,13 +104,17 @@ export function createNotifyService(deps: {
   }
 
   /** Sends to every phone that wants this kind of alert; drops phones the push service says are gone. */
-  async function deliver(alert: Pick<PushAlert, 'kind' | 'title' | 'body' | 'tab' | 'skipPersonId' | 'key'>, only?: string): Promise<number> {
+  async function deliver(
+    alert: Pick<PushAlert, 'kind' | 'title' | 'body' | 'tab' | 'skipPersonId' | 'skipEndpoint' | 'silent' | 'key'>,
+    only?: string
+  ): Promise<number> {
     const keys = vapid()
-    const payload = JSON.stringify({ title: alert.title, body: alert.body, tag: alert.key, url: `/?tab=${alert.tab}` })
+    const payload = JSON.stringify({ title: alert.title, body: alert.body, tag: alert.key, url: `/?tab=${alert.tab}`, silent: alert.silent === true })
     let delivered = 0
     for (const row of db.select().from(pushSubscriptions).all()) {
       if (only ? row.endpoint !== only : !readPrefs(row.prefs)[alert.kind]) continue
       if (!only && alert.skipPersonId && row.personId === alert.skipPersonId) continue
+      if (!only && alert.skipEndpoint && row.endpoint === alert.skipEndpoint) continue
       try {
         await send({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, keys)
         delivered++

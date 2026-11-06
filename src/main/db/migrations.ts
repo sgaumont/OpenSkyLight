@@ -335,6 +335,13 @@ const MIGRATIONS: string[] = [
     prefs TEXT NOT NULL,
     created_at TEXT NOT NULL
   );
+  `,
+  // v12: chat messages say whether to ring (a phone's Quiet / Ring toggle; older ones rang), which
+  // phone sent them by name, and that phone's push endpoint (so it isn't notified of its own message)
+  `
+  ALTER TABLE notes ADD COLUMN ring INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE notes ADD COLUMN device_name TEXT;
+  ALTER TABLE notes ADD COLUMN sender_endpoint TEXT;
   `
 ]
 

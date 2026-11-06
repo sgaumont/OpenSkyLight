@@ -22,7 +22,7 @@ const CONTEXT = 2
 /**
  * New phone messages in the family conversation, centred over everything — every screen and the
  * screensaver (but under the sleep screen) — until the tablet answers (quick reply or typed) or
- * someone taps ✓ Seen twice. Dings every 10 seconds while they wait (quiet during sleep hours).
+ * someone taps ✓ Seen twice. Dings every 10 seconds while a 🔔 Ring message waits (Quiet ones just show; quiet during sleep hours).
  */
 export function NoteOverlay() {
   const { data: messages = [] } = useChat()
@@ -34,7 +34,8 @@ export function NoteOverlay() {
   const [draft, setDraft] = useState('')
   const unseen = messages.filter((m) => m.unseen)
   const sleeping = useKioskState((s) => s.sleeping)
-  const ringing = unseen.length > 0 && !sleeping
+  // the pop-up shows for every new phone message; it only chimes for ones sent with 🔔 Ring
+  const ringing = unseen.some((m) => m.ring) && !sleeping
   useEffect(() => {
     if (!ringing) return
     startNoteChime()
@@ -154,7 +155,7 @@ export function NoteOverlay() {
 /** A message bubble: phones on the left (with who), the tablet on the right. */
 export function Bubble({ m, people, big = false }: { m: ChatMessageDto; people: PersonDto[]; big?: boolean }) {
   const author = m.authorId ? people.find((p) => p.id === m.authorId) : undefined
-  const who = m.fromKiosk ? 'Tablet' : (author?.name ?? 'Phone')
+  const who = m.fromKiosk ? 'Tablet' : (m.deviceName ?? author?.name ?? 'Phone')
   return (
     <div className={`flex max-w-[85%] items-end gap-2 ${m.fromKiosk ? 'flex-row-reverse self-end' : 'self-start'}`} data-chat-message>
       {!m.fromKiosk && author && (
