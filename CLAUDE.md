@@ -614,6 +614,7 @@ Add unit tests where sensible.
   badges still open UseTimeDialog.
 - v0.8.155: Shop's "Video Game Time" row icon is a controller again (`ControllerIcon` in components/icons.tsx,
   used only there); stars stay `StarIcon` everywhere else.
+- v0.8.156: phone Chores tab says "Stars" instead of "Game time" (card, "Star history", per-kid sheet, chore editor field, +/− labels).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
