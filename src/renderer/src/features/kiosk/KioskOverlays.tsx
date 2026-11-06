@@ -160,8 +160,13 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   const leaveFor = (key: string) => leaveTimes.find((t) => t.key === key)
   return (
-    // bottom-right; lifted while a game timer pill sits at the bottom of the screen
-    <div className={`${GLANCE_CARD} right-6 ${timers.length > 0 ? 'bottom-28' : 'bottom-2.5'}`} style={{ animation: 'fade-in 1.2s ease both' }}>
+    // bottom-right; lifted while a game timer pill sits at the bottom of the screen. Drawn at 75% (text,
+    // padding, corners, all of it), shrunk toward the corner so it keeps its 10px / 24px margins.
+    <div
+      className={`${GLANCE_CARD} right-6 origin-bottom-right scale-75 ${timers.length > 0 ? 'bottom-28' : 'bottom-2.5'}`}
+      style={{ animation: 'fade-in 1.2s ease both' }}
+      data-next-up-card
+    >
       {/* one grid (time | title | leave by), so every title starts in line whatever the time's width;
           tomorrow's events sit under their own small header, like Next up's */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-3">

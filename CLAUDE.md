@@ -592,6 +592,8 @@ Add unit tests where sensible.
   lib/format.ts; other screens keep `formatTime` ("3 pm").
 - v0.8.145: screensaver clock/date/weather/what-to-wear moved from bottom-left to top-left (`top-2.5 left-6`,
   same 10px/24px margins and sizes); Countdowns stays top-right, Next up bottom-right.
+- v0.8.146: screensaver Next up card drawn at 75% (`scale-75 origin-bottom-right`, `data-next-up-card`): text,
+  padding and corners all shrink toward the corner, keeping its 10px / 24px margins.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
