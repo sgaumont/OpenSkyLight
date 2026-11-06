@@ -48,6 +48,11 @@ export const COMPANION_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'chores:setVideoGamesStars',
   'stars:balances',
   'stars:adjust',
+  // the Shop's rewards: add, edit, delete (Chores → Rewards)
+  'rewards:list',
+  'rewards:create',
+  'rewards:update',
+  'rewards:delete',
   'events:getOccurrences',
   'people:list',
   'notify:publicKey',

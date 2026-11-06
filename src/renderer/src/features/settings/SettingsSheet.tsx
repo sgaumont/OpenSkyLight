@@ -1,3 +1,4 @@
+import { REWARD_ICONS } from '@shared/rewardIcons'
 import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import type {
@@ -544,8 +545,6 @@ function VideoGamesStarsNote() {
 }
 
 /** Icons a reward can have in the Shop (none = a star). */
-const REWARD_ICONS: (string | null)[] = [null, '🎮', '📺', '📱', '🍬', '🍦', '🍕', '🎬', '🧸', '🎨', '🚲', '💵']
-
 /** The Video Games set reward: controllers for each finished set (each time through, if repeatable). */
 function VideoGamesReward() {
   const { data } = useVideoGamesStars()

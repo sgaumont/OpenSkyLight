@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { DateTime } from 'luxon'
-import type { ChecklistDto, ChoreDto, ChoreMode, DayChoreDto, PersonDto } from '@shared/types'
+import type { ChecklistDto, ChoreDto, ChoreMode, DayChoreDto, PersonDto, RewardDto, RewardKind } from '@shared/types'
+import { REWARD_ICONS } from '@shared/rewardIcons'
 import {
   useAdjustStars,
   useBalances,
@@ -14,6 +15,8 @@ import {
   useVideoGamesStars,
   useGameTimeLog,
   usePeople,
+  useRewardMutations,
+  useRewards,
   useToday
 } from '../api/hooks'
 import { Card, CheckCircle, EmptyNote, StarIcon, GhostButton, PersonAvatar, PrimaryButton, TextInput, textOn } from '../components/ui'
@@ -542,6 +545,8 @@ export function ChoresPage() {
         </Card>
       )}
 
+      <RewardsCard />
+
       <GhostButton onClick={() => setEditingChore('new')}>+ New chore</GhostButton>
 
       <GhostButton onClick={() => setShowManage((v) => !v)}>
@@ -1064,5 +1069,185 @@ function ManageChores({ people, onEditChore }: { people: PersonDto[]; onEditChor
         <ChecklistSheet checklist={editingChecklist} people={people} onClose={() => setEditingChecklist(null)} />
       )}
     </div>
+  )
+}
+
+/** The Shop's rewards, as in the kiosk's Settings → Chores → Rewards: tap one to edit it, or add one. */
+function RewardsCard() {
+  const { data: rewards = [] } = useRewards()
+  const [editing, setEditing] = useState<RewardDto | 'new' | null>(null)
+  return (
+    <Card>
+      <h2 className="mb-1 font-display text-xl font-semibold" data-rewards-card>
+        Rewards
+      </h2>
+      <p className="mb-2 text-sm font-bold text-ink-faint">What the kids can spend their stars on in the tablet's Shop.</p>
+      {rewards.length === 0 && <EmptyNote>No rewards yet</EmptyNote>}
+      {rewards.map((r) => (
+        <button
+          key={r.id}
+          type="button"
+          onClick={() => setEditing(r)}
+          className="pressable flex w-full items-center gap-3 border-b border-line/60 py-2.5 text-left last:border-0"
+          data-reward-row
+        >
+          <span className="w-8 shrink-0 text-center text-2xl">{r.icon ?? '⭐'}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-base font-bold">{r.title}</span>
+            <span className="block text-sm font-bold text-ink-faint">
+              {r.kind === 'dynamic'
+                ? `Kid picks the stars, 1 a minute${r.bonusMinutes > 0 ? ` · +${r.bonusMinutes} min bonus` : ''}`
+                : 'A parent hands it over'}
+            </span>
+          </span>
+          {r.kind === 'static' && (
+            <span className="shrink-0 text-base font-extrabold text-ember-deep">
+              <StarIcon /> {r.costStars}
+            </span>
+          )}
+        </button>
+      ))}
+      <div className="mt-2 flex [&>*]:flex-1">
+        <GhostButton onClick={() => setEditing('new')}>+ New reward</GhostButton>
+      </div>
+      {editing && <RewardSheet reward={editing} onClose={() => setEditing(null)} />}
+    </Card>
+  )
+}
+
+/** A number with − / + buttons (and typing), kept between min and max. */
+function NumberStepper({
+  value,
+  onChange,
+  min,
+  max,
+  label
+}: {
+  value: number
+  onChange: (n: number) => void
+  min: number
+  max: number
+  label: string
+}) {
+  const clamp = (n: number): number => Math.min(max, Math.max(min, Math.round(n)))
+  return (
+    <div className="flex items-center gap-2">
+      <button type="button" aria-label={`Less ${label}`} disabled={value <= min} onClick={() => onChange(clamp(value - 1))} className={STEP_BUTTON}>
+        −
+      </button>
+      <input
+        type="number"
+        inputMode="numeric"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(e) => onChange(clamp(Number(e.target.value) || min))}
+        aria-label={label}
+        className="h-10 w-20 rounded-xl border-2 border-line bg-paper text-center text-base font-extrabold tabular-nums outline-none focus:border-ember"
+      />
+      <button type="button" aria-label={`More ${label}`} disabled={value >= max} onClick={() => onChange(clamp(value + 1))} className={STEP_BUTTON}>
+        +
+      </button>
+    </div>
+  )
+}
+
+/** Add or edit a reward: the same fields as the kiosk's reward editor. */
+function RewardSheet({ reward, onClose }: { reward: RewardDto | 'new'; onClose: () => void }) {
+  const isNew = reward === 'new'
+  const mutations = useRewardMutations()
+  const [title, setTitle] = useState(isNew ? '' : reward.title)
+  const [kind, setKind] = useState<RewardKind>(isNew ? 'static' : reward.kind)
+  const [cost, setCost] = useState(isNew || reward.kind === 'dynamic' ? 10 : reward.costStars)
+  const [bonus, setBonus] = useState(isNew ? 0 : reward.bonusMinutes)
+  const [icon, setIcon] = useState<string | null>(isNew ? null : reward.icon)
+  const busy = mutations.create.isPending || mutations.update.isPending
+  const error = mutations.create.error ?? mutations.update.error ?? mutations.remove.error
+  const valid = title.trim() !== ''
+  const save = (): void => {
+    if (!valid) return
+    const input = {
+      title: title.trim(),
+      kind,
+      costStars: kind === 'static' ? cost : 1,
+      bonusMinutes: kind === 'dynamic' ? bonus : 0,
+      icon
+    }
+    if (isNew) mutations.create.mutate(input, { onSuccess: onClose })
+    else mutations.update.mutate({ id: reward.id, ...input }, { onSuccess: onClose })
+  }
+  return (
+    <Sheet onClose={onClose}>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          save()
+        }}
+        data-reward-sheet
+      >
+        <h2 className="font-display text-xl font-semibold">{isNew ? 'New reward' : 'Edit reward'}</h2>
+        <div>
+          <FieldLabel>Reward</FieldLabel>
+          <TextInput value={title} onChange={setTitle} placeholder="e.g. Movie night pick" autoFocus={isNew} />
+        </div>
+        <div>
+          <FieldLabel>Type</FieldLabel>
+          <Segmented
+            value={kind}
+            onChange={setKind}
+            options={[
+              { value: 'static', label: 'Static' },
+              { value: 'dynamic', label: 'Dynamic' }
+            ]}
+          />
+          <p className="mt-1.5 text-sm font-bold text-ink-faint">
+            {kind === 'static'
+              ? 'A set price (a pack of gum for 5 stars). A parent hands it over on the tablet.'
+              : 'The kid picks how many stars to spend, 1 a minute, and a timer runs (like Video Game Time).'}
+          </p>
+        </div>
+        {kind === 'static' ? (
+          <div>
+            <FieldLabel>Cost in stars</FieldLabel>
+            <NumberStepper value={cost} onChange={setCost} min={1} max={999} label="stars" />
+          </div>
+        ) : (
+          <div>
+            <FieldLabel>Bonus time (minutes)</FieldLabel>
+            <NumberStepper value={bonus} onChange={setBonus} min={0} max={240} label="bonus minutes" />
+            <p className="mt-1.5 text-sm font-bold text-ink-faint">Added to every timer — e.g. 3 minutes to get the console going.</p>
+          </div>
+        )}
+        <div>
+          <FieldLabel>Icon</FieldLabel>
+          <div className="flex flex-wrap gap-2">
+            {REWARD_ICONS.map((e) => (
+              <button
+                key={e ?? 'none'}
+                type="button"
+                aria-pressed={icon === e}
+                onClick={() => setIcon(e)}
+                className={`pressable h-11 w-11 rounded-full text-2xl ${icon === e ? 'bg-ember-soft ring-2 ring-ember' : 'bg-paper-deep'}`}
+              >
+                {e ?? '⭐'}
+              </button>
+            ))}
+          </div>
+        </div>
+        {error && <p className="text-sm font-bold text-ember-deep">{error.message}</p>}
+        <div className="flex gap-2 [&>*]:flex-1">
+          <GhostButton onClick={onClose}>Cancel</GhostButton>
+          <PrimaryButton type="submit" disabled={!valid || busy}>
+            {isNew ? 'Add reward' : 'Save'}
+          </PrimaryButton>
+        </div>
+        {!isNew && (
+          <div className="flex gap-2 [&>*]:flex-1">
+            <DeleteButton onDelete={() => mutations.remove.mutate({ id: reward.id }, { onSuccess: onClose })} />
+          </div>
+        )}
+      </form>
+    </Sheet>
   )
 }

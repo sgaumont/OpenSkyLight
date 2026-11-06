@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ChecklistInput, ChoreCreateInput, ChoreUpdateInput, CountdownInput, NoteInput, NoteReplyInput } from '@shared/types'
+import type { ChecklistInput, ChoreCreateInput, ChoreUpdateInput, CountdownInput, NoteInput, NoteReplyInput, RewardKind } from '@shared/types'
 import { rpc } from './client'
 
 /** Changes arrive instantly over the /api/events stream (api/live.ts); focus/reconnect refetch
@@ -190,4 +190,26 @@ export function useGameTimeLog(personId: string | null, limit: number) {
 /** Controllers paid for each finished Video Games set. */
 export function useVideoGamesStars() {
   return useQuery({ queryKey: ['videoGamesStars'], queryFn: () => rpc('chores:videoGamesStars', undefined), ...LIVE })
+}
+
+/** The Shop's rewards (all of them, paused ones too). */
+export function useRewards() {
+  return useQuery({ queryKey: ['rewards'], queryFn: () => rpc('rewards:list', undefined), ...LIVE })
+}
+
+export interface RewardInput {
+  title: string
+  kind: RewardKind
+  costStars: number
+  bonusMinutes: number
+  icon: string | null
+}
+
+export function useRewardMutations() {
+  const keys = [['rewards']]
+  return {
+    create: useInvalidatingMutation((input: RewardInput) => rpc('rewards:create', input), keys),
+    update: useInvalidatingMutation((input: Partial<RewardInput> & { id: string; active?: boolean }) => rpc('rewards:update', input), keys),
+    remove: useInvalidatingMutation((input: { id: string }) => rpc('rewards:delete', input), keys)
+  }
 }

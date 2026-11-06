@@ -472,7 +472,7 @@ export function usePushInvalidation(): void {
       }
       if (domain === 'chores') {
         // chore day views and star balances key off their own roots
-        for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks', 'videoGamesStars', 'gameTimeLog', 'gameTimers']) {
+        for (const key of ['choresDay', 'balances', 'checklists', 'checklistsDay', 'pendingUnlocks', 'videoGamesStars', 'gameTimeLog', 'gameTimers', 'rewards', 'redemptions']) {
           void queryClient.invalidateQueries({ queryKey: [key] })
         }
       }

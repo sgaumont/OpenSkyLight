@@ -628,6 +628,10 @@ Add unit tests where sensible.
   per reward; GameTimerDto carries rewardId/title/bonusMinutes (`timerTitle`). Chores 'Rewards' button → Shop; RewardsDialog gone.
 - v0.8.162: screensaver cards (Countdowns, Next up, Meals) 25% bigger: `CARD_ZOOM` 0.9375; padding and corner radius
   live in STACK_CARD divided by the zoom, so they stay 12px / 9px / 12px on screen; edge distances unchanged.
+- v0.8.163: phone Chores tab has a Rewards card (add / edit / delete, same fields as the kiosk editor;
+  RewardsCard + RewardSheet in companion ChoresPage). rewards:list/create/update/delete are companion channels;
+  rewards:* mutations now broadcast the chores domain (renderer refetches rewards + redemptions). REWARD_ICONS moved
+  to src/shared/rewardIcons.ts.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

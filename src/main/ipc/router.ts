@@ -159,7 +159,13 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   // balances refresh with the chores domain
   'stars:adjust': 'chores',
   'stars:useTime': 'chores',
-  'stars:stopTimer': 'chores'
+  'stars:stopTimer': 'chores',
+  // the Shop's rewards refresh with the chores domain too (a phone can edit them)
+  'rewards:create': 'chores',
+  'rewards:update': 'chores',
+  'rewards:delete': 'chores',
+  'rewards:redeem': 'chores',
+  'rewards:grant': 'chores'
 }
 
 const broadcastListeners = new Set<(channel: string, payload: unknown) => void>()
