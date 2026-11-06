@@ -49,7 +49,7 @@ export const useUi = create<UiState>((set, get) => ({
   goToday: () => set({ focusedDate: today() }),
   step: (direction) => {
     const { view, focusedDate } = get()
-    if (view === 'home' || view === 'lists' || view === 'chats') return
+    if (view === 'home' || view === 'lists' || view === 'chats' || view === 'shop') return
     const d = DateTime.fromISO(focusedDate, { zone: ZONE })
     const next =
       view === 'day' || view === 'chores'

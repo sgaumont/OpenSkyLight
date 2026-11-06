@@ -1404,6 +1404,7 @@ const TEXT_SIZE_TABS: { view: CalendarViewKind; label: string }[] = [
   { view: 'agenda', label: 'Agenda' },
   { view: 'chores', label: 'Chores' },
   { view: 'chats', label: 'Chat' },
+  { view: 'shop', label: 'Shop' },
   { view: 'lists', label: 'Lists' }
 ]
 

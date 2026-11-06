@@ -8,7 +8,7 @@ import { WeatherButton } from '../weather/WeatherHeader'
 import { IssueLine } from './IssueLine'
 import { UseTimeDialog } from './UseTimeDialog'
 import { initials, textOn } from '../../lib/format'
-import type { CalendarViewKind } from '@shared/types'
+import type { CalendarViewKind, PersonDto } from '@shared/types'
 import { eachDay, weekViewRange } from '@shared/dates'
 
 function useNow(): DateTime {
@@ -23,6 +23,9 @@ function useNow(): DateTime {
 /** Person filter circles: hidden for now — this family doesn't assign events to people. */
 const SHOW_PERSON_FILTER = false
 
+/** Screens without dates: no period label or ‹ › arrows, and the kids' badges get more room. */
+const NO_PAGING: CalendarViewKind[] = ['home', 'lists', 'chats', 'shop']
+
 /** narrow layouts (the 10" kiosk at 115%+ text): slightly smaller round buttons to leave room */
 const NARROW_ICON = 'max-[1300px]:h-11 max-[1300px]:w-11'
 
@@ -33,7 +36,7 @@ function periodLabel(
   weekStartsOn: 0 | 1
 ): string {
   const d = DateTime.fromISO(focusedDate, { zone: ZONE })
-  if (view === 'home' || view === 'lists' || view === 'chats') return ''
+  if (NO_PAGING.includes(view)) return ''
   if (view === 'day' || view === 'chores') return d.toFormat('LLL d')
   if (view === 'month') return d.toFormat('LLLL yyyy')
   if (view === 'agenda') return `From ${d.toFormat('LLL d')}`
@@ -132,7 +135,7 @@ export function Header() {
       )}
 
       {/* period nav (removed from layout where it isn't meaningful — space matters here) */}
-      {view !== 'lists' && view !== 'home' && view !== 'chats' && (
+      {!NO_PAGING.includes(view) && (
         <div className="flex shrink-0 items-center gap-1 rounded-2xl bg-paper-deep/70 p-1">
           <IconButton label="Previous" className={NARROW_ICON} onClick={() => step(-1)}>
             <ChevronLeftIcon />
@@ -154,26 +157,10 @@ export function Header() {
           a tap asks whether they want to use their time (spend it all) */}
       {kids.length > 0 && (
         // a little tighter beside the date controls (Week/Month), where the header is fullest
-        <div className={`flex shrink-0 items-center ${view === 'home' || view === 'lists' || view === 'chats' ? 'gap-4.5' : 'gap-3'}`}>
+        <div className={`flex shrink-0 items-center ${NO_PAGING.includes(view) ? 'gap-4.5' : 'gap-3'}`}>
           {kids.map((p) => {
             const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setUsingTime(p.id)}
-                aria-label={`${p.name}: ${stars} game time`}
-                title={p.name}
-                // as tall as the date + clock block beside them: the banner's full height
-                className="pressable flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
-                style={{ backgroundColor: p.color, color: textOn(p.color) }}
-              >
-                <span aria-hidden className="text-sm leading-none max-[1300px]:text-xs">
-                  <GameIcon className="align-top" />
-                </span>
-                <span className="text-xl leading-none max-[1300px]:text-base">{stars}</span>
-              </button>
-            )
+            return <GameTimeBadge key={p.id} person={p} stars={stars} onClick={() => setUsingTime(p.id)} />
           })}
         </div>
       )}
@@ -204,6 +191,7 @@ export function Header() {
               </span>
             )
           },
+          { value: 'shop', label: 'Shop' },
           { value: 'lists', label: 'Lists' }
         ]}
       />
@@ -219,6 +207,29 @@ export function Header() {
         <GearIcon size={26} />
       </IconButton>
     </header>
+  )
+}
+
+/**
+ * A kid's game time: a circle in their colour with the controller icon and their balance. In the
+ * header (as tall as the banner) and on the Shop screen; a tap opens UseTimeDialog for them.
+ */
+export function GameTimeBadge({ person, stars, onClick }: { person: PersonDto; stars: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${person.name}: ${stars} game time`}
+      title={person.name}
+      className="pressable flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
+      style={{ backgroundColor: person.color, color: textOn(person.color) }}
+      data-game-badge
+    >
+      <span aria-hidden className="text-sm leading-none max-[1300px]:text-xs">
+        <GameIcon className="align-top" />
+      </span>
+      <span className="text-xl leading-none max-[1300px]:text-base">{stars}</span>
+    </button>
   )
 }
 
