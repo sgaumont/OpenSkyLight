@@ -149,7 +149,7 @@ export interface EventDeleteInput {
   occurrenceStart?: string
 }
 
-export type CalendarViewKind = 'home' | 'day' | 'week' | 'month' | 'agenda' | 'chores' | 'lists'
+export type CalendarViewKind = 'home' | 'day' | 'week' | 'month' | 'agenda' | 'chores' | 'lists' | 'chats'
 
 export type HomeTileType =
   | 'todayEvents'

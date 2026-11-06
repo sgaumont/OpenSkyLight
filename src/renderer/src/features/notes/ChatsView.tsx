@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { DateTime } from 'luxon'
 import type { NoteDto, PersonDto } from '@shared/types'
 import { useNoteMutations, usePeople, useRecentChats } from '../../api/hooks'
-import { BigButton, Sheet, Toggle } from '../../components/ui'
+import { BigButton, Toggle } from '../../components/ui'
 import { OskInput } from '../../components/Osk'
 import { ZONE } from '../../stores/uiStore'
 import { waiting } from '@shared/chat'
@@ -18,11 +18,12 @@ function when(iso: string): string {
 }
 
 /**
- * The tablet's Chat screen (header 💬): start a chat to the phones, and read and answer every
- * conversation from the last couple of days — the same list the phones see.
+ * The tablet's Chats screen (top switcher: Home · Week · Month · Chats · Lists): start a chat to the
+ * phones on the left, and read and answer every conversation from the last couple of days on the
+ * right — the same list the phones see.
  */
-export function ChatSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { data: chats = [] } = useRecentChats(open)
+export function ChatsView() {
+  const { data: chats = [] } = useRecentChats(true)
   const { data: people = [] } = usePeople()
   const { start } = useNoteMutations()
   const [text, setText] = useState('')
@@ -41,31 +42,26 @@ export function ChatSheet({ open, onClose }: { open: boolean; onClose: () => voi
     )
   }
   return (
-    <Sheet open={open} onClose={onClose} title="Chat" wide>
-      <div className="flex flex-col gap-5 pb-2" data-chat-sheet>
-        <div className="flex flex-col gap-3 rounded-2xl bg-paper-deep/50 p-4">
-          <div className="text-sm font-extrabold tracking-wide text-ink-faint uppercase">New chat to the phones</div>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <OskInput value={text} onChange={(v) => setText(v.slice(0, MAX_LENGTH))} placeholder="e.g. Dinner's ready! 🍝" />
-            </div>
-            <BigButton onClick={send} disabled={!text.trim() || start.isPending}>
-              Send
-            </BigButton>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="flex-1 text-base font-semibold text-ink-soft">Until tonight — clears itself at midnight</span>
-            <Toggle checked={untilTonight} onChange={setUntilTonight} label="Until tonight" />
-          </div>
+    <div className="flex h-full gap-5 px-5 pb-5" data-chats-view>
+      <div className="flex w-[26rem] shrink-0 flex-col gap-3 self-start rounded-3xl bg-card p-5 shadow-card">
+        <div className="text-sm font-extrabold tracking-wide text-ink-faint uppercase">New chat to the phones</div>
+        <OskInput value={text} onChange={(v) => setText(v.slice(0, MAX_LENGTH))} placeholder="e.g. Dinner's ready! 🍝" />
+        <div className="flex items-center gap-3">
+          <span className="flex-1 text-base font-semibold text-ink-soft">Until tonight — clears itself at midnight</span>
+          <Toggle checked={untilTonight} onChange={setUntilTonight} label="Until tonight" />
         </div>
-
+        <BigButton onClick={send} disabled={!text.trim() || start.isPending}>
+          Send
+        </BigButton>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
         {chats.length === 0 ? (
-          <p className="py-6 text-center text-lg font-bold text-ink-faint">No chats in the last couple of days</p>
+          <p className="py-10 text-center text-xl font-bold text-ink-faint">No chats in the last couple of days</p>
         ) : (
           chats.map((c) => <Conversation key={c.id} chat={c} byId={byId} />)
         )}
       </div>
-    </Sheet>
+    </div>
   )
 }
 

@@ -15,6 +15,7 @@ import { MonthView } from './features/calendar/MonthView'
 import { AgendaView } from './features/calendar/AgendaView'
 import { ChoresView } from './features/chores/ChoresView'
 import { ListsView } from './features/lists/ListsView'
+import { ChatsView } from './features/notes/ChatsView'
 import { EventEditor } from './features/calendar/EventEditor'
 import { SettingsSheet } from './features/settings/SettingsSheet'
 import { KioskOverlays } from './features/kiosk/KioskOverlays'
@@ -71,10 +72,11 @@ export default function App() {
           {view === 'month' && <MonthView />}
           {view === 'agenda' && <AgendaView />}
           {view === 'chores' && <ChoresView />}
+          {view === 'chats' && <ChatsView />}
           {view === 'lists' && <ListsView />}
         </div>
       </main>
-      {view !== 'chores' && view !== 'lists' && view !== 'home' && <Fab />}
+      {view !== 'chores' && view !== 'lists' && view !== 'home' && view !== 'chats' && <Fab />}
       <EventEditor />
       <SettingsSheet />
       <OskTray />

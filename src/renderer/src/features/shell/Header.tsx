@@ -3,8 +3,7 @@ import { DateTime } from 'luxon'
 import { useBalances, useNotes, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { SegmentedControl, IconButton } from '../../components/ui'
-import { ChatIcon, ChevronLeftIcon, ChevronRightIcon, GameIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
-import { ChatSheet } from '../notes/ChatSheet'
+import { ChevronLeftIcon, ChevronRightIcon, GameIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
 import { popsUp, waiting } from '@shared/chat'
 import { WeatherButton } from '../weather/WeatherHeader'
 import { IssueLine } from './IssueLine'
@@ -35,7 +34,7 @@ function periodLabel(
   weekStartsOn: 0 | 1
 ): string {
   const d = DateTime.fromISO(focusedDate, { zone: ZONE })
-  if (view === 'home' || view === 'lists') return ''
+  if (view === 'home' || view === 'lists' || view === 'chats') return ''
   if (view === 'day' || view === 'chores') return d.toFormat('LLL d')
   if (view === 'month') return d.toFormat('LLLL yyyy')
   if (view === 'agenda') return `From ${d.toFormat('LLL d')}`
@@ -56,7 +55,6 @@ export function Header() {
   const kids = people.filter((p) => p.role === 'child')
   // the kid whose "use your time?" question is open
   const [usingTime, setUsingTime] = useState<string | null>(null)
-  const [chatOpen, setChatOpen] = useState(false)
   const { data: openChats = [] } = useNotes()
   const waitingChats = openChats.filter((n) => popsUp(n) && waiting(n)).length
   const view = useUi((s) => s.view)
@@ -134,7 +132,7 @@ export function Header() {
       )}
 
       {/* period nav (removed from layout where it isn't meaningful — space matters here) */}
-      {view !== 'lists' && view !== 'home' && (
+      {view !== 'lists' && view !== 'home' && view !== 'chats' && (
         <div className="flex shrink-0 items-center gap-1 rounded-2xl bg-paper-deep/70 p-1">
           <IconButton label="Previous" className={NARROW_ICON} onClick={() => step(-1)}>
             <ChevronLeftIcon />
@@ -156,7 +154,7 @@ export function Header() {
           a tap asks whether they want to use their time (spend it all) */}
       {kids.length > 0 && (
         // a little tighter beside the date controls (Week/Month), where the header is fullest
-        <div className={`flex shrink-0 items-center ${view === 'home' || view === 'lists' ? 'gap-4.5' : 'gap-3'}`}>
+        <div className={`flex shrink-0 items-center ${view === 'home' || view === 'lists' || view === 'chats' ? 'gap-4.5' : 'gap-3'}`}>
           {kids.map((p) => {
             const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
             return (
@@ -192,23 +190,24 @@ export function Header() {
           { value: 'home', label: 'Home' },
           { value: 'week', label: 'Week' },
           { value: 'month', label: 'Month' },
+          {
+            value: 'chats',
+            // the count of chats waiting for the tablet to answer (was the 💬 button's badge)
+            label: (
+              <span className="flex items-center gap-1.5" data-chats-tab>
+                Chats
+                {waitingChats > 0 && (
+                  <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-ember px-1.5 text-sm font-extrabold text-white" data-chat-badge>
+                    {waitingChats}
+                  </span>
+                )}
+              </span>
+            )
+          },
           { value: 'lists', label: 'Lists' }
         ]}
       />
 
-      {/* Chat (was Notes): every conversation with the phones; the dot counts chats waiting for an answer */}
-      <IconButton label="Chat" className={`relative ${NARROW_ICON}`} onClick={() => setChatOpen(true)}>
-        <ChatIcon size={26} />
-        {waitingChats > 0 && (
-          <span
-            className="absolute -top-0.5 -right-0.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-ember px-1.5 text-sm font-extrabold text-white"
-            data-chat-badge
-          >
-            {waitingChats}
-          </span>
-        )}
-      </IconButton>
-      <ChatSheet open={chatOpen} onClose={() => setChatOpen(false)} />
 
       {view === 'home' && (
         <IconButton label="Customize home screen" className={NARROW_ICON} onClick={requestHomeEdit}>

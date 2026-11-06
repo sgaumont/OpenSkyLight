@@ -86,7 +86,7 @@ export const occurrenceQuerySchema = z.object({
 })
 
 const textSizePct = z.number().int().min(TEXT_SIZE_MIN).max(TEXT_SIZE_MAX)
-const viewKind = z.enum(['home', 'day', 'week', 'month', 'agenda', 'chores', 'lists'])
+const viewKind = z.enum(['home', 'day', 'week', 'month', 'agenda', 'chores', 'lists', 'chats'])
 
 const homeTileSchema = z.object({
   id: z.string().min(1).max(80),

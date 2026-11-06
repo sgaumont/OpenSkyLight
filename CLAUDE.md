@@ -545,6 +545,12 @@ Add unit tests where sensible.
   (`animate-slide-from-right/left`); taps keep `animate-rise`. Kiosk (Linear OPE-19): when the screensaver or the
   sleep screen goes away, `goToday()` puts Week / Month / Day back on today (KioskOverlays, the `covered` true→false
   edge).
+- v0.8.135: kiosk "Chats" screen in the top switcher (Home · Week · Month · Chats · Lists). New view kind `'chats'`
+  (types, schemas viewKind, text-size tabs). `features/notes/ChatsView.tsx` replaces the v0.8.130 ChatSheet: the
+  new-chat box on the left, conversations on the right. The 💬 header icon is gone and its waiting count is now a
+  badge on the Chats button (`SegmentedControl` labels are ReactNode). No period arrows, + button or stepping on
+  Chats. Header checked at 1440 wide, 100/115/130%, with clothing and two kids. Playwright screenshots crop a
+  zoomed page; use `webContents.capturePage()`.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
