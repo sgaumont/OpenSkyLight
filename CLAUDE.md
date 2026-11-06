@@ -535,6 +535,8 @@ Add unit tests where sensible.
   forecast high meets (at or above) → 🩳 / 👖 / 🧥 (jacket below pants). Shown on the screensaver right of the weather
   (78px white disc) and as a white-disc badge on today's icon in the Home weather tile (`ClothingEmoji`). The disc is
   there because Windows draws 🧥 dark grey.
+- v0.8.132: What to wear settings — the shorts and pants rows share one grid (`data-clothing-rows`), so the two
+  number boxes line up.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

@@ -45,15 +45,16 @@ export function ClothingSection() {
     setShorts(null)
     setPants(null)
   }
+  // one grid for both rows, so the number boxes line up whatever the label length
   const row = (emoji: string, label: string, value: string, set: (v: string) => void) => (
-    <div className="flex items-center gap-3">
-      <span className="w-8 text-2xl">{emoji}</span>
+    <>
+      <span className="text-2xl">{emoji}</span>
       <span className="text-base font-bold text-ink-soft">{label} when the high is at least</span>
       <div className="w-20">
         <OskInput value={value} onChange={(v) => set(v.replace(/[^\d-]/g, '').slice(0, 4))} />
       </div>
       <span className="text-base font-bold text-ink-soft">°{unit.toUpperCase()}</span>
-    </div>
+    </>
   )
   return (
     <div data-clothing-section>
@@ -67,10 +68,12 @@ export function ClothingSection() {
         </div>
         {c.enabled && (
           <>
-            {row(CLOTHING_EMOJI.shorts, 'Shorts', shortsDraft, setShorts)}
-            {row(CLOTHING_EMOJI.pants, 'Pants', pantsDraft, setPants)}
+            <div className="grid grid-cols-[2rem_auto_5rem_1fr] items-center gap-x-3 gap-y-3" data-clothing-rows>
+              {row(CLOTHING_EMOJI.shorts, 'Shorts', shortsDraft, setShorts)}
+              {row(CLOTHING_EMOJI.pants, 'Pants', pantsDraft, setPants)}
+            </div>
             <div className="flex items-center gap-3">
-              <span className="w-8 text-2xl">{CLOTHING_EMOJI.jacket}</span>
+              <span className="w-8 shrink-0 text-2xl">{CLOTHING_EMOJI.jacket}</span>
               <span className="flex-1 text-base font-bold text-ink-soft">Jacket below that</span>
               {changed && (
                 <BigButton disabled={!valid} onClick={save}>
