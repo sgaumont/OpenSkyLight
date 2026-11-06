@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
@@ -128,13 +128,16 @@ function ScreensaverWeather() {
   )
 }
 
+/** The small uppercase label over a screensaver card's lines ("Next up", "Tomorrow", "Countdowns"). */
+const SMALL_HEADER = 'text-sm font-extrabold tracking-wider text-white/60 uppercase'
+
 /** The frosted card the screensaver's Next up and Countdowns sit on. */
 /** (Position is per card: Countdowns top-right, Next up bottom-right.) */
 const GLANCE_CARD = 'absolute max-w-[40rem] rounded-3xl bg-black/34 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
 
 /**
  * What's next (five timed events, all one size), bottom-right over the photos: the rest of today, running into
- * tomorrow — marked "Tmrw", like the This week tile — once today's are done.
+ * tomorrow — under a small "Tomorrow" header — once today's are done.
  */
 function ScreensaverGlance({ now }: { now: DateTime }) {
   const { data: timers = [] } = useGameTimers()
@@ -159,21 +162,27 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
   return (
     // bottom-right; lifted while a game timer pill sits at the bottom of the screen
     <div className={`${GLANCE_CARD} right-6 ${timers.length > 0 ? 'bottom-28' : 'bottom-2.5'}`} style={{ animation: 'fade-in 1.2s ease both' }}>
-      <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Next up</div>
-      {upcoming.slice(0, 5).map(({ o, tomorrow }) => (
-        <div key={o.key} className="mt-1 flex items-baseline gap-3 text-2xl font-bold" data-next-up-line>
-          <span className="shrink-0 tabular-nums">
-            {tomorrow && <span className="mr-2 text-white/60">Tmrw</span>}
-            {Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}
-          </span>
-          <span className="truncate">{o.title}</span>
-          {leaveFor(o.key) && (
-            <span className="ml-auto shrink-0 pl-2 text-white/70 tabular-nums" data-next-up-leave>
-              🚗 {time(leaveFor(o.key)!.leaveAt)}
+      {/* one grid (time | title | leave by), so every title starts in line whatever the time's width;
+          tomorrow's events sit under their own small header, like Next up's */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-3">
+        <div className={`col-span-3 ${SMALL_HEADER}`}>Next up</div>
+        {upcoming.slice(0, 5).map(({ o, tomorrow }, i, shown) => (
+          <Fragment key={o.key}>
+            {tomorrow && !shown[i - 1]?.tomorrow && (
+              <div className={`col-span-3 ${i > 0 ? 'mt-2' : ''} ${SMALL_HEADER}`} data-next-up-tomorrow>
+                Tomorrow
+              </div>
+            )}
+            <span className="mt-1 text-2xl font-bold tabular-nums" data-next-up-line>
+              {Date.parse(o.start) <= now.toMillis() ? 'Now' : time(o.start)}
             </span>
-          )}
-        </div>
-      ))}
+            <span className="mt-1 truncate text-2xl font-bold">{o.title}</span>
+            <span className="mt-1 pl-2 text-2xl font-bold text-white/70 tabular-nums">
+              {leaveFor(o.key) && <span data-next-up-leave>🚗 {time(leaveFor(o.key)!.leaveAt)}</span>}
+            </span>
+          </Fragment>
+        ))}
+      </div>
     </div>
   )
 }

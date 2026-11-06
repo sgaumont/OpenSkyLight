@@ -586,6 +586,8 @@ Add unit tests where sensible.
   is skipped by `skipEndpoint` (its push endpoint), since names replace the person pick. "This phone's name" is at
   the top of the phone's 🔔 screen (localStorage `osl.phoneName`); it's shown on its messages and notification
   titles, and Chat shows a hint until it's set. `notes.pushFeed()` = timeline + senderEndpoint (main only).
+- v0.8.143: screensaver Next up — tomorrow's events under a small "Tomorrow" header (SMALL_HEADER, like "Next up"),
+  no "Tmrw" prefix; the card is one grid (time | title | 🚗 leave) so titles line up whatever the time width.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
