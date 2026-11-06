@@ -612,6 +612,8 @@ Add unit tests where sensible.
   `ScreensaverAlert` under the date, alert colour at 35% alpha (`${bg}59`), "+N" via alertSummary.
 - v0.8.154: header star badges open the Shop (`setView('shop')`) instead of the use-time pop-up; the Shop's own
   badges still open UseTimeDialog.
+- v0.8.155: Shop's "Video Game Time" row icon is a controller again (`ControllerIcon` in components/icons.tsx,
+  used only there); stars stay `StarIcon` everywhere else.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
