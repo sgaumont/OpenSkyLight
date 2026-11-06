@@ -189,8 +189,9 @@ function ScreensaverCountdowns({ today }: { today: string }) {
   return (
     <div className={`${GLANCE_CARD} top-2.5 right-6`} style={{ animation: 'fade-in 1.2s ease both' }}>
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Countdowns</div>
-      {shown.map(({ c, label }, i) => (
-        <div key={c.id} className={`flex items-baseline gap-3 ${i === 0 ? 'mt-1 text-2xl' : 'mt-1 text-lg text-white/70'} font-bold`}>
+      {/* all one size, like Next up's lines — the soonest isn't singled out */}
+      {shown.map(({ c, label }) => (
+        <div key={c.id} className="mt-1 flex items-baseline gap-3 text-2xl font-bold" data-countdown-line>
           <span className="truncate">
             {c.emoji ?? '⏳'} {c.title}
           </span>
