@@ -2,7 +2,9 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { DateTime } from 'luxon'
 import { useQuery } from '@tanstack/react-query'
 import { ipcInvoke } from '../../api/client'
-import { useCountdowns, useGameTimers, useLeaveTimes, useSettings, useWeather } from '../../api/hooks'
+import { useCountdowns, useGameTimers, useLeaveTimes, useMeals, useSettings, useWeather } from '../../api/hooks'
+import { SLOT_META } from '../meals/Meals'
+import { mealsAhead } from '@shared/mealsAhead'
 import { ClothingEmoji } from '../weather/Clothing'
 import { countdownLabel } from '@shared/countdown'
 import { useCalendarData } from '../calendar/useCalendarData'
@@ -96,7 +98,7 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
         </div>
         <div className="mt-1.5 text-4xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
       </div>
-      <ScreensaverGlance now={now} />
+      <ScreensaverBottomCards now={now} />
       <ScreensaverCountdowns today={now.toISODate()!} />
     </div>
   )
@@ -131,16 +133,62 @@ function ScreensaverWeather() {
 /** The small uppercase label over a screensaver card's lines ("Next up", "Tomorrow", "Countdowns"). */
 const SMALL_HEADER = 'text-sm font-extrabold tracking-wider text-white/60 uppercase'
 
-/** The frosted card the screensaver's Next up and Countdowns sit on. */
-/** (Position is per card: Countdowns top-right, Next up bottom-right.) */
-const GLANCE_CARD = 'absolute max-w-[40rem] rounded-3xl bg-black/34 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
+/** The frosted card the screensaver's Next up, Meals and Countdowns sit on. */
+/** (Position is per card: Countdowns top-right, Meals bottom-left, Next up bottom-right.) */
+const GLANCE_CARD = 'max-w-[40rem] rounded-3xl bg-black/34 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
+
+/** The bottom cards are drawn at 75% (text, padding, corners); zoom, so the stack lays out at that size. */
+const STACK_CARD: React.CSSProperties = { zoom: 0.75, animation: 'fade-in 1.2s ease both' }
+
+/**
+ * The bottom corners, 10px / 24px from the edges: today's meals still to come bottom-left, Next up
+ * bottom-right. Both lift clear while a game timer pill sits at the bottom of the screen.
+ */
+function ScreensaverBottomCards({ now }: { now: DateTime }) {
+  const { data: timers = [] } = useGameTimers()
+  const bottom = timers.length > 0 ? 'bottom-28' : 'bottom-2.5'
+  return (
+    <>
+      <div className={`absolute left-6 ${bottom}`}>
+        <ScreensaverMeals now={now} />
+      </div>
+      <div className={`absolute right-6 ${bottom}`}>
+        <ScreensaverGlance now={now} />
+      </div>
+    </>
+  )
+}
+
+/** Today's meals, Next up's twin: breakfast goes at 9 am, lunch at 1 pm, dinner at 6 pm; the snack stays, last. */
+function ScreensaverMeals({ now }: { now: DateTime }) {
+  const todayKey = now.toISODate()!
+  const { data: meals = [] } = useMeals(todayKey, todayKey)
+  const shown = mealsAhead(meals, now.hour)
+  if (shown.length === 0) return null
+  return (
+    <div className={GLANCE_CARD} style={STACK_CARD} data-meals-card>
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-4">
+        <div className={`col-span-2 ${SMALL_HEADER}`}>Meals today</div>
+        {shown.map((m) => (
+          <Fragment key={m.slot}>
+            {/* the meal's colour as a dot (the purple snack is too dark for text on the frosted card) */}
+            <span className="mt-1 flex items-center gap-2.5 text-2xl font-bold text-white/70" data-meal-line={m.slot}>
+              <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ backgroundColor: SLOT_META[m.slot].color }} />
+              {SLOT_META[m.slot].label}
+            </span>
+            <span className="mt-1 truncate text-2xl font-bold">{m.text}</span>
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 /**
  * What's next (five timed events, all one size), bottom-right over the photos: the rest of today, running into
  * tomorrow — under a small "Tomorrow" header — once today's are done.
  */
 function ScreensaverGlance({ now }: { now: DateTime }) {
-  const { data: timers = [] } = useGameTimers()
   const { data: leaveTimes = [] } = useLeaveTimes()
   const todayKey = now.toISODate()!
   const tomorrowKey = now.plus({ days: 1 }).toISODate()!
@@ -160,13 +208,7 @@ function ScreensaverGlance({ now }: { now: DateTime }) {
   const time = (iso: string) => DateTime.fromISO(iso).setZone(ZONE).toFormat('h:mm a').toLowerCase()
   const leaveFor = (key: string) => leaveTimes.find((t) => t.key === key)
   return (
-    // bottom-right; lifted while a game timer pill sits at the bottom of the screen. Drawn at 75% (text,
-    // padding, corners, all of it), shrunk toward the corner so it keeps its 10px / 24px margins.
-    <div
-      className={`${GLANCE_CARD} right-6 origin-bottom-right scale-75 ${timers.length > 0 ? 'bottom-28' : 'bottom-2.5'}`}
-      style={{ animation: 'fade-in 1.2s ease both' }}
-      data-next-up-card
-    >
+    <div className={GLANCE_CARD} style={STACK_CARD} data-next-up-card>
       {/* one grid (time | title | leave by), so every title starts in line whatever the time's width;
           tomorrow's events sit under their own small header, like Next up's */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-3">
@@ -201,7 +243,7 @@ function ScreensaverCountdowns({ today }: { today: string }) {
     .slice(0, 3)
   if (shown.length === 0) return null
   return (
-    <div className={`${GLANCE_CARD} top-2.5 right-6`} style={{ animation: 'fade-in 1.2s ease both' }}>
+    <div className={`${GLANCE_CARD} absolute top-2.5 right-6`} style={{ animation: 'fade-in 1.2s ease both' }}>
       <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Countdowns</div>
       {/* all one size, like Next up's lines — the soonest isn't singled out */}
       {shown.map(({ c, label }) => (

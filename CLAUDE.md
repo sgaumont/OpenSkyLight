@@ -594,6 +594,9 @@ Add unit tests where sensible.
   same 10px/24px margins and sizes); Countdowns stays top-right, Next up bottom-right.
 - v0.8.146: screensaver Next up card drawn at 75% (`scale-75 origin-bottom-right`, `data-next-up-card`): text,
   padding and corners all shrink toward the corner, keeping its 10px / 24px margins.
+- v0.8.147: screensaver "Meals today" card bottom-left (`data-meals-card`), Next up's twin at 75% (both now use
+  `zoom: 0.75` via `STACK_CARD`); today's meals still to come via `mealsAhead` (src/shared/mealsAhead.ts): breakfast
+  drops at 9 am, lunch 1 pm, dinner 6 pm, snack always last; empty slots skipped, no card when none left.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
