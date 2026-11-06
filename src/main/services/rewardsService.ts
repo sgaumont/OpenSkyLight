@@ -190,14 +190,15 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
   }
 
   /**
-   * A kid spends all their saved-up controllers on game time: their balance goes to 0 and a game
-   * timer starts (play minutes + setup). Only ever lowers a balance, so it needs no parent PIN.
-   * A kid already playing gets the new minutes added to their running timer.
+   * A kid spends some of their saved-up stars (all of them when `stars` is left out) on game time:
+   * that many come off their balance and a game timer starts (play minutes + setup). Only ever
+   * lowers a balance, so it needs no parent PIN. A kid already playing gets the new minutes added
+   * to their running timer. Asking for more than they have spends what they have.
    */
-  function useTime(personId: string): { used: number; minutes: number; timer: GameTimerDto | null } {
+  function useTime(personId: string, stars?: number): { used: number; minutes: number; timer: GameTimerDto | null } {
     const [person] = db.select().from(people).where(and(eq(people.id, personId), isNull(people.deletedAt))).all()
     if (!person) throw notFound('Person')
-    const balance = choresService.balanceOf(personId)
+    const balance = Math.min(choresService.balanceOf(personId), stars ?? Infinity)
     if (balance <= 0) return { used: 0, minutes: 0, timer: null }
     const { total } = gameMinutes(balance)
     const now = DateTime.utc()

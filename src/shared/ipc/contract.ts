@@ -120,7 +120,7 @@ export type IpcContract = {
   /** a parent's correction: adds `delta` (may be negative) to the person's balance */
   'stars:adjust': { req: { personId: string; delta: number }; res: { balance: number } }
   /** a kid uses all their saved-up controllers ("use your time"): balance → 0; not PIN-gated */
-  'stars:useTime': { req: { personId: string }; res: { used: number; minutes: number; timer: GameTimerDto | null } }
+  'stars:useTime': { req: { personId: string; stars?: number }; res: { used: number; minutes: number; timer: GameTimerDto | null } }
   /** game timers counting down (and finished ones not yet acknowledged) */
   'stars:timers': { req: void; res: GameTimerDto[] }
   /** stop early: the time left comes back as controllers (rounded up to a minute, capped at what was spent) */

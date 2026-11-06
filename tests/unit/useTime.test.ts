@@ -47,6 +47,23 @@ describe('use your time', () => {
     expect(Date.parse(timer.startedAt)).toBeGreaterThanOrEqual(before - 1000)
   })
 
+  it('spends only the stars picked: the rest stay, and the timer is that many minutes + setup', () => {
+    rewards.adjust('emma', 50)
+    const res = rewards.useTime('emma', 20)
+    expect(res).toMatchObject({ used: 20, minutes: 23 })
+    expect(chores.balanceOf('emma')).toBe(30)
+    expect(handle.db.select().from(starLedger).all().at(-1)).toMatchObject({ delta: -20, note: 'Used game time (23 min)' })
+    const [timer] = rewards.timers()
+    expect(timer).toMatchObject({ personId: 'emma', minutes: 23, points: 20 })
+    expect(Date.parse(timer.endsAt) - Date.parse(timer.startedAt)).toBe(23 * 60_000)
+  })
+
+  it('picking more than the balance spends what there is', () => {
+    rewards.adjust('emma', 12)
+    expect(rewards.useTime('emma', 40)).toMatchObject({ used: 12, minutes: 15 })
+    expect(chores.balanceOf('emma')).toBe(0)
+  })
+
   it('using more time while still playing adds to the running timer', () => {
     rewards.adjust('emma', 30)
     const first = rewards.useTime('emma').timer!
