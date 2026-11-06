@@ -83,9 +83,9 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
       )}
       {/* preload the next slide so the crossfade never flashes */}
       {next && <img src={next} alt="" className="hidden" />}
-      {/* bottom-left: the clock with the weather just right of it, the date underneath
+      {/* top-left: the clock with the weather just right of it, the date underneath
           (all 1.5× v0.8.115's sizes: time 108px, date 36px, temperature 54px) */}
-      <div className="absolute bottom-2.5 left-6 select-none" data-screensaver-clock>
+      <div className="absolute top-2.5 left-6 select-none" data-screensaver-clock>
         <div className="flex items-center gap-9">
           <div className="font-display text-[108px] leading-none font-semibold text-white/90 drop-shadow-lg">
             {timeFormat === '24h' ? now.toFormat('HH:mm') : now.toFormat('h:mm')}
