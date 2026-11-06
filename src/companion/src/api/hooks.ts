@@ -112,6 +112,15 @@ export function useNotes() {
   return useQuery({ queryKey: ['notes'], queryFn: () => rpc('notes:recent', undefined), ...LIVE })
 }
 
+/** The one family conversation (tablet and phones), oldest first. */
+export function useChat() {
+  return useQuery({ queryKey: ['notes', 'timeline'], queryFn: () => rpc('chat:timeline', undefined), ...LIVE })
+}
+
+export function useChatSend() {
+  return useInvalidatingMutation((input: { text: string; authorId: string | null }) => rpc('chat:send', input), [['notes']])
+}
+
 export function useNoteMutations() {
   const keys = [['notes']]
   return {

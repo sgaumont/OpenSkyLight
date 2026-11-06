@@ -28,6 +28,7 @@ import type {
   MealSlotDto,
   MealSlotKind,
   NoteDto,
+  ChatMessageDto,
   NoteInput,
   NoteReplyDto,
   NoteReplyInput,
@@ -160,6 +161,14 @@ export type IpcContract = {
   'notes:reply': { req: NoteReplyInput; res: NoteReplyDto }
   /** a reply tapped or typed on the tablet — kiosk-only, so a phone can't post as the tablet */
   'notes:kioskReply': { req: { noteId: string; text: string }; res: NoteReplyDto }
+  /** the one family conversation, oldest first */
+  'chat:timeline': { req: void; res: ChatMessageDto[] }
+  /** a message from a phone */
+  'chat:send': { req: { text: string; authorId: string | null }; res: ChatMessageDto }
+  /** a message from the tablet (also marks the phones' messages seen) */
+  'chat:kioskSend': { req: { text: string }; res: ChatMessageDto }
+  /** the tablet has seen every phone message so far */
+  'chat:seen': { req: void; res: void }
   /** a chat started on the tablet (to the phones) */
   'notes:kioskAdd': { req: { text: string; untilTonight: boolean }; res: NoteDto }
   'notes:done': { req: { id: string }; res: void }
@@ -288,6 +297,7 @@ export const ALLOWED_CHANNEL_PREFIXES = [
   'listItems:',
   'meals:',
   'notes:',
+  'chat:',
   'countdowns:',
   'travel:',
   'screensaver:',

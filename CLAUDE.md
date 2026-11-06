@@ -551,6 +551,16 @@ Add unit tests where sensible.
   badge on the Chats button (`SegmentedControl` labels are ReactNode). No period arrows, + button or stepping on
   Chats. Header checked at 1440 wide, 100/115/130%, with clothing and two kids. Playwright screenshots crop a
   zoomed page; use `webContents.capturePage()`.
+- v0.8.136: Chat is ONE family conversation (tablet + all phones), like a group text, with no separate chats.
+  `notesService.timeline()` merges every `notes` row and every `note_replies` row (old threads fold in by time) →
+  `ChatMessageDto[]`; `send(input, fromKiosk)` adds a `notes` row. A tablet message marks all open ones done (=
+  seen); `seen()` is the pop-up's two-tap "✓ Seen". `unseen` = a phone message not done/expired — that's what pops
+  up and chimes ("phone has the last word"). Channels: `chat:timeline`/`chat:send` (companion too), and
+  `chat:kioskSend`/`chat:seen` (tablet only). The old `notes:*` channels stay for phones still on an older page.
+  Tablet: NoteOverlay shows the new messages plus 2 before them, quick replies / Write… / ✓ Seen, and the Chats
+  button count = unseen. ChatsView is one scrolling list with day dividers and the composer at the bottom, lifted
+  above the on-screen keyboard (`useOskHeight()` in Osk.tsx). Phone bubbles are tinted with the sender's colour.
+  Phone Chat tab: same stream, mine on the right, composer + From picker below. `shared/chat.ts` removed.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

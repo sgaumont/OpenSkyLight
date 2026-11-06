@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
-import { useBalances, useNotes, usePeople, useSettings } from '../../api/hooks'
+import { useBalances, useChat, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { SegmentedControl, IconButton } from '../../components/ui'
 import { ChevronLeftIcon, ChevronRightIcon, GameIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
-import { popsUp, waiting } from '@shared/chat'
 import { WeatherButton } from '../weather/WeatherHeader'
 import { IssueLine } from './IssueLine'
 import { UseTimeDialog } from './UseTimeDialog'
@@ -55,8 +54,9 @@ export function Header() {
   const kids = people.filter((p) => p.role === 'child')
   // the kid whose "use your time?" question is open
   const [usingTime, setUsingTime] = useState<string | null>(null)
-  const { data: openChats = [] } = useNotes()
-  const waitingChats = openChats.filter((n) => popsUp(n) && waiting(n)).length
+  // phone messages the tablet hasn't seen yet
+  const { data: chat = [] } = useChat()
+  const waitingChats = chat.filter((m) => m.unseen).length
   const view = useUi((s) => s.view)
   const setView = useUi((s) => s.setView)
   const focusedDate = useUi((s) => s.focusedDate)

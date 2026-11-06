@@ -21,6 +21,8 @@ export const COMPANION_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'stars:log',
   'notes:list',
   'notes:add',
+  'chat:timeline',
+  'chat:send',
   'notes:done',
   'notes:recent',
   'notes:reply',

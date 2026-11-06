@@ -141,6 +141,9 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'notes:reply': 'notes',
   'notes:kioskReply': 'notes',
   'notes:kioskAdd': 'notes',
+  'chat:send': 'notes',
+  'chat:kioskSend': 'notes',
+  'chat:seen': 'notes',
   'chores:create': 'chores',
   'chores:update': 'chores',
   'chores:delete': 'chores',
@@ -355,6 +358,10 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('travel:test', s.travelTestSchema, (req) => services.travel.test(req.destination))
   handle('notes:list', null, () => services.notes.list())
   handle('notes:add', s.noteAddSchema, (req) => services.notes.add(req))
+  handle('chat:timeline', null, () => services.notes.timeline())
+  handle('chat:send', s.chatSendSchema, (req) => services.notes.send(req, false))
+  handle('chat:kioskSend', s.chatKioskSendSchema, (req) => services.notes.send({ text: req.text, authorId: null }, true))
+  handle('chat:seen', null, () => services.notes.seen())
   handle('notes:kioskAdd', s.noteKioskAddSchema, (req) => services.notes.add({ text: req.text, authorId: null, untilTonight: req.untilTonight }, true))
   handle('notes:done', s.noteDoneSchema, (req) => services.notes.done(req.id))
   handle('notes:recent', null, () => services.notes.recent())

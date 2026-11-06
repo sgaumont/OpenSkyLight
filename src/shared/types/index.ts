@@ -444,6 +444,18 @@ export interface NoteReplyInput {
   authorId: string | null
 }
 
+/** One message in the family conversation (Chat): every message, tablet and phones, in one stream. */
+export interface ChatMessageDto {
+  id: string
+  text: string
+  /** who on a phone; null from the tablet or when no one was picked */
+  authorId: string | null
+  fromKiosk: boolean
+  createdAt: string
+  /** a phone message the tablet hasn't seen yet (pops up and chimes until answered or marked seen) */
+  unseen: boolean
+}
+
 export interface NoteInput {
   text: string
   authorId: string | null

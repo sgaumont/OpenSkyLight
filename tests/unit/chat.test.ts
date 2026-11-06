@@ -4,10 +4,9 @@ import { DateTime } from 'luxon'
 import { openDatabase, type DbHandle } from '../../src/main/db/client'
 import { runMigrations } from '../../src/main/db/migrations'
 import { createNotesService } from '../../src/main/services/notesService'
-import { popsUp, waiting } from '../../src/shared/chat'
 import { COMPANION_CHANNELS } from '../../src/shared/ipc/companionChannels'
 
-describe('Chat (was Notes): chats the tablet starts', () => {
+describe('Chat: one family conversation', () => {
   let handle: DbHandle
   let now = DateTime.fromISO('2026-11-05T20:00:00Z')
   beforeEach(() => {
@@ -16,35 +15,65 @@ describe('Chat (was Notes): chats the tablet starts', () => {
   })
   afterEach(() => handle.sqlite.close())
   const svc = () => createNotesService(handle.db, () => 'America/Edmonton', () => now)
+  const later = (min: number) => {
+    now = now.plus({ minutes: min })
+  }
 
-  it('a phone chat pops up on the tablet and waits for an answer', () => {
-    const notes = svc()
-    notes.add({ text: 'Pick up milk', authorId: null, untilTonight: false })
-    const [n] = notes.list()
-    expect(n.fromKiosk).toBe(false)
-    expect(popsUp(n)).toBe(true)
-    expect(waiting(n)).toBe(true)
-    notes.reply({ noteId: n.id, text: '👍', authorId: null, fromKiosk: true })
-    expect(waiting(notes.list()[0])).toBe(false)
+  it('every message, tablet and phones, lands in one stream, oldest first', () => {
+    const chat = svc()
+    chat.send({ text: 'Pick up milk', authorId: 'mom' }, false)
+    later(1)
+    chat.send({ text: 'On my way', authorId: null }, true)
+    later(1)
+    chat.send({ text: 'Thanks!', authorId: 'mom' }, false)
+    const t = chat.timeline()
+    expect(t.map((m) => [m.text, m.fromKiosk])).toEqual([
+      ['Pick up milk', false],
+      ['On my way', true],
+      ['Thanks!', false]
+    ])
+    expect(t[1].authorId).toBeNull() // the tablet never has a person
   })
 
-  it("a tablet chat doesn't pop up on the tablet until a phone answers it", () => {
-    const notes = svc()
-    const started = notes.add({ text: "Dinner's ready", authorId: null, untilTonight: false }, true)
-    expect(started.fromKiosk).toBe(true)
-    let [n] = notes.list()
-    expect(popsUp(n)).toBe(false)
-    expect(waiting(n)).toBe(false)
-    // the phones see it, from the tablet
-    expect(notes.recent()[0]).toMatchObject({ text: "Dinner's ready", fromKiosk: true })
-    now = now.plus({ minutes: 2 })
-    notes.reply({ noteId: n.id, text: 'On my way', authorId: null, fromKiosk: false })
-    ;[n] = notes.list()
-    expect(popsUp(n)).toBe(true)
-    expect(waiting(n)).toBe(true)
+  it('a phone message is unseen (pops up and chimes) until the tablet answers', () => {
+    const chat = svc()
+    chat.send({ text: 'Running late', authorId: null }, false)
+    later(1)
+    chat.send({ text: 'Start dinner', authorId: null }, false)
+    expect(chat.timeline().filter((m) => m.unseen).map((m) => m.text)).toEqual(['Running late', 'Start dinner'])
+    later(1)
+    chat.send({ text: '👍', authorId: null }, true)
+    expect(chat.timeline().some((m) => m.unseen)).toBe(false)
+    // the phone has the last word again → unseen again
+    later(1)
+    chat.send({ text: 'Also bread', authorId: null }, false)
+    expect(chat.timeline().filter((m) => m.unseen).map((m) => m.text)).toEqual(['Also bread'])
   })
 
-  it('phones cannot start a chat as the tablet', () => {
+  it('✓ Seen clears them without an answer; tablet messages are never unseen', () => {
+    const chat = svc()
+    chat.send({ text: "Dinner's ready", authorId: null }, true)
+    expect(chat.timeline()[0].unseen).toBe(false)
+    chat.send({ text: 'Coming', authorId: null }, false)
+    chat.seen()
+    expect(chat.timeline().some((m) => m.unseen)).toBe(false)
+  })
+
+  it('the old separate chats fold into the stream in time order (first message, then replies)', () => {
+    const chat = svc()
+    const n = chat.add({ text: 'Old note', authorId: null, untilTonight: false })
+    later(5)
+    chat.reply({ noteId: n.id, text: 'Old reply', authorId: null, fromKiosk: true })
+    later(5)
+    chat.send({ text: 'New message', authorId: null }, false)
+    expect(chat.timeline().map((m) => m.text)).toEqual(['Old note', 'Old reply', 'New message'])
+  })
+
+  it('phones can read and send, but never as the tablet', () => {
+    expect(COMPANION_CHANNELS).toContain('chat:timeline')
+    expect(COMPANION_CHANNELS).toContain('chat:send')
+    expect(COMPANION_CHANNELS).not.toContain('chat:kioskSend')
+    expect(COMPANION_CHANNELS).not.toContain('chat:seen')
     expect(COMPANION_CHANNELS).not.toContain('notes:kioskAdd')
   })
 

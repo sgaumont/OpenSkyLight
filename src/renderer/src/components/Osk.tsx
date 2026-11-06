@@ -150,3 +150,29 @@ export function OskTray() {
     </div>
   )
 }
+
+/** How tall the on-screen keyboard is right now (0 when it's closed), so a screen can keep its input above it. */
+export function useOskHeight(): number {
+  const open = useOsk((s) => s.target !== null)
+  const [height, setHeight] = useState(0)
+  useEffect(() => {
+    if (!open) {
+      setHeight(0)
+      return
+    }
+    let ro: ResizeObserver | null = null
+    // the tray mounts on the same tick the target is set; measure it once it's in the page
+    const raf = requestAnimationFrame(() => {
+      const tray = document.querySelector<HTMLElement>('.osl-osk-tray')
+      if (!tray) return
+      setHeight(tray.getBoundingClientRect().height)
+      ro = new ResizeObserver(() => setHeight(tray.getBoundingClientRect().height))
+      ro.observe(tray)
+    })
+    return () => {
+      cancelAnimationFrame(raf)
+      ro?.disconnect()
+    }
+  }, [open])
+  return height
+}

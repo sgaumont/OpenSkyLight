@@ -4,13 +4,15 @@ import type { AppDb } from '../db/client'
 import { noteReplies, notes } from '../db/schema'
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
-import type { NoteDto, NoteInput, NoteReplyDto } from '@shared/types'
+import type { ChatMessageDto, NoteDto, NoteInput, NoteReplyDto } from '@shared/types'
 import { invalid, notFound } from './errors'
 
 const MAX_LENGTH = 280
 /** How far back the phone's list of conversations goes (by latest message). */
 const RECENT_DAYS = 2
 const RECENT_MAX = 20
+/** How much of the family conversation the tablet and phones load. */
+const TIMELINE_MAX = 300
 
 function cleanText(raw: string, what: string): string {
   const text = raw.trim()
@@ -140,12 +142,55 @@ export function createNotesService(db: AppDb, deviceTz: () => string, now: () =>
     return { id: row.id, text, authorId: row.authorId, fromKiosk: row.fromKiosk, createdAt: row.createdAt }
   }
 
+  /**
+   * The family conversation: every message from the tablet and the phones, oldest first — new
+   * messages and everything from the old separate chats (their first message and replies) alike.
+   */
+  function timeline(limit = TIMELINE_MAX): ChatMessageDto[] {
+    const nowIso = isoUtc(now())
+    const roots: ChatMessageDto[] = db
+      .select()
+      .from(notes)
+      .all()
+      .map((n) => ({
+        id: n.id,
+        text: n.text,
+        authorId: n.authorId,
+        fromKiosk: n.fromKiosk,
+        createdAt: n.createdAt,
+        unseen: !n.fromKiosk && isShowing(n, nowIso)
+      }))
+    const replies: ChatMessageDto[] = db
+      .select()
+      .from(noteReplies)
+      .all()
+      .map((r) => ({ id: r.id, text: r.text, authorId: r.authorId, fromKiosk: r.fromKiosk, createdAt: r.createdAt, unseen: false }))
+    return [...roots, ...replies].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)).slice(-limit)
+  }
+
+  /** A new message in the conversation. One from the tablet also counts as having seen the phones'. */
+  function send(input: { text: string; authorId: string | null }, fromKiosk: boolean): ChatMessageDto {
+    const text = cleanText(input.text, 'message')
+    const at = isoUtc(now())
+    const row = { id: uuidv7(), text, authorId: fromKiosk ? null : input.authorId, createdAt: at, expiresAt: null, doneAt: fromKiosk ? at : null, fromKiosk }
+    db.transaction((tx) => {
+      tx.insert(notes).values(row).run()
+      if (fromKiosk) tx.update(notes).set({ doneAt: at }).where(isNull(notes.doneAt)).run()
+    })
+    return { id: row.id, text, authorId: row.authorId, fromKiosk, createdAt: at, unseen: !fromKiosk }
+  }
+
+  /** The tablet has seen every phone message so far (the pop-up's ✓ Seen). */
+  function seen(): void {
+    db.update(notes).set({ doneAt: isoUtc(now()) }).where(isNull(notes.doneAt)).run()
+  }
+
   /** Off the kiosk; kept in the table so the phone can still read the conversation for a while. */
   function done(id: string): void {
     db.update(notes).set({ doneAt: isoUtc(now()) }).where(eq(notes.id, id)).run()
   }
 
-  return { list, recent, add, reply, done }
+  return { list, recent, add, reply, done, timeline, send, seen }
 }
 
 export type NotesService = ReturnType<typeof createNotesService>

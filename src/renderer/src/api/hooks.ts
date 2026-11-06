@@ -414,27 +414,15 @@ export function useTravelMutations() {
   }
 }
 
-export function useNotes() {
-  // re-checked every minute so "until tonight" notes drop off at midnight
-  return useQuery({ queryKey: ['notes'], queryFn: () => ipcInvoke('notes:list', undefined), refetchInterval: 60_000 })
+/** The one family conversation (tablet and phones), oldest first; re-read every minute as a backstop. */
+export function useChat() {
+  return useQuery({ queryKey: ['notes', 'timeline'], queryFn: () => ipcInvoke('chat:timeline', undefined), refetchInterval: 60_000 })
 }
 
-/** The Chat screen: chats on the kiosk plus the last couple of days', newest activity first. */
-export function useRecentChats(enabled: boolean) {
-  return useQuery({ queryKey: ['notes', 'recent'], queryFn: () => ipcInvoke('notes:recent', undefined), enabled })
-}
-
-export function useNoteMutations() {
+export function useChatMutations() {
   return {
-    start: useInvalidatingMutation(
-      (input: { text: string; untilTonight: boolean }) => ipcInvoke('notes:kioskAdd', input),
-      [['notes']]
-    ),
-    done: useInvalidatingMutation((input: { id: string }) => ipcInvoke('notes:done', input), [['notes']]),
-    reply: useInvalidatingMutation(
-      (input: { noteId: string; text: string }) => ipcInvoke('notes:kioskReply', input),
-      [['notes']]
-    )
+    send: useInvalidatingMutation((input: { text: string }) => ipcInvoke('chat:kioskSend', input), [['notes']]),
+    seen: useInvalidatingMutation(() => ipcInvoke('chat:seen', undefined), [['notes']])
   }
 }
 
