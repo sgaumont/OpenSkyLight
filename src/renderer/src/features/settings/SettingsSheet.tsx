@@ -57,7 +57,7 @@ import { ipcInvoke } from '../../api/client'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { BigButton, Dialog, FieldLabel, SegmentedControl, Sheet, Toggle } from '../../components/ui'
 import { OskInput } from '../../components/Osk'
-import { GameIcon, PlusIcon } from '../../components/icons'
+import { StarIcon, PlusIcon } from '../../components/icons'
 import {
   ChecklistsSection,
   PeoplePicker,
@@ -536,7 +536,7 @@ function VideoGamesStarsNote() {
     <div className="max-w-60">
       <FieldLabel>Game time</FieldLabel>
       <p className="text-sm font-bold text-ink-soft">
-        None alone — the whole day's set pays <GameIcon /> {data?.stars ?? '…'}, once a parent approves.
+        None alone — the whole day's set pays <StarIcon /> {data?.stars ?? '…'}, once a parent approves.
       </p>
     </div>
   )
@@ -674,7 +674,7 @@ function ChoresTab() {
                 <span className="min-w-0 flex-1 truncate text-lg font-bold">
                   {peopleById.get(r.personId)?.name ?? 'Someone'} → {r.rewardTitle}
                 </span>
-                <span className="text-base font-extrabold text-ember-deep"><GameIcon /> {r.starsSpent}</span>
+                <span className="text-base font-extrabold text-ember-deep"><StarIcon /> {r.starsSpent}</span>
                 <BigButton onClick={() => rewardMutations.grant.mutate({ redemptionId: r.id })}>Grant</BigButton>
               </div>
             ))}
@@ -709,7 +709,7 @@ function ChoresTab() {
                   {c.routine ? ` · ${c.routine}` : ''}
                 </span>
               </span>
-              {c.starsValue > 0 && <span className="text-base font-extrabold text-ember-deep"><GameIcon /> {c.starsValue}</span>}
+              {c.starsValue > 0 && <span className="text-base font-extrabold text-ember-deep"><StarIcon /> {c.starsValue}</span>}
             </button>
           ))}
           <BigButton variant="ghost" onClick={() => openChoreEditor('new')}>
@@ -744,7 +744,7 @@ function ChoresTab() {
               className="pressable flex items-center gap-3 rounded-2xl bg-paper-deep/50 p-3 text-left"
             >
               <span className="min-w-0 flex-1 truncate text-lg font-bold">{r.title}</span>
-              <span className="text-base font-extrabold text-ember-deep"><GameIcon /> {r.costStars}</span>
+              <span className="text-base font-extrabold text-ember-deep"><StarIcon /> {r.costStars}</span>
             </button>
           ))}
           <BigButton

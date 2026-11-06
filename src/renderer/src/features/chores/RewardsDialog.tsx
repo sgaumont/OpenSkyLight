@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GameIcon } from '../../components/icons'
+import { StarIcon } from '../../components/icons'
 import { useBalances, usePeople, useRewardMutations, useRewards } from '../../api/hooks'
 import { useToasts } from '../../stores/toastStore'
 import { Dialog } from '../../components/ui'
@@ -55,7 +55,7 @@ export function RewardsDialog({ open, onClose }: { open: boolean; onClose: () =>
             })}
           </div>
           <div className="text-center font-display text-2xl">
-            {selected?.name} has <span className="text-ember-deep"><GameIcon /> {balance}</span>
+            {selected?.name} has <span className="text-ember-deep"><StarIcon /> {balance}</span>
           </div>
           <div className="flex flex-col gap-2">
             {rewards.map((r) => {
@@ -63,7 +63,7 @@ export function RewardsDialog({ open, onClose }: { open: boolean; onClose: () =>
               return (
                 <div key={r.id} className="flex items-center gap-3 rounded-2xl bg-paper-deep/50 p-3">
                   <span className="min-w-0 flex-1 truncate text-lg font-bold">{r.title}</span>
-                  <span className="text-base font-extrabold text-ember-deep"><GameIcon /> {r.costStars}</span>
+                  <span className="text-base font-extrabold text-ember-deep"><StarIcon /> {r.costStars}</span>
                   <button
                     type="button"
                     disabled={!affordable || !selected}

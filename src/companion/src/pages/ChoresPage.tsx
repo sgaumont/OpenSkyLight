@@ -16,7 +16,7 @@ import {
   usePeople,
   useToday
 } from '../api/hooks'
-import { Card, CheckCircle, EmptyNote, GameIcon, GhostButton, PersonAvatar, PrimaryButton, TextInput, textOn } from '../components/ui'
+import { Card, CheckCircle, EmptyNote, StarIcon, GhostButton, PersonAvatar, PrimaryButton, TextInput, textOn } from '../components/ui'
 import { sortDayChores } from '@shared/choreOrder'
 import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type ScheduleKind } from '@shared/choreSchedule'
 import { describeRecurrence } from '@shared/recurrence/build'
@@ -74,7 +74,7 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
               >
                 −
               </button>
-              <span className="min-w-14 text-center text-lg font-extrabold text-ember-deep tabular-nums"><GameIcon /> {stars}</span>
+              <span className="min-w-14 text-center text-lg font-extrabold text-ember-deep tabular-nums"><StarIcon /> {stars}</span>
               <button
                 type="button"
                 aria-label={`More game time for ${p.name}`}
@@ -176,7 +176,7 @@ function GameTimeLogSheet({ people, onClose }: { people: PersonDto[]; onClose: (
                     {Math.abs(e.delta)}
                   </div>
                   <div className="text-xs font-bold text-ink-faint tabular-nums">
-                    → <GameIcon /> {e.balanceAfter}
+                    → <StarIcon /> {e.balanceAfter}
                   </div>
                 </div>
               </div>
@@ -239,7 +239,7 @@ function ClaimSheet({
         {chore.starsValue > 0 && (
           <>
             {' · '}
-            <GameIcon /> {chore.starsValue}
+            <StarIcon /> {chore.starsValue}
           </>
         )}
         {counted && !each && ` · today ${countLabel(chore)}`}
@@ -300,7 +300,7 @@ function EditStarsSheet({ person, current, onClose }: { person: PersonDto; curre
       <div className="mb-4 flex items-center gap-2.5">
         <PersonAvatar name={person.name} color={person.color} />
         <h2 className="flex-1 truncate font-display text-xl font-semibold">{person.name}'s game time</h2>
-        <span className="text-sm font-extrabold text-ink-faint">now <GameIcon /> {current}</span>
+        <span className="text-sm font-extrabold text-ink-faint">now <StarIcon /> {current}</span>
       </div>
       <div className="mb-4 flex items-center gap-3">
         <button
@@ -355,7 +355,7 @@ function EachChoreRow({
         <span className={`min-w-0 flex-1 truncate text-base font-semibold ${chore.completed ? 'text-ink-faint line-through' : ''}`}>
           {chore.title}
         </span>
-        {chore.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><GameIcon /> {chore.starsValue}</span>}
+        {chore.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><StarIcon /> {chore.starsValue}</span>}
       </div>
       <div className="mt-1.5 flex flex-wrap gap-2">
         {chore.assignees.map((id) => {
@@ -428,7 +428,7 @@ export function ChoresPage() {
             🎮 {cl.title}
             {cl.kind === 'videogames' && (
               <span className="ml-2 text-lg text-ember-deep">
-                <GameIcon /> {cl.stars}
+                <StarIcon /> {cl.stars}
               </span>
             )}
           </h2>
@@ -503,7 +503,7 @@ export function ChoresPage() {
                     </span>
                   )}
                   {chore.starsValue > 0 && (
-                    <span className="shrink-0 text-sm font-extrabold text-ink-faint"><GameIcon /> {chore.starsValue}</span>
+                    <span className="shrink-0 text-sm font-extrabold text-ink-faint"><StarIcon /> {chore.starsValue}</span>
                   )}
                 </div>
               </div>
@@ -535,7 +535,7 @@ export function ChoresPage() {
               <PersonAvatar name={p.name} color={p.color} />
               <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
               <span className="text-sm font-extrabold text-ink-faint">
-                {dayChores.filter((c) => c.completedBy === p.id).length} today · <GameIcon /> {balanceOf(p.id)}
+                {dayChores.filter((c) => c.completedBy === p.id).length} today · <StarIcon /> {balanceOf(p.id)}
               </span>
             </div>
           ))}
@@ -771,7 +771,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
               >
                 −
               </button>
-              <span className="min-w-11 text-center text-base font-extrabold tabular-nums"><GameIcon /> {stars}</span>
+              <span className="min-w-11 text-center text-base font-extrabold tabular-nums"><StarIcon /> {stars}</span>
               <button
                 type="button"
                 aria-label="More game time"
@@ -970,7 +970,7 @@ export function PendingUnlocksCard({ people, today }: { people: PersonDto[]; tod
             {dayLabel(u.date, today) ? ` · ${dayLabel(u.date, today)}` : ''}
             {u.kind === 'videogames' && (
               <span className="ml-1.5 text-ember-deep">
-                · <GameIcon /> {u.stars}
+                · <StarIcon /> {u.stars}
               </span>
             )}
           </span>
@@ -992,7 +992,7 @@ function VideoGamesNote() {
   const { data } = useVideoGamesStars()
   return (
     <p className="rounded-xl bg-sun-soft px-3 py-2 text-sm font-bold text-ink-soft">
-      Pays nothing alone: finishing all of the day's 🎮 Video Games chores earns <GameIcon /> {data?.stars ?? '…'} (again for
+      Pays nothing alone: finishing all of the day's 🎮 Video Games chores earns <StarIcon /> {data?.stars ?? '…'} (again for
       each full set), once a parent approves.
     </p>
   )
@@ -1035,7 +1035,7 @@ function ManageChores({ people, onEditChore }: { people: PersonDto[]; onEditChor
                   {c.routine ? ` · ${c.routine}` : ''}
                 </span>
               </span>
-              {c.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><GameIcon /> {c.starsValue}</span>}
+              {c.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><StarIcon /> {c.starsValue}</span>}
             </button>
           ))}
       </Card>

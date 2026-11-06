@@ -3,7 +3,7 @@ import { DateTime } from 'luxon'
 import type { PersonDto } from '@shared/types'
 import { usePendingUnlocks, useUseTime } from '../../api/hooks'
 import { BigButton, Dialog } from '../../components/ui'
-import { GameIcon } from '../../components/icons'
+import { StarIcon } from '../../components/icons'
 import { useToasts } from '../../stores/toastStore'
 import { useApprovals } from '../../stores/approvalStore'
 import { ZONE } from '../../stores/uiStore'
@@ -31,7 +31,7 @@ export function UseTimeDialog({ person, balance, onClose }: { person: PersonDto 
     <Dialog open onClose={onClose} title={person.name}>
       <div className="flex flex-col items-center gap-5 text-center">
         <span className="text-4xl font-extrabold text-ember-deep tabular-nums">
-          <GameIcon /> {balance}
+          <StarIcon /> {balance}
         </span>
         {balance > 0 ? (
           <>

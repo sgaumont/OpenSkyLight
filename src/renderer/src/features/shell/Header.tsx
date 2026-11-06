@@ -3,7 +3,7 @@ import { DateTime } from 'luxon'
 import { useBalances, useChat, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { SegmentedControl, IconButton } from '../../components/ui'
-import { ChevronLeftIcon, ChevronRightIcon, GameIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
+import { ChevronLeftIcon, ChevronRightIcon, StarIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
 import { WeatherButton } from '../weather/WeatherHeader'
 import { IssueLine } from './IssueLine'
 import { UseTimeDialog } from './UseTimeDialog'
@@ -153,7 +153,7 @@ export function Header() {
         </div>
       )}
 
-      {/* each child's controller balance, in their colour, beside the screen selector on every screen —
+      {/* each child's star balance, in their colour, beside the screen selector on every screen —
           a tap asks whether they want to use their time (spend it all) */}
       {kids.length > 0 && (
         // a little tighter beside the date controls (Week/Month), where the header is fullest
@@ -211,7 +211,7 @@ export function Header() {
 }
 
 /**
- * A kid's game time: a circle in their colour with the controller icon and their balance. In the
+ * A kid's game time: a circle in their colour with the star icon and their balance. In the
  * header (as tall as the banner) and on the Shop screen; a tap opens UseTimeDialog for them.
  */
 export function GameTimeBadge({ person, stars, onClick }: { person: PersonDto; stars: number; onClick: () => void }) {
@@ -226,7 +226,7 @@ export function GameTimeBadge({ person, stars, onClick }: { person: PersonDto; s
       data-game-badge
     >
       <span aria-hidden className="text-sm leading-none max-[1300px]:text-xs">
-        <GameIcon className="align-top" />
+        <StarIcon className="align-top" />
       </span>
       <span className="text-xl leading-none max-[1300px]:text-base">{stars}</span>
     </button>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { DateTime } from 'luxon'
 import { useGameTimeLog, usePeople } from '../../api/hooks'
 import { FieldLabel } from '../../components/ui'
-import { GameIcon } from '../../components/icons'
+import { StarIcon } from '../../components/icons'
 import { initials, textOn } from '../../lib/format'
 import { ZONE } from '../../stores/uiStore'
 
@@ -78,7 +78,7 @@ export function GameTimeLog() {
                     {Math.abs(e.delta)}
                   </span>
                   <span className="w-20 shrink-0 text-right text-sm font-bold text-ink-faint tabular-nums">
-                    → <GameIcon /> {e.balanceAfter}
+                    → <StarIcon /> {e.balanceAfter}
                   </span>
                 </div>
               )

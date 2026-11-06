@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { GameTimerDto } from '@shared/types'
 import { formatDuration } from '@shared/timer'
 import { useGameTimers, usePeople, useStopGameTimer } from '../../api/hooks'
-import { GameIcon } from '../../components/icons'
+import { StarIcon } from '../../components/icons'
 import { startAlarm, stopAlarm } from '../../lib/alarm'
 import { initials, textOn } from '../../lib/format'
 import { useKioskState } from '../../stores/kioskStore'
@@ -68,7 +68,7 @@ export function GameTimers() {
                   </span>
                 )}
                 <span className="text-lg font-bold">
-                  <GameIcon /> {p?.name ?? 'Game time'}
+                  <StarIcon /> {p?.name ?? 'Game time'}
                 </span>
                 <span className="min-w-20 text-center font-display text-3xl tabular-nums" data-left>
                   {formatDuration(left(t))}
@@ -106,7 +106,7 @@ export function GameTimers() {
             className="animate-pop flex w-full max-w-xl flex-col items-center gap-6 rounded-3xl bg-card px-10 py-9 text-center shadow-float ring-2 ring-ember"
           >
             <span className="text-6xl text-ember">
-              <GameIcon />
+              <StarIcon />
             </span>
             <p className="font-display text-4xl leading-tight">
               {upPerson ? `${upPerson.name}'s` : 'Your'} game time is up!

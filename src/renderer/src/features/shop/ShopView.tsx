@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useBalances, usePeople } from '../../api/hooks'
-import { GameIcon } from '../../components/icons'
+import { StarIcon } from '../../components/icons'
 import { GameTimeBadge } from '../shell/Header'
 import { UseTimeDialog } from '../shell/UseTimeDialog'
 
@@ -19,7 +19,7 @@ export function ShopView() {
     <div className="h-full overflow-y-auto px-5 pb-4" data-shop-view>
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-5 rounded-3xl bg-card px-7 py-5 shadow-card" data-shop-item="videogames">
-          <GameIcon className="shrink-0 text-4xl text-ember-deep" />
+          <StarIcon className="shrink-0 text-4xl text-ember-deep" />
           <span className="min-w-0 flex-1 font-display text-3xl">Video Game Time</span>
           {kids.length === 0 ? (
             <span className="text-lg font-bold text-ink-faint">Add the kids in Settings → Family</span>

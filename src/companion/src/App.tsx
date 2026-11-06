@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTabSwipe } from './lib/useTabSwipe'
-import { GameIcon } from './components/ui'
+import { StarIcon } from './components/ui'
 import { DateTime } from 'luxon'
 import { getToken, setUnauthorizedHandler } from './api/client'
 import { useLiveUpdates } from './api/live'
@@ -17,7 +17,7 @@ import { NotificationsSheet } from './pages/NotificationsSheet'
 type TabId = 'lists' | 'meals' | 'chores' | 'photos' | 'notes'
 
 const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
-  { id: 'chores', label: 'Chores', icon: <GameIcon /> },
+  { id: 'chores', label: 'Chores', icon: <StarIcon /> },
   { id: 'lists', label: 'Lists', icon: '✓' },
   { id: 'meals', label: 'Meals', icon: '🍽' },
   { id: 'photos', label: 'Photos', icon: '🖼' },

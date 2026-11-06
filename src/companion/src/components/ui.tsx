@@ -144,8 +144,8 @@ export function EmptyNote({ children }: { children: ReactNode }) {
   return <p className="py-6 text-center text-base font-semibold text-ink-faint">{children}</p>
 }
 
-/** Solid game controller, sized to the text around it — the stars currency's mark (same as the kiosk's). */
-export function GameIcon({ className = '', ...p }: SVGProps<SVGSVGElement>) {
+/** Solid star, sized to the text around it — the stars currency's mark (same as the kiosk's). */
+export function StarIcon({ className = '', ...p }: SVGProps<SVGSVGElement>) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -157,7 +157,7 @@ export function GameIcon({ className = '', ...p }: SVGProps<SVGSVGElement>) {
       className={`inline-block shrink-0 align-[-0.25em] ${className}`}
       {...p}
     >
-      <path d="M7 6h10a5 5 0 0 1 4.9 4l1 5.2a3.2 3.2 0 0 1-5.6 2.7L15.6 16H8.4l-1.7 1.9a3.2 3.2 0 0 1-5.6-2.7l1-5.2A5 5 0 0 1 7 6ZM6.6 8.8v1.3H5.3v1.8h1.3v1.3h1.8v-1.3h1.3v-1.8H8.4V8.8ZM16 8.9a1.15 1.15 0 1 0 0 2.3 1.15 1.15 0 0 0 0-2.3Zm2.3 2.3a1.15 1.15 0 1 0 0 2.3 1.15 1.15 0 0 0 0-2.3Z" />
+      <path d="M12 2.2l2.95 6.3 6.85.8-5.07 4.7 1.36 6.8L12 17.4l-6.09 3.4 1.36-6.8L2.2 9.3l6.85-.8Z" />
     </svg>
   )
 }

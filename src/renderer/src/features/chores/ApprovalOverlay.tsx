@@ -4,7 +4,7 @@ import type { PendingUnlockDto } from '@shared/types'
 import { dayLabel } from '@shared/dayLabel'
 import { useAuthMutations, useAuthStatus, useChecklistMutations, usePendingUnlocks, usePeople } from '../../api/hooks'
 import { PinDialog } from '../../components/PinDialog'
-import { GameIcon } from '../../components/icons'
+import { StarIcon } from '../../components/icons'
 import { ZONE } from '../../stores/uiStore'
 import { useApprovals } from '../../stores/approvalStore'
 
@@ -73,7 +73,7 @@ export function ApprovalOverlay() {
           {when ? ` ${when}` : ''}!
         </p>
         <p className="text-3xl font-extrabold text-ember-deep">
-          Approve <GameIcon /> {u.stars}?
+          Approve <StarIcon /> {u.stars}?
         </p>
         <div className="flex w-full gap-3 [&>*]:flex-1">
           <button

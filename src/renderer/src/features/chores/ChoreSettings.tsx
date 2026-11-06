@@ -8,7 +8,7 @@ import { ZONE } from '../../stores/uiStore'
 import { textOn } from '../../lib/format'
 import { BigButton, Dialog, FieldLabel, SegmentedControl } from '../../components/ui'
 import { OskInput } from '../../components/Osk'
-import { GameIcon, PlusIcon } from '../../components/icons'
+import { StarIcon, PlusIcon } from '../../components/icons'
 import { dayLabel } from '@shared/dayLabel'
 
 const WEEKDAY_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -110,7 +110,7 @@ export function PendingUnlocks() {
           </span>
           {u.kind === 'videogames' && (
             <span className="text-base font-extrabold text-ember-deep">
-              <GameIcon /> {u.stars}
+              <StarIcon /> {u.stars}
             </span>
           )}
           <BigButton
