@@ -69,7 +69,7 @@ export function ApprovalOverlay() {
           Waiting for a parent{waiting.length > 1 ? ` · 1 of ${waiting.length}` : ''}
         </div>
         <p className="font-display text-4xl leading-tight">
-          {name} finished 🎮 Video Games{(u.round ?? 1) > 1 ? ` (set ${u.round})` : ''}
+          {name} finished ⭐ Video Games{(u.round ?? 1) > 1 ? ` (set ${u.round})` : ''}
           {when ? ` ${when}` : ''}!
         </p>
         <p className="text-3xl font-extrabold text-ember-deep">

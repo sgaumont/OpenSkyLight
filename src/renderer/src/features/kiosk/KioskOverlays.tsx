@@ -11,6 +11,8 @@ import { useCalendarData } from '../calendar/useCalendarData'
 import { agendaRange } from '@shared/dates'
 import { withoutEnded } from '@shared/occurrences'
 import { weatherIcon } from '../weather/WeatherHeader'
+import { alertColours, alertSummary } from '../weather/WeatherAlerts'
+import { AlertIcon } from '../../components/icons'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { useKioskState } from '../../stores/kioskStore'
 import { guardInput } from '@shared/inputGuard'
@@ -97,6 +99,7 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
           <ClothingEmoji className="flex h-[78px] w-[78px] items-center justify-center rounded-full bg-white/85 text-[48px] leading-none shadow-lg" />
         </div>
         <div className="mt-1.5 text-4xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>
+        <ScreensaverAlert />
       </div>
       <ScreensaverBottomCards now={now} />
       <ScreensaverCountdowns today={now.toISODate()!} />
@@ -130,12 +133,34 @@ function ScreensaverWeather() {
   )
 }
 
+/**
+ * A weather warning under the date, in its Environment Canada colour but see-through (the photo
+ * shows through it); "+N" for any others. Nothing when there's no alert.
+ */
+function ScreensaverAlert() {
+  const { data: weather } = useWeather()
+  const alerts = weather?.alerts ?? []
+  if (alerts.length === 0) return null
+  const { bg } = alertColours(alerts[0].colour)
+  return (
+    <div
+      className="mt-3 inline-flex max-w-[44rem] items-center gap-2.5 rounded-full px-5 py-2 text-2xl font-bold text-white/90 drop-shadow-lg"
+      // the alert colour at 35%: plainly a warning, but light enough not to cover the photo
+      style={{ backgroundColor: `${bg}59` }}
+      data-screensaver-alert
+    >
+      <AlertIcon size={26} className="shrink-0" />
+      <span className="truncate">{alertSummary(alerts)}</span>
+    </div>
+  )
+}
+
 /** The small uppercase label over a screensaver card's lines ("Next up", "Tomorrow", "Countdowns"). */
 const SMALL_HEADER = 'text-sm font-extrabold tracking-wider text-white/60 uppercase'
 
 /** The frosted card the screensaver's Next up, Meals and Countdowns sit on. */
 /** (Position is per card: Countdowns top-right, Meals bottom-left, Next up bottom-right.) */
-const GLANCE_CARD = 'max-w-[40rem] rounded-3xl bg-black/34 px-7 py-6 text-white drop-shadow-lg backdrop-blur-sm select-none'
+const GLANCE_CARD = 'max-w-[40rem] rounded-2xl bg-black/34 px-4 py-3 text-white drop-shadow-lg backdrop-blur-sm select-none'
 
 /** The bottom cards are drawn at 75% (text, padding, corners); zoom, so the stack lays out at that size. */
 const STACK_CARD: React.CSSProperties = { zoom: 0.75, animation: 'fade-in 1.2s ease both' }

@@ -49,7 +49,7 @@ describe('push alert rules', () => {
       weather: [{ id: 'w1', title: 'Snowfall warning', area: 'Calgary' }]
     })
     const [a, w] = dueAlerts(s)
-    expect(a).toMatchObject({ key: 'approve:vg:ava:2026-11-05:2', title: '🎮 Ava finished Video Games (round 2)', tab: 'chores' })
+    expect(a).toMatchObject({ key: 'approve:vg:ava:2026-11-05:2', title: '⭐ Ava finished Video Games (round 2)', tab: 'chores' })
     expect(w).toMatchObject({ key: 'weather:w1', kind: 'weather', title: '⚠️ Snowfall warning' })
     expect(dueAlerts(s).map((x) => x.key)).toEqual([a.key, w.key])
   })

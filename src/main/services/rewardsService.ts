@@ -244,7 +244,8 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     const entries = rows.map((r) => {
       const after = (running.get(r.personId) ?? 0) + r.delta
       running.set(r.personId, after)
-      return { id: r.id, personId: r.personId, delta: r.delta, at: r.createdAt, note: r.note ?? describe(r), balanceAfter: after }
+      // notes saved before v0.8.153 have 🎮 where stars are shown as ⭐ now
+      return { id: r.id, personId: r.personId, delta: r.delta, at: r.createdAt, note: (r.note ?? describe(r)).replace(/🎮/gu, '⭐'), balanceAfter: after }
     })
     return entries.reverse().slice(0, limit)
   }
@@ -271,7 +272,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
         .all()
       if (done) return done.title
       const [round] = db.select().from(videoGameRounds).where(eq(videoGameRounds.id, r.refId)).all()
-      if (round) return '🎮 Video Games set — approved'
+      if (round) return '⭐ Video Games set — approved'
     }
     return 'Chore'
   }

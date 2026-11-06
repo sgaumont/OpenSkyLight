@@ -425,7 +425,7 @@ export function ChoresPage() {
       {checklists.map((cl) => (
         <Card key={cl.checklistId}>
           <h2 className="font-display text-xl font-semibold">
-            🎮 {cl.title}
+            ⭐ {cl.title}
             {cl.kind === 'videogames' && (
               <span className="ml-2 text-lg text-ember-deep">
                 <StarIcon /> {cl.stars}
@@ -749,7 +749,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
               // "Everyone" is no longer offered for new chores; an existing one keeps it so it isn't changed by accident
               { value: 'anyone', label: 'Whoever' },
               ...(!isNew && chore.mode === 'each' ? [{ value: 'each' as const, label: 'Everyone' }] : []),
-              { value: 'videogames', label: '🎮 Video Games' }
+              { value: 'videogames', label: '⭐ Video Games' }
             ]}
           />
           {mode !== 'anyone' && (
@@ -965,7 +965,7 @@ export function PendingUnlocksCard({ people, today }: { people: PersonDto[]; tod
           className="flex items-center gap-2.5 border-b border-line/60 py-2 last:border-0"
         >
           <span className="min-w-0 flex-1 text-base font-bold">
-            {people.find((p) => p.id === u.personId)?.name ?? 'Someone'} finished 🎮 {u.title}
+            {people.find((p) => p.id === u.personId)?.name ?? 'Someone'} finished ⭐ {u.title}
             {u.kind === 'videogames' && (u.round ?? 1) > 1 ? ` (set ${u.round})` : ''}
             {dayLabel(u.date, today) ? ` · ${dayLabel(u.date, today)}` : ''}
             {u.kind === 'videogames' && (
@@ -992,7 +992,7 @@ function VideoGamesNote() {
   const { data } = useVideoGamesStars()
   return (
     <p className="rounded-xl bg-sun-soft px-3 py-2 text-sm font-bold text-ink-soft">
-      Pays nothing alone: finishing all of the day's 🎮 Video Games chores earns <StarIcon /> {data?.stars ?? '…'} (again for
+      Pays nothing alone: finishing all of the day's ⭐ Video Games chores earns <StarIcon /> {data?.stars ?? '…'} (again for
       each full set), once a parent approves.
     </p>
   )
@@ -1029,7 +1029,7 @@ function ManageChores({ people, onEditChore }: { people: PersonDto[]; onEditChor
                 <span className="block truncate text-base font-bold">{c.title}</span>
                 <span className="block truncate text-xs font-extrabold text-ink-faint">
                   {c.active ? '' : 'Paused · '}
-                  {c.mode === 'each' ? `Everyone: ${names(c.assignees)} · ` : c.mode === 'videogames' ? `🎮 Video Games: ${names(c.assignees)} · ` : ''}
+                  {c.mode === 'each' ? `Everyone: ${names(c.assignees)} · ` : c.mode === 'videogames' ? `⭐ Video Games: ${names(c.assignees)} · ` : ''}
                   {repeats(c.recurrence)}
                   {c.times === null ? ' · no limit' : c.times > 1 ? ` · ${c.times}×` : ''}
                   {c.routine ? ` · ${c.routine}` : ''}
@@ -1048,7 +1048,7 @@ function ManageChores({ people, onEditChore }: { people: PersonDto[]; onEditChor
             onClick={() => setEditingChecklist(c)}
             className="pressable flex w-full flex-col border-b border-line/60 py-2 text-left last:border-0"
           >
-            <span className="truncate text-base font-bold">🎮 {c.title}</span>
+            <span className="truncate text-base font-bold">⭐ {c.title}</span>
             <span className="truncate text-xs font-extrabold text-ink-faint">{c.items.map((i) => i.title).join(' · ')}</span>
             <span className="truncate text-xs font-extrabold text-ink-faint">
               {names(c.assignees)} · {repeats(c.recurrence)}

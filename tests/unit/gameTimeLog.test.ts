@@ -50,7 +50,7 @@ describe('game time log', () => {
       ['Used game time (58 min)', -55, 0],
       ['Changed by a parent', 5, 55],
       ['Reward: Ice cream', -10, 50],
-      ['🎮 Video Games set — approved', 60, 60]
+      ['⭐ Video Games set — approved', 60, 60]
     ])
   })
 
@@ -62,7 +62,7 @@ describe('game time log', () => {
     for (const t of tasks) chores.complete(t.id, DAY, 'emma')
     chores.approveUnlock(VIDEO_GAMES_SET_ID, 'emma', DAY, 1)
     chores.uncomplete(tasks[0].id, DAY, 'emma')
-    expect(lines('emma')[0]).toEqual(['🎮 Video Games set taken back (a task was un-ticked)', -60, 0])
+    expect(lines('emma')[0]).toEqual(['⭐ Video Games set taken back (a task was un-ticked)', -60, 0])
     expect(chores.balanceOf('emma')).toBe(0)
   })
 

@@ -50,7 +50,7 @@ export function UseTimeDialog({ person, balance, onClose }: { person: PersonDto 
                     { personId: person.id },
                     {
                       onSuccess: (res) => {
-                        if (res.used > 0) pushToast(`🎮 Enjoy your ${minutesLabel(res.minutes)}, ${person.name}!`)
+                        if (res.used > 0) pushToast(`⭐ Enjoy your ${minutesLabel(res.minutes)}, ${person.name}!`)
                         onClose()
                       }
                     }

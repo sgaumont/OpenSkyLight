@@ -179,7 +179,7 @@ function ChecklistCard({
     <div className="flex flex-col gap-3 rounded-card bg-paper-deep/40 p-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1">
         <div className="font-display text-2xl">
-          🎮 {checklist.title}
+          ⭐ {checklist.title}
           {checklist.kind === 'videogames' && (
             <span className="ml-2 text-xl text-ember-deep">
               <StarIcon /> {checklist.stars}

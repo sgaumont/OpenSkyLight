@@ -155,8 +155,8 @@ export function useChoreClaim(date: string): {
       { choreId: chore.choreId, date, personId: person.id },
       {
         onSuccess: (res) => {
-          if (res.unlocked) pushToast(`🎮 ${person.name} finished ${res.unlocked}! Ask a parent to sign off.`)
-          else if (chore.starsValue > 0) pushToast(`🎮 ${chore.starsValue} for ${person.name}!`)
+          if (res.unlocked) pushToast(`⭐ ${person.name} finished ${res.unlocked}! Ask a parent to sign off.`)
+          else if (chore.starsValue > 0) pushToast(`⭐ ${chore.starsValue} for ${person.name}!`)
           else if (chore.mode === 'anyone') pushToast(`Thanks, ${person.name}!`)
         }
       }

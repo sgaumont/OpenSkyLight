@@ -14,7 +14,7 @@ export const NO_PUSH: PushPrefs = { chat: false, leave: false, approvals: false,
 export const PUSH_LABELS: Record<PushKind, string> = {
   chat: '💬 New chat messages',
   leave: '🚗 Time to leave for an event',
-  approvals: '🎮 Chores waiting for a parent to approve',
+  approvals: '⭐ Chores waiting for a parent to approve',
   weather: '⚠️ Weather warnings',
   timers: "⏳ A kid's game time is up"
 }
@@ -88,7 +88,7 @@ export function dueAlerts(s: PushState): PushAlert[] {
     out.push({
       key: `approve:${a.checklistId}:${a.personId}:${a.date}:${a.round ?? 0}`,
       kind: 'approvals',
-      title: `🎮 ${name(a.personId)} finished ${what}`,
+      title: `⭐ ${name(a.personId)} finished ${what}`,
       body: 'Waiting for a parent to approve',
       tab: 'chores'
     })

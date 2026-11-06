@@ -81,7 +81,7 @@ export function GameTimers() {
                     stop.mutate(
                       { id: t.id },
                       // the time left goes back on their balance
-                      { onSuccess: (res) => res.refunded > 0 && pushToast(`🎮 ${res.refunded} back to ${p?.name ?? 'them'}`) }
+                      { onSuccess: (res) => res.refunded > 0 && pushToast(`⭐ ${res.refunded} back to ${p?.name ?? 'them'}`) }
                     )
                   }}
                   onBlur={() => setConfirming(null)}

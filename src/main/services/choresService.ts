@@ -665,7 +665,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       .where(and(eq(videoGameRounds.personId, personId), eq(videoGameRounds.dueDate, date)))
       .all()
     for (const r of existing.filter((r) => r.round > rounds)) {
-      reverse(tx, r.id, personId, '🎮 Video Games set taken back (a task was un-ticked)')
+      reverse(tx, r.id, personId, '⭐ Video Games set taken back (a task was un-ticked)')
       tx.delete(videoGameRounds).where(eq(videoGameRounds.id, r.id)).run()
     }
     let added = false
@@ -772,7 +772,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
             reason: 'chore',
             refId: row.id,
             createdAt: now,
-            note: `🎮 Video Games set${round > 1 ? ` (set ${round})` : ''} — approved`
+            note: `⭐ Video Games set${round > 1 ? ` (set ${round})` : ''} — approved`
           })
           .run()
       }

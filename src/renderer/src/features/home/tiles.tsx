@@ -517,7 +517,7 @@ export function ChoresProgressTile() {
                     }
                   })}
                 >
-                  🎮 {cl.title}
+                  ⭐ {cl.title}
                   {cl.kind === 'videogames' && ` · ${cl.stars}`}
                 </span>
                 {cl.people.map((s) => {

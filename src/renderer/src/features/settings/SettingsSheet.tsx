@@ -549,7 +549,7 @@ function VideoGamesReward() {
   if (!data) return null
   return (
     <div>
-      <FieldLabel>🎮 Video Games reward</FieldLabel>
+      <FieldLabel>⭐ Video Games reward</FieldLabel>
       <div className="flex items-center gap-4 rounded-2xl bg-paper-deep/50 p-4">
         <span className="flex-1 text-base font-semibold text-ink-soft">
           Game time for finishing all of a day's Video Games chores — again for each full set, if they can be done more
@@ -699,7 +699,7 @@ function ChoresTab() {
                 <span className="block truncate text-lg font-bold">{c.title}</span>
                 <span className="block text-sm font-bold text-ink-faint">
                   {c.mode !== 'anyone'
-                    ? `${c.mode === 'videogames' ? '🎮 Video Games' : 'Everyone'}: ${c.assignees
+                    ? `${c.mode === 'videogames' ? '⭐ Video Games' : 'Everyone'}: ${c.assignees
                         .map((id) => peopleById.get(id)?.name)
                         .filter(Boolean)
                         .join(', ')} · `
@@ -781,7 +781,7 @@ function ChoresTab() {
               options={[
                 { value: 'anyone', label: 'Whoever does it' },
                 ...(editingChore !== 'new' && editingChore?.mode === 'each' ? [{ value: 'each' as const, label: 'Everyone' }] : []),
-                { value: 'videogames', label: '🎮 Video Games' }
+                { value: 'videogames', label: '⭐ Video Games' }
               ]}
             />
             {mode !== 'anyone' && (

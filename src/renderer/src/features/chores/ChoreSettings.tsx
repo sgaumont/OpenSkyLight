@@ -104,7 +104,7 @@ export function PendingUnlocks() {
       {pending.map((u) => (
         <div key={`${u.checklistId}:${u.personId}:${u.round ?? 0}`} className="flex items-center gap-3 rounded-2xl bg-sun-soft p-3">
           <span className="min-w-0 flex-1 truncate text-lg font-bold">
-            {people.find((p) => p.id === u.personId)?.name ?? 'Someone'} finished 🎮 {u.title}
+            {people.find((p) => p.id === u.personId)?.name ?? 'Someone'} finished ⭐ {u.title}
             {u.kind === 'videogames' && (u.round ?? 1) > 1 ? ` (set ${u.round})` : ''}
             {dayLabel(u.date, today) && <span className="ml-1.5 text-ink-faint">· {dayLabel(u.date, today)}</span>}
           </span>
@@ -181,7 +181,7 @@ export function ChecklistsSection() {
             className="pressable flex items-center gap-3 rounded-2xl bg-paper-deep/50 p-3 text-left"
           >
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-lg font-bold">🎮 {c.title}</span>
+              <span className="block truncate text-lg font-bold">⭐ {c.title}</span>
               <span className="block text-sm font-bold text-ink-faint">
                 {c.items.map((i) => i.title).join(' · ')}
               </span>

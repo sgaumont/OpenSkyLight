@@ -27,7 +27,7 @@ export function GameTimeLog() {
 
   return (
     <div>
-      <FieldLabel>🎮 Game time log</FieldLabel>
+      <FieldLabel>⭐ Game time log</FieldLabel>
       <div className="flex flex-col gap-3 rounded-2xl bg-paper-deep/50 p-4">
         <div className="flex flex-wrap gap-2">
           {[{ id: null, name: 'Everyone' }, ...kids].map((p) => (
