@@ -597,6 +597,8 @@ Add unit tests where sensible.
 - v0.8.147: screensaver "Meals today" card bottom-left (`data-meals-card`), Next up's twin at 75% (both now use
   `zoom: 0.75` via `STACK_CARD`); today's meals still to come via `mealsAhead` (src/shared/mealsAhead.ts): breakfast
   drops at 9 am, lunch 1 pm, dinner 6 pm, snack always last; empty slots skipped, no card when none left.
+- v0.8.148: screensaver Countdowns card at 75% (STACK_CARD zoom) inside an absolute top-2.5 right-6 wrapper,
+  so the zoom doesn't shrink its corner margins (`data-countdowns-card`).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

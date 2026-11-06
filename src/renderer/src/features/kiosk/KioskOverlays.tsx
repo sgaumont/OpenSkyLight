@@ -243,17 +243,20 @@ function ScreensaverCountdowns({ today }: { today: string }) {
     .slice(0, 3)
   if (shown.length === 0) return null
   return (
-    <div className={`${GLANCE_CARD} absolute top-2.5 right-6`} style={{ animation: 'fade-in 1.2s ease both' }}>
-      <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Countdowns</div>
-      {/* all one size, like Next up's lines — the soonest isn't singled out */}
-      {shown.map(({ c, label }) => (
-        <div key={c.id} className="mt-1 flex items-baseline gap-3 text-2xl font-bold" data-countdown-line>
-          <span className="truncate">
-            {c.emoji ?? '⏳'} {c.title}
-          </span>
-          <span className="ml-auto shrink-0 pl-4 tabular-nums">{label}</span>
-        </div>
-      ))}
+    // the wrapper holds the 10px / 24px corner margins; the card inside is drawn at 75%, like the bottom cards
+    <div className="absolute top-2.5 right-6">
+      <div className={GLANCE_CARD} style={STACK_CARD} data-countdowns-card>
+        <div className="text-sm font-extrabold tracking-wider text-white/60 uppercase">Countdowns</div>
+        {/* all one size, like Next up's lines — the soonest isn't singled out */}
+        {shown.map(({ c, label }) => (
+          <div key={c.id} className="mt-1 flex items-baseline gap-3 text-2xl font-bold" data-countdown-line>
+            <span className="truncate">
+              {c.emoji ?? '⏳'} {c.title}
+            </span>
+            <span className="ml-auto shrink-0 pl-4 tabular-nums">{label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
