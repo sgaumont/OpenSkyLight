@@ -35,7 +35,7 @@ import { MealsDialog, MealStrip, SLOT_META, useMealsForRange } from '../meals/Me
 import { useChoreClaim } from '../chores/ClaimChore'
 import { ChoreHistoryDialog } from '../chores/ChoreHistory'
 import { ZONE } from '../../stores/uiStore'
-import { formatTime, initials, textOn } from '../../lib/format'
+import { formatTime, formatTimeFull, initials, textOn } from '../../lib/format'
 import { occurrenceColor } from '../../lib/colors'
 import { sortDayChores } from '@shared/choreOrder'
 import { canAddMore, countLabel, countOf, isCounted } from '@shared/choreCount'
@@ -225,7 +225,7 @@ export function WeekAgendaTile({ compact }: TileProps) {
                     />
                   </span>
                   <span className={`text-right text-xs font-bold whitespace-nowrap text-ink-faint tabular-nums ${gap}`}>
-                    {occ.allDay ? 'All Day' : formatTime(occ.start, settings?.timeFormat ?? '12h')}
+                    {occ.allDay ? 'All Day' : formatTimeFull(occ.start, settings?.timeFormat ?? '12h')}
                   </span>
                   <span className={`font-bold [overflow-wrap:anywhere] ${compact ? 'text-xs' : 'text-sm'} ${gap}`}>
                     {occ.title}

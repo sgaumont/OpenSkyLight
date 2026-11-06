@@ -11,6 +11,12 @@ export function formatTime(iso: string, timeFormat: '12h' | '24h'): string {
   return d.minute === 0 ? d.toFormat('h a').toLowerCase() : d.toFormat('h:mm a').toLowerCase()
 }
 
+/** Always with minutes and no space before am/pm ("3:00pm", "3:30pm"); 24h stays "15:00". */
+export function formatTimeFull(iso: string, timeFormat: '12h' | '24h'): string {
+  const d = local(iso)
+  return timeFormat === '24h' ? d.toFormat('HH:mm') : d.toFormat('h:mma').toLowerCase()
+}
+
 export function formatTimeRange(startIso: string, endIso: string, timeFormat: '12h' | '24h'): string {
   return `${formatTime(startIso, timeFormat)} – ${formatTime(endIso, timeFormat)}`
 }
