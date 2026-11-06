@@ -46,7 +46,7 @@ export function AlertDetails({ alerts }: { alerts: WeatherAlert[] }) {
   )
 }
 
-/** Coloured strip naming the current alerts; a tap shows them in full. */
+/** Coloured strip naming the current alerts; a tap shows them in full. Kept slim: it shares the weather tile with the forecast. */
 export function AlertStrip({ alerts, className = '' }: { alerts: WeatherAlert[]; className?: string }) {
   const [open, setOpen] = useState(false)
   if (alerts.length === 0) return null
@@ -57,11 +57,13 @@ export function AlertStrip({ alerts, className = '' }: { alerts: WeatherAlert[];
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="pressable flex w-full min-w-0 items-center gap-1.5 rounded-xl px-2.5 py-1 text-left text-sm font-extrabold"
-        style={{ backgroundColor: c.bg, color: c.fg }}
+        className="pressable flex w-full min-w-0 items-center gap-[0.35em] rounded-lg px-[0.6em] py-[0.2em] text-left leading-tight font-extrabold"
+        // 12px, but never more than 11% of the tile's height (container units ignore the tile's
+        // text-size zoom), so a big text size can't let the strip crowd out the forecast
+        style={{ backgroundColor: c.bg, color: c.fg, fontSize: 'min(0.75rem, 11cqh)' }}
         aria-label={`Weather alerts: ${alerts.map((a) => a.title).join(', ')}`}
       >
-        <AlertIcon size={18} className="shrink-0" />
+        <AlertIcon size={13} className="h-[1.1em] w-[1.1em] shrink-0" />
         <span className="truncate">{alertSummary(alerts)}</span>
       </button>
       {/* portal: the dialog must escape the tile's clipping and text-size zoom */}

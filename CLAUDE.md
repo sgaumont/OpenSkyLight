@@ -605,6 +605,8 @@ Add unit tests where sensible.
   now shared from Header.tsx) that opens the same UseTimeDialog. `NO_PAGING` in Header.tsx = screens without dates.
 - v0.8.151: stars show as stars again (undoes v0.8.73): `GameIcon` renamed `StarIcon` (solid star SVG) in renderer
   components/icons.tsx and companion components/ui.tsx; every use follows. 🎮 emoji (Video Games chore type, toasts, push) unchanged.
+- v0.8.152: weather tile's alert strip is slimmer (was `text-sm py-1`, 28px) and sized `min(0.75rem, 11cqh)` off the
+  tile's height (outer div is a size container), so a big tile/Home text size can't make it crowd and clip the forecast.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

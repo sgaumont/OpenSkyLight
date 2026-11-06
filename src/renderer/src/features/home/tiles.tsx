@@ -265,7 +265,8 @@ export function WeatherTile({ tile }: TileProps) {
   // a 1-row column only has room for the high
   const highOnly = oneRow
   return (
-    <div className="flex h-full flex-col gap-1.5">
+    // a size container too, so the alert strip can size itself to the tile's height
+    <div className="flex h-full flex-col gap-1" style={{ containerType: 'size' }}>
       <AlertStrip alerts={weather.alerts} className="shrink-0" />
       <div className="min-h-0 flex-1 overflow-hidden" style={{ containerType: 'size' }}>
         <div className={`flex h-full ${layout === 'stacked' ? 'flex-col' : ''}`}>
