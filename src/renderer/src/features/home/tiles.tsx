@@ -11,6 +11,7 @@ import { presetById } from '@shared/rss'
 import { agendaRange, dayRange, eachDay } from '@shared/dates'
 import { withoutEnded } from '@shared/occurrences'
 import { HOME_GRID_SCALE } from '@shared/home'
+import { mealsAhead } from '@shared/mealsAhead'
 import { ipcInvoke } from '../../api/client'
 import {
   useBalances,
@@ -157,16 +158,26 @@ export function TodayEventsTile({ compact }: TileProps) {
   )
 }
 
-/** Today's meal strip, as under each Week day; tapping it edits the meals (not the tile's tap). */
+/**
+ * Today's meal strip, as under each Week day; tapping it edits the meals (not the tile's tap).
+ * Meals that are over drop off, as on the screensaver (breakfast at 9 am, lunch 1 pm, dinner 6 pm);
+ * the editor still gets the whole day.
+ */
 function TodayMeals({ date }: { date: string }) {
   const range = useMemo(() => dayRange(date, ZONE), [date])
   const meals = useMealsForRange(range).get(date) ?? []
+  const [hour, setHour] = useState(() => DateTime.now().setZone(ZONE).hour)
+  useEffect(() => {
+    const t = setInterval(() => setHour(DateTime.now().setZone(ZONE).hour), 60_000)
+    return () => clearInterval(t)
+  }, [])
+  const ahead = mealsAhead(meals, hour)
   const [open, setOpen] = useState(false)
   return (
     // stops taps on the strip, and (via React's portal bubbling) inside the dialog,
     // from also counting as a tap on the tile, which opens the Day view
     <div className="mt-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-      <MealStrip date={date} meals={meals} onOpen={() => setOpen(true)} large />
+      <MealStrip date={date} meals={ahead} onOpen={() => setOpen(true)} large />
       {/* portal: the dialog must escape the tile's clipping and text-size zoom */}
       {createPortal(<MealsDialog date={open ? date : null} meals={meals} onClose={() => setOpen(false)} />, document.body)}
     </div>

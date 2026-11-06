@@ -620,6 +620,8 @@ Add unit tests where sensible.
 - v0.8.158: "Shop" removed from the top switcher (redundant: the header star badges open Shop since v0.8.154);
   the `shop` view stays, and the switcher shows nothing selected while it's open.
 - v0.8.159: Shop screen subheader "💵 Kid's Shop 💵" (top left, above the first item; `data-shop-title`).
+- v0.8.160: home Today tile's meal strip drops meals that are over (`mealsAhead`, same as the screensaver:
+  breakfast 9 am, lunch 1 pm, dinner 6 pm; snack stays); the meals editor still gets the whole day.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
