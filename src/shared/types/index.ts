@@ -408,14 +408,22 @@ export interface RewardDto {
   bonusMinutes: number
 }
 
+/** A kid asking to buy something in the Shop; nothing is spent until a parent grants it. */
 export interface RedemptionDto {
   id: string
   rewardId: string
   rewardTitle: string
+  /** dynamic: a timer starts on grant */
+  rewardKind: RewardKind
   personId: string
+  /** the stars asked for (charged on grant) */
   starsSpent: number
+  /** dynamic: how long the timer will run (stars + the reward's bonus) */
+  minutes: number | null
   redeemedAt: string
-  status: 'pending' | 'granted'
+  status: 'pending' | 'granted' | 'denied'
+  /** already taken off their balance (requests from before parents approved first) */
+  charged: boolean
 }
 
 /** Text sizes as whole percentages (see shared/textSize.ts). */

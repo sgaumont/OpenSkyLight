@@ -198,7 +198,11 @@ export const rewardRedemptions = sqliteTable('reward_redemptions', {
   personId: text('person_id').notNull().references(() => people.id),
   starsSpent: integer('stars_spent').notNull(),
   redeemedAt: text('redeemed_at').notNull(),
-  status: text('status', { enum: ['pending', 'granted'] }).notNull().default('pending')
+  /** pending: waiting for a parent; granted / denied: they decided */
+  status: text('status', { enum: ['pending', 'granted', 'denied'] }).notNull().default('pending'),
+  /** the stars have come off (on grant now; up front for ones made before parents approved first) */
+  charged: integer('charged', { mode: 'boolean' }).notNull().default(true),
+  decidedAt: text('decided_at')
 })
 
 export const lists = sqliteTable('lists', {

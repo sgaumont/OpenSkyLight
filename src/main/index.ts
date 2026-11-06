@@ -160,6 +160,7 @@ if (!gotLock) {
         names: () => new Map(services.people.list().map((p) => [p.id, p.name])),
         chat: () => services.notes.pushFeed(20),
         approvals: (today) => services.chores.pendingUnlocks(today),
+        requests: () => services.rewards.pendingRedemptions(),
         leaves: () => services.travel.leaveTimes(),
         timers: () => services.rewards.timers(),
         weather: async () =>

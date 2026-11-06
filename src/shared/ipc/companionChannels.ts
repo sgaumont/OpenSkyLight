@@ -53,6 +53,10 @@ export const COMPANION_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'rewards:create',
   'rewards:update',
   'rewards:delete',
+  // Shop purchases waiting for a parent: OK or no from the phone
+  'rewards:redemptions',
+  'rewards:grant',
+  'rewards:deny',
   'events:getOccurrences',
   'people:list',
   'notify:publicKey',

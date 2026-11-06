@@ -632,6 +632,10 @@ Add unit tests where sensible.
   RewardsCard + RewardSheet in companion ChoresPage). rewards:list/create/update/delete are companion channels;
   rewards:* mutations now broadcast the chores domain (renderer refetches rewards + redemptions). REWARD_ICONS moved
   to src/shared/rewardIcons.ts.
+- v0.8.164: every Shop purchase is a request a parent OKs first (phone 'Waiting for you' card + push under approvals,
+  or Settings → Chores): `rewards:redeem` {stars?} charges nothing; `rewards:grant` takes the stars (dynamic → useTime starts
+  the timer), `rewards:deny` spends nothing. DB v14: reward_redemptions.charged (old rows 1 = paid up front) + decided_at.
+  Pending stars are held (rewards.held) so they can't be asked for twice; asking again replaces the request.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

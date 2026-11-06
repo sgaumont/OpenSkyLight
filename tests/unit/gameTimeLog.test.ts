@@ -43,7 +43,7 @@ describe('game time log', () => {
     for (const t of tasks) chores.complete(t.id, DAY, 'emma')
     chores.approveUnlock(VIDEO_GAMES_SET_ID, 'emma', DAY, 1)
     const reward = rewards.create({ title: 'Ice cream', costStars: 10 })
-    rewards.redeem(reward.id, 'emma')
+    rewards.grant(rewards.redeem(reward.id, 'emma').id)
     rewards.adjust('emma', 5)
     rewards.useTime('emma')
     expect(lines('emma')).toEqual([

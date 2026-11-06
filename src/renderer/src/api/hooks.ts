@@ -292,13 +292,14 @@ export function useRewardMutations() {
     ),
     remove: useInvalidatingMutation((input: { id: string }) => ipcInvoke('rewards:delete', input), [['rewards']]),
     redeem: useInvalidatingMutation(
-      (input: { rewardId: string; personId: string }) => ipcInvoke('rewards:redeem', input),
+      (input: { rewardId: string; personId: string; stars?: number }) => ipcInvoke('rewards:redeem', input),
       [['balances'], ['redemptions']]
     ),
     grant: useInvalidatingMutation(
       (input: { redemptionId: string }) => ipcInvoke('rewards:grant', input),
-      [['redemptions']]
-    )
+      [['redemptions'], ['balances'], ['gameTimers']]
+    ),
+    deny: useInvalidatingMutation((input: { redemptionId: string }) => ipcInvoke('rewards:deny', input), [['redemptions'], ['balances']])
   }
 }
 

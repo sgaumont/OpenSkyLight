@@ -43,6 +43,8 @@ export interface NotifySources {
   names(): Map<string, string>
   chat(): PushState['chat']
   approvals(today: string): PushState['approvals']
+  /** Shop purchases waiting for a parent */
+  requests?(): NonNullable<PushState['requests']>
   leaves(): PushState['leaves']
   timers(): PushState['timers']
   weather(): Promise<PushState['weather']>
@@ -150,6 +152,7 @@ export function createNotifyService(deps: {
       names: sources.names(),
       chat: sources.chat(),
       approvals: sources.approvals(today),
+      requests: sources.requests?.() ?? [],
       leaves: sources.leaves(),
       timers: sources.timers(),
       weather: await sources.weather().catch(() => [])

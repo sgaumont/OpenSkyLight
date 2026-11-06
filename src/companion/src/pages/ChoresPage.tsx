@@ -12,6 +12,8 @@ import {
   useChores,
   useChoresDay,
   usePendingUnlocks,
+  useShopRequestMutations,
+  useShopRequests,
   useVideoGamesStars,
   useGameTimeLog,
   usePeople,
@@ -956,21 +958,42 @@ function ChecklistSheet({
   )
 }
 
-/** Finished checklists and Video Games sets waiting for a parent to sign off today. */
+/**
+ * Waiting for a parent: finished checklists and Video Games sets to sign off today, and Shop
+ * purchases to OK (nothing is spent until then; a timed reward's timer starts on OK).
+ */
 export function PendingUnlocksCard({ people, today }: { people: PersonDto[]; today: string }) {
   const { data: pending = [] } = usePendingUnlocks(today)
+  const { data: requests = [] } = useShopRequests()
   const mutations = useChecklistMutations()
-  if (pending.length === 0) return null
+  const shop = useShopRequestMutations()
+  const [error, setError] = useState<string | null>(null)
+  if (pending.length === 0 && requests.length === 0) return null
+  const nameOf = (id: string): string => people.find((p) => p.id === id)?.name ?? 'Someone'
+  const onError = (e: Error): void => setError(e.message)
   return (
     <div className="rounded-card bg-sun-soft p-4 shadow-card">
       <h2 className="mb-1 font-display text-xl font-semibold">Waiting for you</h2>
+      {requests.map((r) => (
+        <div key={r.id} className="flex items-center gap-2 border-b border-line/60 py-2 last:border-0" data-shop-request>
+          <span className="min-w-0 flex-1 text-base font-bold">
+            🛒 {nameOf(r.personId)} wants {r.rewardTitle}
+            <span className="ml-1.5 text-ember-deep">
+              · <StarIcon /> {r.starsSpent}
+            </span>
+            {r.minutes !== null && <span className="text-ink-faint"> · {r.minutes} min</span>}
+          </span>
+          <GhostButton onClick={() => shop.deny.mutate({ redemptionId: r.id }, { onError })}>No</GhostButton>
+          <PrimaryButton onClick={() => shop.grant.mutate({ redemptionId: r.id }, { onError, onSuccess: () => setError(null) })}>OK</PrimaryButton>
+        </div>
+      ))}
       {pending.map((u) => (
         <div
           key={`${u.checklistId}:${u.personId}:${u.round ?? 0}`}
           className="flex items-center gap-2.5 border-b border-line/60 py-2 last:border-0"
         >
           <span className="min-w-0 flex-1 text-base font-bold">
-            {people.find((p) => p.id === u.personId)?.name ?? 'Someone'} finished ⭐ {u.title}
+            {nameOf(u.personId)} finished ⭐ {u.title}
             {u.kind === 'videogames' && (u.round ?? 1) > 1 ? ` (set ${u.round})` : ''}
             {dayLabel(u.date, today) ? ` · ${dayLabel(u.date, today)}` : ''}
             {u.kind === 'videogames' && (
@@ -988,6 +1011,7 @@ export function PendingUnlocksCard({ people, today }: { people: PersonDto[]; tod
           </PrimaryButton>
         </div>
       ))}
+      {error && <p className="mt-2 text-sm font-bold text-ember-deep">{error}</p>}
     </div>
   )
 }

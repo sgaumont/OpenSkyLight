@@ -177,6 +177,19 @@ export function useChecklistMutations() {
   }
 }
 
+/** Shop purchases waiting for a parent to OK them. */
+export function useShopRequests() {
+  return useQuery({ queryKey: ['redemptions'], queryFn: () => rpc('rewards:redemptions', undefined), ...LIVE })
+}
+
+export function useShopRequestMutations() {
+  const keys = [['redemptions'], ['balances'], ['gameTimeLog']]
+  return {
+    grant: useInvalidatingMutation((input: { redemptionId: string }) => rpc('rewards:grant', input), keys),
+    deny: useInvalidatingMutation((input: { redemptionId: string }) => rpc('rewards:deny', input), keys)
+  }
+}
+
 /** The game time log, newest first: one kid, or everyone. */
 export function useGameTimeLog(personId: string | null, limit: number) {
   return useQuery({

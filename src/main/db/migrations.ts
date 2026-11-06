@@ -351,6 +351,12 @@ const MIGRATIONS: string[] = [
   ALTER TABLE rewards ADD COLUMN bonus_minutes INTEGER NOT NULL DEFAULT 0;
   INSERT INTO rewards (id, title, icon, cost_stars, active, sort_order, kind, bonus_minutes)
     VALUES ('video-game-time', 'Video Game Time', '🎮', 1, 1, -1, 'dynamic', 3);
+  `,
+  // v14: buying from the Shop asks a parent first — a redemption is a request until granted, and
+  // only then do the stars come off (charged). Ones made before this were charged up front.
+  `
+  ALTER TABLE reward_redemptions ADD COLUMN charged INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE reward_redemptions ADD COLUMN decided_at TEXT;
   `
 ]
 

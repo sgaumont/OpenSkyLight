@@ -98,6 +98,7 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
   'rewards:update',
   'rewards:delete',
   'rewards:grant',
+  'rewards:deny',
   'screensaver:pickFolder',
   'backup:pickFolder',
   'backup:clearFolder',
@@ -165,7 +166,8 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'rewards:update': 'chores',
   'rewards:delete': 'chores',
   'rewards:redeem': 'chores',
-  'rewards:grant': 'chores'
+  'rewards:grant': 'chores',
+  'rewards:deny': 'chores'
 }
 
 const broadcastListeners = new Set<(channel: string, payload: unknown) => void>()
@@ -341,9 +343,10 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('rewards:create', s.rewardCreateSchema, (req) => services.rewards.create(req))
   handle('rewards:update', s.rewardUpdateSchema, (req) => services.rewards.update(req))
   handle('rewards:delete', s.idSchema, (req) => services.rewards.remove(req.id))
-  handle('rewards:redeem', s.redeemSchema, (req) => services.rewards.redeem(req.rewardId, req.personId))
+  handle('rewards:redeem', s.redeemSchema, (req) => services.rewards.redeem(req.rewardId, req.personId, req.stars))
   handle('rewards:redemptions', null, () => services.rewards.pendingRedemptions())
   handle('rewards:grant', s.grantSchema, (req) => services.rewards.grant(req.redemptionId))
+  handle('rewards:deny', s.grantSchema, (req) => services.rewards.deny(req.redemptionId))
 
   handle('lists:getAll', null, () => services.lists.getAll())
   handle('lists:create', s.listCreateSchema, (req) => services.lists.create(req))

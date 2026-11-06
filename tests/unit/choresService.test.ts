@@ -75,7 +75,10 @@ describe('chores + rewards', () => {
     chores.complete(chore.id, '2026-06-10', 'kid1')
     chores.complete(chore.id, '2026-06-11', 'kid1')
     const reward = rewards.create({ title: 'Ice cream', costStars: 15 })
-    rewards.redeem(reward.id, 'kid1')
+    // a request costs nothing until a parent grants it
+    const asked = rewards.redeem(reward.id, 'kid1')
+    expect(chores.balanceOf('kid1')).toBe(20)
+    rewards.grant(asked.id)
     expect(chores.balanceOf('kid1')).toBe(5)
   })
 
@@ -105,7 +108,7 @@ describe('chores + rewards', () => {
 
   it('refuses redemptions the balance cannot cover', () => {
     const reward = rewards.create({ title: 'Bike', costStars: 100 })
-    expect(() => rewards.redeem(reward.id, 'kid1')).toThrow(/Not enough game time/)
+    expect(() => rewards.redeem(reward.id, 'kid1')).toThrow(/Not enough stars/)
     expect(chores.balanceOf('kid1')).toBe(0)
   })
 

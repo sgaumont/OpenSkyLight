@@ -125,69 +125,148 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     if (result.changes === 0) throw notFound('Reward')
   }
 
-  function redemptionDto(
-    row: typeof rewardRedemptions.$inferSelect,
-    rewardTitle: string
-  ): RedemptionDto {
+  function redemptionDto(row: typeof rewardRedemptions.$inferSelect, reward: typeof rewards.$inferSelect): RedemptionDto {
+    const dynamic = reward.kind === 'dynamic'
     return {
       id: row.id,
       rewardId: row.rewardId,
-      rewardTitle,
+      rewardTitle: reward.title,
+      rewardKind: reward.kind,
       personId: row.personId,
       starsSpent: row.starsSpent,
+      minutes: dynamic ? gameMinutes(row.starsSpent, reward.bonusMinutes).total : null,
       redeemedAt: row.redeemedAt,
-      status: row.status
+      status: row.status,
+      charged: row.charged
     }
   }
 
-  function redeem(rewardId: string, personId: string): RedemptionDto {
+  /** Stars a kid has asked for and a parent hasn't decided on yet — set aside, not spent. */
+  function held(personId: string, exceptId?: string): number {
+    return db
+      .select()
+      .from(rewardRedemptions)
+      .where(and(eq(rewardRedemptions.personId, personId), eq(rewardRedemptions.status, 'pending'), eq(rewardRedemptions.charged, false)))
+      .all()
+      .filter((r) => r.id !== exceptId)
+      .reduce((n, r) => n + r.starsSpent, 0)
+  }
+
+  /**
+   * A kid asks to buy something in the Shop: a static reward at its price, a dynamic one for the
+   * stars they picked. Nothing comes off yet — a parent grants or denies it. The stars are set
+   * aside meanwhile, so they can't be asked for twice; asking again for the same reward replaces
+   * the earlier request.
+   */
+  function redeem(rewardId: string, personId: string, stars?: number): RedemptionDto {
     const [reward] = db.select().from(rewards).where(and(eq(rewards.id, rewardId), isNull(rewards.deletedAt))).all()
     if (!reward) throw notFound('Reward')
-    if (reward.kind === 'dynamic') throw invalid(`${reward.title} is bought by the minute`)
-    const balance = choresService.balanceOf(personId)
-    if (balance < reward.costStars) {
-      throw invalid(`Not enough game time yet — ${reward.costStars - balance} more to go!`)
-    }
-    const id = uuidv7()
+    const [person] = db.select().from(people).where(and(eq(people.id, personId), isNull(people.deletedAt))).all()
+    if (!person) throw notFound('Person')
+    if (reward.kind === 'dynamic' && !stars) throw invalid(`Pick how many stars to spend on ${reward.title}`)
+    const want = reward.kind === 'dynamic' ? stars! : reward.costStars
+    const [earlier] = db
+      .select()
+      .from(rewardRedemptions)
+      .where(
+        and(
+          eq(rewardRedemptions.personId, personId),
+          eq(rewardRedemptions.rewardId, rewardId),
+          eq(rewardRedemptions.status, 'pending'),
+          eq(rewardRedemptions.charged, false)
+        )
+      )
+      .all()
+    const available = choresService.balanceOf(personId) - held(personId, earlier?.id)
+    if (available < want) throw invalid(`Not enough stars yet — ${want - available} more to go!`)
     const now = isoUtc(DateTime.utc())
-    db.transaction((tx) => {
-      tx.insert(rewardRedemptions)
-        .values({ id, rewardId, personId, starsSpent: reward.costStars, redeemedAt: now, status: 'pending' })
-        .run()
-      tx.insert(starLedger)
-        .values({
-          id: uuidv7(),
-          personId,
-          delta: -reward.costStars,
-          reason: 'redemption',
-          refId: id,
-          createdAt: now,
-          note: `Reward: ${reward.title}`
-        })
-        .run()
-    })
+    const id = earlier?.id ?? uuidv7()
+    if (earlier) {
+      db.update(rewardRedemptions).set({ starsSpent: want, redeemedAt: now }).where(eq(rewardRedemptions.id, id)).run()
+    } else {
+      db.insert(rewardRedemptions).values({ id, rewardId, personId, starsSpent: want, redeemedAt: now, status: 'pending', charged: false }).run()
+    }
     const [row] = db.select().from(rewardRedemptions).where(eq(rewardRedemptions.id, id)).all()
-    return redemptionDto(row, reward.title)
+    return redemptionDto(row, reward)
   }
 
+  /** Purchases waiting for a parent, newest first. */
   function pendingRedemptions(): RedemptionDto[] {
     const rows = db
-      .select({ redemption: rewardRedemptions, rewardTitle: rewards.title })
+      .select({ redemption: rewardRedemptions, reward: rewards })
       .from(rewardRedemptions)
       .innerJoin(rewards, eq(rewards.id, rewardRedemptions.rewardId))
       .where(eq(rewardRedemptions.status, 'pending'))
       .orderBy(desc(rewardRedemptions.redeemedAt))
       .all()
-    return rows.map((r) => redemptionDto(r.redemption, r.rewardTitle))
+    return rows.map((r) => redemptionDto(r.redemption, r.reward))
   }
 
-  function grant(redemptionId: string): void {
-    const result = db
-      .update(rewardRedemptions)
-      .set({ status: 'granted' })
+  function pending(redemptionId: string): { row: typeof rewardRedemptions.$inferSelect; reward: typeof rewards.$inferSelect } {
+    const [hit] = db
+      .select({ row: rewardRedemptions, reward: rewards })
+      .from(rewardRedemptions)
+      .innerJoin(rewards, eq(rewards.id, rewardRedemptions.rewardId))
       .where(and(eq(rewardRedemptions.id, redemptionId), eq(rewardRedemptions.status, 'pending')))
-      .run()
-    if (result.changes === 0) throw notFound('Redemption')
+      .all()
+    if (!hit) throw notFound('Request')
+    return hit
+  }
+
+  /**
+   * A parent says yes: the stars come off now (unless they already did, on a request from before
+   * parents approved first), and a dynamic reward's timer starts.
+   */
+  function grant(redemptionId: string): void {
+    const { row, reward } = pending(redemptionId)
+    const now = isoUtc(DateTime.utc())
+    if (!row.charged) {
+      const balance = choresService.balanceOf(row.personId)
+      if (balance < row.starsSpent) throw invalid(`Only ${balance} ${balance === 1 ? 'star' : 'stars'} left now — not enough for this`)
+    }
+    db.transaction(() => {
+      if (!row.charged) {
+        if (reward.kind === 'dynamic') {
+          // takes the stars off and starts (or tops up) their timer for this reward
+          useTime(row.personId, row.starsSpent, reward.id)
+        } else {
+          db.insert(starLedger)
+            .values({
+              id: uuidv7(),
+              personId: row.personId,
+              delta: -row.starsSpent,
+              reason: 'redemption',
+              refId: row.id,
+              createdAt: now,
+              note: `Reward: ${reward.title}`
+            })
+            .run()
+        }
+      }
+      db.update(rewardRedemptions).set({ status: 'granted', charged: true, decidedAt: now }).where(eq(rewardRedemptions.id, row.id)).run()
+    })
+  }
+
+  /** A parent says no: nothing is spent (a request from before, already charged, gets its stars back). */
+  function deny(redemptionId: string): void {
+    const { row, reward } = pending(redemptionId)
+    const now = isoUtc(DateTime.utc())
+    db.transaction(() => {
+      if (row.charged) {
+        db.insert(starLedger)
+          .values({
+            id: uuidv7(),
+            personId: row.personId,
+            delta: row.starsSpent,
+            reason: 'redemption',
+            refId: row.id,
+            createdAt: now,
+            note: `Reward not given: ${reward.title}`
+          })
+          .run()
+      }
+      db.update(rewardRedemptions).set({ status: 'denied', decidedAt: now }).where(eq(rewardRedemptions.id, row.id)).run()
+    })
   }
 
   /** A parent's manual correction, kept in the ledger like every other change; may go below zero. */
@@ -323,7 +402,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     return 'Chore'
   }
 
-  return { list, create, update, remove, redeem, pendingRedemptions, grant, adjust, useTime, log, timers, stopTimer }
+  return { list, create, update, remove, redeem, pendingRedemptions, grant, deny, held, adjust, useTime, log, timers, stopTimer }
 }
 
 export type RewardsService = ReturnType<typeof createRewardsService>

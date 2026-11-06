@@ -70,6 +70,7 @@ import {
 import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type ScheduleKind } from '@shared/choreSchedule'
 import { initials, textOn } from '../../lib/format'
 import QRCode from 'qrcode'
+import { useToasts } from '../../stores/toastStore'
 
 type Tab = 'family' | 'calendars' | 'chores' | 'general'
 
@@ -593,6 +594,7 @@ function ChoresTab() {
   const { data: redemptions = [] } = useRedemptions()
   const choreMutations = useChoreMutations()
   const rewardMutations = useRewardMutations()
+  const pushToast = useToasts((s) => s.push)
   const peopleById = new Map(people.map((p) => [p.id, p]))
   const pendingUnlocks = usePendingUnlockCount()
 
@@ -691,12 +693,17 @@ function ChoresTab() {
           <div className="flex flex-col gap-2">
             <PendingUnlocks />
             {redemptions.map((r) => (
-              <div key={r.id} className="flex items-center gap-3 rounded-2xl bg-sun-soft p-3">
+              // a Shop purchase: nothing is spent until OK (a timed reward's timer starts then)
+              <div key={r.id} className="flex items-center gap-3 rounded-2xl bg-sun-soft p-3" data-shop-request>
                 <span className="min-w-0 flex-1 truncate text-lg font-bold">
-                  {peopleById.get(r.personId)?.name ?? 'Someone'} → {r.rewardTitle}
+                  🛒 {peopleById.get(r.personId)?.name ?? 'Someone'} → {r.rewardTitle}
+                  {r.minutes !== null && <span className="text-ink-faint"> · {r.minutes} min</span>}
                 </span>
                 <span className="text-base font-extrabold text-ember-deep"><StarIcon /> {r.starsSpent}</span>
-                <BigButton onClick={() => rewardMutations.grant.mutate({ redemptionId: r.id })}>Grant</BigButton>
+                <BigButton variant="ghost" onClick={() => rewardMutations.deny.mutate({ redemptionId: r.id })}>
+                  No
+                </BigButton>
+                <BigButton onClick={() => rewardMutations.grant.mutate({ redemptionId: r.id }, { onError: (e) => pushToast(e.message) })}>OK</BigButton>
               </div>
             ))}
           </div>

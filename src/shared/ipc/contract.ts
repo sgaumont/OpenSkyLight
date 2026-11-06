@@ -197,9 +197,10 @@ export type IpcContract = {
     res: RewardDto
   }
   'rewards:delete': { req: { id: string }; res: void }
-  'rewards:redeem': { req: { rewardId: string; personId: string }; res: RedemptionDto }
+  'rewards:redeem': { req: { rewardId: string; personId: string; stars?: number }; res: RedemptionDto }
   'rewards:redemptions': { req: void; res: RedemptionDto[] }
   'rewards:grant': { req: { redemptionId: string }; res: void }
+  'rewards:deny': { req: { redemptionId: string }; res: void }
 
   'camera:list': { req: void; res: { id: string; name: string }[] }
   'camera:add': { req: { name: string; url: string }; res: { id: string; name: string } }
