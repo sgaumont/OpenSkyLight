@@ -565,6 +565,8 @@ Add unit tests where sensible.
 - v0.8.138: phone Chat — outgoing messages (sent from this phone, remembered in localStorage `osl.chatSent`, or
   written as this phone's From person) sit flush right with right-aligned text; incoming (the tablet, other phones)
   sit flush left with left-aligned text (`data-side="out"|"in"`).
+- v0.8.139: the tablet's switcher label is "Chat", not "Chats" (Home · Week · Month · Chat · Lists; the text-size
+  tab too). The view kind stays `'chats'`.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

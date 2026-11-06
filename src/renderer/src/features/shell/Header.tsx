@@ -195,7 +195,7 @@ export function Header() {
             // the count of chats waiting for the tablet to answer (was the 💬 button's badge)
             label: (
               <span className="flex items-center gap-1.5" data-chats-tab>
-                Chats
+                Chat
                 {waitingChats > 0 && (
                   <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-ember px-1.5 text-sm font-extrabold text-white" data-chat-badge>
                     {waitingChats}

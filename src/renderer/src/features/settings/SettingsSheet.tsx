@@ -1386,7 +1386,7 @@ const TEXT_SIZE_TABS: { view: CalendarViewKind; label: string }[] = [
   { view: 'month', label: 'Month' },
   { view: 'agenda', label: 'Agenda' },
   { view: 'chores', label: 'Chores' },
-  { view: 'chats', label: 'Chats' },
+  { view: 'chats', label: 'Chat' },
   { view: 'lists', label: 'Lists' }
 ]
 

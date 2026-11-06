@@ -17,7 +17,7 @@ function dayLabel(iso: string): string {
 }
 
 /**
- * The tablet's Chats screen (top switcher: Home · Week · Month · Chats · Lists): the one family
+ * The tablet's Chat screen (top switcher: Home · Week · Month · Chat · Lists): the one family
  * conversation with the phones, newest at the bottom, and a box to keep it going.
  */
 export function ChatsView() {
