@@ -6,6 +6,26 @@ import { Card, EmptyNote, PersonAvatar, PrimaryButton } from '../components/ui'
 import { CountdownsCard } from './CountdownsCard'
 
 const AUTHOR_KEY = 'osl.noteAuthor'
+/** ids of the messages this phone sent, so they sit on the right even without a "From" pick */
+const SENT_KEY = 'osl.chatSent'
+const SENT_MAX = 500
+
+function sentIds(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SENT_KEY) ?? '[]') as string[])
+  } catch {
+    return new Set()
+  }
+}
+
+function rememberSent(id: string): void {
+  try {
+    const ids = [...sentIds(), id].slice(-SENT_MAX)
+    localStorage.setItem(SENT_KEY, JSON.stringify(ids))
+  } catch {
+    // private browsing: falls back to the From pick
+  }
+}
 const MAX_LENGTH = 280
 
 function rememberedAuthor(): string | null {
@@ -57,8 +77,17 @@ export function NotesPage() {
   }
 
   function post(): void {
-    send.mutate({ text: text.trim(), authorId: author?.id ?? null }, { onSuccess: () => setText('') })
+    send.mutate(
+      { text: text.trim(), authorId: author?.id ?? null },
+      {
+        onSuccess: (m) => {
+          rememberSent(m.id)
+          setText('')
+        }
+      }
+    )
   }
+  const sent = sentIds()
 
   const byId = new Map(people.map((p) => [p.id, p]))
   return (
@@ -74,7 +103,7 @@ export function NotesPage() {
                   {dayLabel(m.createdAt)}
                 </div>
               )}
-              <Message m={m} byId={byId} me={author} />
+              <Message m={m} byId={byId} mine={!m.fromKiosk && (sent.has(m.id) || (!!author && m.authorId === author.id))} />
             </div>
           ))}
         </div>
@@ -126,16 +155,18 @@ export function NotesPage() {
   )
 }
 
-/** A message: mine (this phone's person) on the right, the tablet's and everyone else's on the left. */
-function Message({ m, byId, me }: { m: ChatMessageDto; byId: Map<string, PersonDto>; me: PersonDto | null }) {
+/**
+ * A message: outgoing (sent from this phone, or as this phone's person) on the right; incoming —
+ * the tablet's and everyone else's — on the left.
+ */
+function Message({ m, byId, mine }: { m: ChatMessageDto; byId: Map<string, PersonDto>; mine: boolean }) {
   const author = m.authorId ? byId.get(m.authorId) : undefined
-  const mine = !m.fromKiosk && !!me && m.authorId === me.id
   const who = m.fromKiosk ? 'Tablet' : (author?.name ?? 'Phone')
   return (
-    <div className={`flex max-w-[85%] flex-col ${mine ? 'items-end self-end' : 'items-start self-start'}`} data-chat-message>
+    <div className={`flex max-w-[85%] flex-col ${mine ? 'items-end self-end' : 'items-start self-start'}`} data-chat-message data-side={mine ? 'out' : 'in'}>
       <p
         className={`rounded-2xl px-3 py-2 text-base font-bold break-words whitespace-pre-line ${
-          mine ? 'bg-ember text-white' : m.fromKiosk ? 'bg-ink text-paper' : 'bg-card text-ink'
+          mine ? 'bg-ember text-right text-white' : m.fromKiosk ? 'bg-ink text-left text-paper' : 'bg-card text-left text-ink'
         }`}
       >
         {m.text}

@@ -562,6 +562,9 @@ Add unit tests where sensible.
   above the on-screen keyboard (`useOskHeight()` in Osk.tsx). Phone bubbles are tinted with the sender's colour.
   Phone Chat tab: same stream, mine on the right, composer + From picker below. `shared/chat.ts` removed.
 - v0.8.137: screensaver Countdowns lines all one size (text-2xl, full white) — the soonest is no longer bigger.
+- v0.8.138: phone Chat — outgoing messages (sent from this phone, remembered in localStorage `osl.chatSent`, or
+  written as this phone's From person) sit flush right with right-aligned text; incoming (the tablet, other phones)
+  sit flush left with left-aligned text (`data-side="out"|"in"`).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
