@@ -249,14 +249,24 @@ export function KioskOverlays() {
   useEffect(() => {
     setCovered(covered)
   }, [covered, setCovered])
-  // back from the screensaver or sleep: Week / Month (and Day) show today again, not wherever
-  // someone left them (OPE-19)
+  // back from the screensaver or sleep: a fresh start — the default screen (Home), on today
+  // (OPE-19), with Settings or an event editor someone left open closed
   const goToday = useUi((s) => s.goToday)
+  const setView = useUi((s) => s.setView)
+  const setSettingsOpen = useUi((s) => s.setSettingsOpen)
+  const closeEditor = useUi((s) => s.closeEditor)
+  const { data: kioskSettings } = useSettings()
+  const defaultView = kioskSettings?.defaultView ?? 'home'
   const wasCovered = useRef(false)
   useEffect(() => {
-    if (wasCovered.current && !covered) goToday()
+    if (wasCovered.current && !covered) {
+      setView(defaultView)
+      goToday()
+      setSettingsOpen(false)
+      closeEditor()
+    }
     wasCovered.current = covered
-  }, [covered, goToday])
+  }, [covered, goToday, setView, defaultView, setSettingsOpen, closeEditor])
   useEffect(() => {
     setSleepingState(sleeping)
   }, [sleeping, setSleepingState])

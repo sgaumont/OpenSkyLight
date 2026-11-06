@@ -567,6 +567,9 @@ Add unit tests where sensible.
   sit flush left with left-aligned text (`data-side="out"|"in"`).
 - v0.8.139: the tablet's switcher label is "Chat", not "Chats" (Home · Week · Month · Chat · Lists; the text-size
   tab too). The view kind stays `'chats'`.
+- v0.8.140: back from the screensaver or sleep, the tablet goes to the default screen (Settings → Default screen,
+  Home) on today, and closes Settings or an event editor left open (KioskOverlays covered→uncovered effect;
+  extends OPE-19).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
