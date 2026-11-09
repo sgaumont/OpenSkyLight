@@ -177,6 +177,19 @@ export function useChecklistMutations() {
   }
 }
 
+/** Kids' timers running on the tablet (and finished ones it hasn't put away yet). */
+export function useTimers() {
+  return useQuery({ queryKey: ['gameTimers'], queryFn: () => rpc('stars:timers', undefined), ...LIVE })
+}
+
+export function useTimerMutations() {
+  const keys = [['gameTimers'], ['balances'], ['gameTimeLog']]
+  return {
+    adjust: useInvalidatingMutation((input: { id: string; minutes: number }) => rpc('stars:adjustTimer', input), keys),
+    stop: useInvalidatingMutation((input: { id: string }) => rpc('stars:stopTimer', input), keys)
+  }
+}
+
 /** Shop purchases waiting for a parent to OK them. */
 export function useShopRequests() {
   return useQuery({ queryKey: ['redemptions'], queryFn: () => rpc('rewards:redemptions', undefined), ...LIVE })

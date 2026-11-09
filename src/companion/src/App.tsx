@@ -8,6 +8,7 @@ import { usePeople, useToday } from './api/hooks'
 import { ListsPage } from './pages/ListsPage'
 import { MealsPage } from './pages/MealsPage'
 import { ChoresPage, PendingUnlocksCard } from './pages/ChoresPage'
+import { TimersCard } from './pages/TimersCard'
 import { PhotosPage } from './pages/PhotosPage'
 import { NotesPage } from './pages/NotesPage'
 import { PairScreen } from './pages/PairScreen'
@@ -92,6 +93,8 @@ export default function App() {
 
       <main ref={mainRef} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4" data-tab-main>
         {/* sign-offs (checklists, Video Games) prompt on every tab, not just Chores (which has its own) */}
+        {/* the kids' running timers, on every tab: watch them, add or take off minutes */}
+        <TimersCard />
         {tab !== 'chores' && <ApprovalPrompt today={today} />}
         <div key={tab} className={slide === 'from-right' ? 'animate-slide-from-right' : slide === 'from-left' ? 'animate-slide-from-left' : 'animate-rise'}>
           {tab === 'lists' && <ListsPage />}

@@ -155,6 +155,32 @@ describe('Shop rewards: static and dynamic', () => {
   })
 })
 
+describe('changing a running timer from the phone (OPE-22)', () => {
+  it('adds or takes off minutes; stars stay as they are', () => {
+    rewards.adjust('emma', 30)
+    const t = rewards.useTime('emma', 20).timer!
+    const ends = Date.parse(t.endsAt)
+    const more = rewards.adjustTimer(t.id, 5)
+    expect(Date.parse(more.endsAt) - ends).toBe(5 * 60_000)
+    expect(more.minutes).toBe(28)
+    const less = rewards.adjustTimer(t.id, -10)
+    expect(Date.parse(less.endsAt) - ends).toBe(-5 * 60_000)
+    expect(rewards.timers()[0].endsAt).toBe(less.endsAt)
+    expect(chores.balanceOf('emma')).toBe(10)
+  })
+
+  it('taking off more than is left ends it now (the tablet then says it is up)', () => {
+    rewards.adjust('emma', 10)
+    const t = rewards.useTime('emma', 10).timer!
+    const before = Date.now()
+    const ended = rewards.adjustTimer(t.id, -60)
+    expect(Date.parse(ended.endsAt)).toBeGreaterThanOrEqual(before - 1000)
+    expect(Date.parse(ended.endsAt)).toBeLessThanOrEqual(Date.now())
+    expect(() => rewards.adjustTimer(t.id, 5)).toThrow(/already finished/)
+    expect(() => rewards.adjustTimer('nope', 5)).toThrow()
+  })
+})
+
 describe('database v14', () => {
   it('requests from before parents approved first count as already charged', () => {
     const sqlite = new Database(':memory:')

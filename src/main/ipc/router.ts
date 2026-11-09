@@ -161,6 +161,7 @@ const MUTATION_DOMAINS: Partial<Record<IpcChannel, MutationDomain>> = {
   'stars:adjust': 'chores',
   'stars:useTime': 'chores',
   'stars:stopTimer': 'chores',
+  'stars:adjustTimer': 'chores',
   // the Shop's rewards refresh with the chores domain too (a phone can edit them)
   'rewards:create': 'chores',
   'rewards:update': 'chores',
@@ -338,6 +339,7 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('stars:log', s.gameTimeLogSchema, (req) => services.rewards.log(req.personId, req.limit))
   handle('stars:timers', null, () => services.rewards.timers())
   handle('stars:stopTimer', s.stopTimerSchema, (req) => services.rewards.stopTimer(req.id))
+  handle('stars:adjustTimer', s.adjustTimerSchema, (req) => services.rewards.adjustTimer(req.id, req.minutes))
 
   handle('rewards:list', null, () => services.rewards.list())
   handle('rewards:create', s.rewardCreateSchema, (req) => services.rewards.create(req))

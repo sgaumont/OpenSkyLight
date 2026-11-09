@@ -60,6 +60,28 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     return { refunded }
   }
 
+  /**
+   * A parent changes a running timer by some minutes (from the phone): more time, or less. Taking
+   * off more than is left ends it now — the tablet then says it's up. Stars aren't touched.
+   */
+  function adjustTimer(id: string, minutes: number): GameTimerDto {
+    const list = timers()
+    const timer = list.find((t) => t.id === id)
+    if (!timer) throw notFound('Timer')
+    const now = DateTime.utc()
+    const ends = DateTime.fromISO(timer.endsAt)
+    if (ends <= now) throw invalid('That timer has already finished')
+    const moved = ends.plus({ minutes })
+    const endsAt = moved <= now ? now : moved
+    const next: GameTimerDto = {
+      ...timer,
+      endsAt: isoUtc(endsAt),
+      minutes: Math.max(0, Math.round(endsAt.diff(DateTime.fromISO(timer.startedAt), 'minutes').minutes))
+    }
+    putSetting(KEY_TIMERS, JSON.stringify(list.map((t) => (t.id === id ? next : t))))
+    return next
+  }
+
   function toDto(row: typeof rewards.$inferSelect): RewardDto {
     return { id: row.id, title: row.title, icon: row.icon, costStars: row.costStars, active: row.active, kind: row.kind, bonusMinutes: row.bonusMinutes }
   }
@@ -402,7 +424,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     return 'Chore'
   }
 
-  return { list, create, update, remove, redeem, pendingRedemptions, grant, deny, held, adjust, useTime, log, timers, stopTimer }
+  return { list, create, update, remove, redeem, pendingRedemptions, grant, deny, held, adjust, useTime, log, timers, stopTimer, adjustTimer }
 }
 
 export type RewardsService = ReturnType<typeof createRewardsService>
