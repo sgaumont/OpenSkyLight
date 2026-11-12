@@ -1,11 +1,14 @@
 import type { PushPrefs } from '@shared/pushAlerts'
 import { rpc } from './client'
+import { isNativeApp } from './base'
 
 /**
  * Phone notifications (Web Push). Phones only allow them on a secure page, so they work from the
  * kiosk's Tailscale https address, not the home Wi-Fi http one.
  */
 export function pushSupported(): boolean {
+  // the Android app gets its own (native) notifications in a coming update, not Web Push
+  if (isNativeApp()) return false
   return window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
 }
 

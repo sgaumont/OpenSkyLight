@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NO_PUSH, PUSH_KINDS, PUSH_LABELS, type PushPrefs } from '@shared/pushAlerts'
 import { rpc } from '../api/client'
 import { currentSubscription, disablePush, enablePush, pushSupported, savePush } from '../api/push'
+import { isNativeApp } from '../api/base'
 import { GhostButton, PrimaryButton } from '../components/ui'
 import { getPhoneName, PHONE_NAME_MAX, setPhoneName } from '../lib/phoneName'
 
@@ -75,7 +76,12 @@ export function NotificationsSheet({ onClose }: { onClose: () => void }) {
       >
         <h2 className="font-display text-xl font-semibold">🔔 Notifications</h2>
         <PhoneNameField />
-        {!pushSupported() ? (
+        {isNativeApp() ? (
+          <p className="mt-2 mb-4 text-base font-semibold text-ink-soft" data-native-push-soon>
+            Notifications are coming to Family Skyview in the next update. Until then, the phone web app (opened from
+            the kiosk's Tailscale address) can still get them.
+          </p>
+        ) : !pushSupported() ? (
           <p className="mt-2 mb-4 text-base font-semibold text-ink-soft">
             Notifications only work when this app is opened from the kiosk's <b>Tailscale (https)</b> address. On the
             kiosk, open Settings → Phone app, switch the QR code to Tailscale, and scan it with this phone.

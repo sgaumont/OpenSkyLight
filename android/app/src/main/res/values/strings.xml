@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Family Skyview</string>
+    <string name="title_activity_main">Family Skyview</string>
+    <string name="package_name">io.github.sgaumont.familyskyview</string>
+    <string name="custom_url_scheme">io.github.sgaumont.familyskyview</string>
+</resources>

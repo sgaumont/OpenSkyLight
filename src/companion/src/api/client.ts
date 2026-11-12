@@ -1,4 +1,6 @@
 import type { IpcChannel, IpcContract, IpcResult } from '@shared/ipc/contract'
+import { kioskBases, parsePairingLink } from '@shared/pairing'
+import { clearBases, kioskFetch, mirrorToNative, setBases } from './base'
 
 const TOKEN_KEY = 'osl.companionToken'
 
@@ -8,10 +10,12 @@ export function getToken(): string | null {
 
 export function setToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token)
+  mirrorToNative(TOKEN_KEY, token)
 }
 
 export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY)
+  mirrorToNative(TOKEN_KEY, null)
 }
 
 /** Pull a pairing token out of the QR URL fragment (#t=…), then scrub it. */
@@ -41,7 +45,7 @@ export async function rpc<K extends IpcChannel>(
   channel: K,
   req: IpcContract[K]['req']
 ): Promise<IpcContract[K]['res']> {
-  const res = await fetch(`/api/rpc/${channel}`, {
+  const res = await kioskFetch(`/api/rpc/${channel}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${getToken() ?? ''}`,
@@ -61,7 +65,7 @@ export async function rpc<K extends IpcChannel>(
 
 /** fetch with the pairing token; a 401 drops back to the pairing screen, like rpc(). */
 export async function authedFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const res = await fetch(path, {
+  const res = await kioskFetch(path, {
     ...init,
     headers: { ...(init.headers as Record<string, string> | undefined), Authorization: `Bearer ${getToken() ?? ''}` }
   })
@@ -71,4 +75,25 @@ export async function authedFetch(path: string, init: RequestInit = {}): Promise
     throw new RpcError('UNAUTHORIZED', 'Not paired')
   }
   return res
+}
+
+/**
+ * The Android app pairs from the same QR code as the web app: remember the kiosk's address and the
+ * token, then ask the kiosk for all its addresses (home Wi-Fi and Tailscale) to switch between.
+ */
+export async function pairWithLink(raw: string): Promise<void> {
+  const link = parsePairingLink(raw)
+  if (!link) throw new Error("That isn't the family display's pairing code")
+  setBases([link.base])
+  setToken(link.token)
+  let res: Response
+  try {
+    res = await authedFetch('/api/addresses')
+  } catch (e) {
+    clearBases()
+    if (e instanceof RpcError) throw new Error('That code was already used or replaced — make a new one on the display')
+    throw new Error("Can't reach the family display at that address")
+  }
+  const listed = res.ok ? ((await res.json()) as { lan: string[]; secure: string | null }) : null
+  setBases(kioskBases(link.base, listed))
 }

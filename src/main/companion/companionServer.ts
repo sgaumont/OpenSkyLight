@@ -47,6 +47,9 @@ export interface CompanionServerDeps {
  * UI and exposes an allowlisted slice of the IPC contract as POST /api/rpc/*.
  * Auth is a bearer token minted from the (PIN-gated) kiosk settings QR.
  */
+/** Where the Android app's bundled phone UI runs (Capacitor's https scheme on Android). */
+export const APP_ORIGIN = 'https://localhost'
+
 export function createCompanionServer(deps: CompanionServerDeps) {
   const tailscale = createTailscaleHttps()
   let server: Server | null = null
@@ -261,6 +264,16 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     })
   }
 
+  /**
+   * GET /api/addresses: every way to reach this kiosk — home Wi-Fi first, then the Tailscale https
+   * one — so the Android app can switch between them as the phone leaves and comes home.
+   */
+  async function handleAddresses(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    if (!authorize(req, res)) return
+    const ts = await secure()
+    sendJson(res, 200, { lan: getStatus().urls, secure: ts.host && ts.serving ? `https://${ts.host}/` : null })
+  }
+
   /** Tell every listening phone that a data domain changed (they refetch). */
   function push(domain: string): void {
     const line = `data: ${JSON.stringify({ domain })}\n\n`
@@ -269,6 +282,25 @@ export function createCompanionServer(deps: CompanionServerDeps) {
 
   function onRequest(req: IncomingMessage, res: ServerResponse): void {
     const url = req.url ?? '/'
+    // the Android app (Family Skyview) runs its bundled copy of the phone UI at https://localhost
+    // and calls the kiosk from there — the one other page allowed to (the web app is same-origin)
+    if (req.headers.origin === APP_ORIGIN && url.startsWith('/api/')) {
+      res.setHeader('Access-Control-Allow-Origin', APP_ORIGIN)
+      res.setHeader('Vary', 'Origin')
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'Access-Control-Allow-Methods': 'GET, POST, DELETE',
+          'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+          'Access-Control-Max-Age': '600'
+        })
+        res.end()
+        return
+      }
+    }
+    if (url === '/api/addresses' && req.method === 'GET') {
+      void handleAddresses(req, res)
+      return
+    }
     if (url === '/api/events' && req.method === 'GET') {
       handleEvents(req, res)
       return

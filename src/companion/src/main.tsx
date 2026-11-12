@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { adoptTokenFromUrl } from './api/client'
 import { registerServiceWorker } from './api/push'
+import { mirrorToNative } from './api/base'
+import { getPhoneName } from './lib/phoneName'
 import App from './App'
 import './styles.css'
 
@@ -10,6 +12,8 @@ import './styles.css'
 adoptTokenFromUrl()
 // phone notifications (only where the page is https, i.e. the Tailscale address)
 registerServiceWorker()
+// Android app: keep the native copy of this phone's name in step (no-op on the web app)
+mirrorToNative('osl.phoneName', getPhoneName() || null)
 
 // the companion follows the phone's own theme (the kiosk follows the sun)
 const darkQuery = window.matchMedia('(prefers-color-scheme: dark)')

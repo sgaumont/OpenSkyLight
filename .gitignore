@@ -11,3 +11,7 @@ fcm-service-account*.json
 *.log
 .vite/
 coverage/
+# Android app (Family Skyview): Firebase config for the phone — never commit
+android/app/google-services.json
+*.keystore
+*.jks

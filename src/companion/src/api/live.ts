@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getToken } from './client'
+import { forgetCurrentBase, kioskFetch } from './base'
 
 /** Retry delay after the stream drops (kiosk restarting, Wi-Fi ↔ Tailscale hand-off). */
 const RETRY_MS = 3000
@@ -27,7 +28,7 @@ export function useLiveUpdates(enabled: boolean): void {
       while (!stopped) {
         ctrl = new AbortController()
         try {
-          const res = await fetch('/api/events', {
+          const res = await kioskFetch('/api/events', {
             headers: { Authorization: `Bearer ${getToken() ?? ''}` },
             signal: ctrl.signal,
             cache: 'no-store'
@@ -74,6 +75,8 @@ export function useLiveUpdates(enabled: boolean): void {
     // a phone coming back from sleep usually holds a dead stream: start a fresh one now
     const onVisible = (): void => {
       if (document.visibilityState !== 'visible') return
+      // the app may have left home (or come back) while asleep: check which kiosk address answers
+      forgetCurrentBase()
       reconnectNow = true
       ctrl?.abort()
       wake?.()
