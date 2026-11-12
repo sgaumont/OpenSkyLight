@@ -164,6 +164,14 @@ export type IpcContract = {
     req: { endpoint: string; p256dh: string; auth: string; personId: string | null; prefs: PushPrefs }
     res: void
   }
+  /**
+   * the Android app (Firebase Cloud Messaging): turn on / update, same prefs as Web Push. Its
+   * endpoint for the other notify:* calls (and chat:send) is the returned "fcm:<token>".
+   */
+  'notify:subscribeFcm': {
+    req: { token: string; personId: string | null; prefs: PushPrefs; deviceName?: string | null }
+    res: { endpoint: string }
+  }
   'notify:unsubscribe': { req: { endpoint: string }; res: void }
   'notify:test': { req: { endpoint: string }; res: { delivered: boolean } }
   /** one live lookup from home, to check the key and the address */

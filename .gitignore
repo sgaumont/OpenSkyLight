@@ -5,6 +5,9 @@ shots/
 *.local
 .DS_Store
 Thumbs.db
+# Firebase service-account keys (the Android app's notifications) — never commit
+fcm-service-account*.json
+*-firebase-adminsdk-*.json
 *.log
 .vite/
 coverage/

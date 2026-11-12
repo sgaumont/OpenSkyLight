@@ -341,12 +341,19 @@ export const backupRestoreSchema = z.object({
 export const travelKeySchema = z.object({ apiKey: z.string().trim().min(20).max(200).nullable() })
 const pushEndpoint = z.string().url().max(1000)
 export const notifyEndpointSchema = z.object({ endpoint: pushEndpoint })
+const pushPrefs = z.object({ chat: z.boolean(), leave: z.boolean(), approvals: z.boolean(), weather: z.boolean(), timers: z.boolean() })
 export const notifySubscribeSchema = z.object({
   endpoint: pushEndpoint,
   p256dh: z.string().min(1).max(200),
   auth: z.string().min(1).max(100),
   personId: z.string().min(1).nullable(),
-  prefs: z.object({ chat: z.boolean(), leave: z.boolean(), approvals: z.boolean(), weather: z.boolean(), timers: z.boolean() })
+  prefs: pushPrefs
+})
+export const notifySubscribeFcmSchema = z.object({
+  token: z.string().regex(/^[A-Za-z0-9_:.-]{20,400}$/),
+  personId: z.string().min(1).nullable(),
+  prefs: pushPrefs,
+  deviceName: z.string().trim().max(40).nullable().optional()
 })
 export const travelTestSchema = z.object({ destination: z.string().trim().min(3).max(300) })
 

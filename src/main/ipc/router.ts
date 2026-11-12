@@ -371,6 +371,7 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('notify:publicKey', null, () => services.notify.publicKey())
   handle('notify:get', s.notifyEndpointSchema, (req) => services.notify.get(req.endpoint))
   handle('notify:subscribe', s.notifySubscribeSchema, (req) => services.notify.subscribe(req))
+  handle('notify:subscribeFcm', s.notifySubscribeFcmSchema, (req) => services.notify.subscribeFcm(req))
   handle('notify:unsubscribe', s.notifyEndpointSchema, (req) => services.notify.unsubscribe(req.endpoint))
   handle('notify:test', s.notifyEndpointSchema, (req) => services.notify.test(req.endpoint))
   handle('travel:test', s.travelTestSchema, (req) => services.travel.test(req.destination))

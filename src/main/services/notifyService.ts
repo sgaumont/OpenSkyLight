@@ -6,8 +6,9 @@ import { pushSubscriptions } from '../db/schema'
 import type { SettingsService } from './settingsService'
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
-import { dueAlerts, NO_PUSH, pruneSent, PUSH_KINDS, type PushAlert, type PushPrefs, type PushState } from '@shared/pushAlerts'
+import { dueAlerts, fcmData, NO_PUSH, pruneSent, PUSH_KINDS, type PushAlert, type PushPrefs, type PushState } from '@shared/pushAlerts'
 import { invalid } from './errors'
+import type { FcmSender } from './fcmSender'
 
 const KEY_VAPID = 'push.vapid' // { publicKey, privateKey }
 const KEY_SENT = 'push.sent' // { [alertKey]: sentAtMs }
@@ -23,6 +24,16 @@ export interface PushSubscriptionInput {
   personId: string | null
   prefs: PushPrefs
 }
+
+/** The Android app's sign-up: its FCM token instead of a Web Push address. */
+export interface FcmSubscriptionInput {
+  token: string
+  personId: string | null
+  prefs: PushPrefs
+  deviceName?: string | null
+}
+
+const FCM_PREFIX = 'fcm:'
 
 /** Hands one notification to the phone's push service; throws with `statusCode` on failure. */
 export type PushSender = (
@@ -61,10 +72,13 @@ export function createNotifyService(deps: {
   sources: NotifySources
   deviceTz: () => string
   send?: PushSender
+  /** the FCM sender, or null while there's no service-account key (Android phones are then skipped) */
+  fcm?: () => FcmSender | null
   now?: () => number
 }) {
   const { db, settings, sources } = deps
   const send = deps.send ?? webPushSender
+  const fcm = deps.fcm ?? (() => null)
   const now = deps.now ?? Date.now
   let timer: NodeJS.Timeout | null = null
   let checking: Promise<void> = Promise.resolve()
@@ -101,30 +115,53 @@ export function createNotifyService(deps: {
     }
   }
 
+  /** Adds the Android app's phone (or updates it); its endpoint is "fcm:<token>". */
+  function subscribeFcm(input: FcmSubscriptionInput): { endpoint: string } {
+    const endpoint = FCM_PREFIX + input.token
+    const prefs = JSON.stringify(Object.fromEntries(PUSH_KINDS.map((k) => [k, input.prefs[k] === true])))
+    const deviceName = input.deviceName?.trim() || null
+    if (get(endpoint)) {
+      db.update(pushSubscriptions).set({ personId: input.personId, prefs, deviceName }).where(eq(pushSubscriptions.endpoint, endpoint)).run()
+    } else {
+      db.insert(pushSubscriptions)
+        .values({ id: uuidv7(), endpoint, kind: 'fcm', p256dh: '', auth: '', personId: input.personId, deviceName, prefs, createdAt: isoUtc(DateTime.utc()) })
+        .run()
+    }
+    return { endpoint }
+  }
+
   function unsubscribe(endpoint: string): void {
     db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint)).run()
   }
 
   /** Sends to every phone that wants this kind of alert; drops phones the push service says are gone. */
   async function deliver(
-    alert: Pick<PushAlert, 'kind' | 'title' | 'body' | 'tab' | 'skipPersonId' | 'skipEndpoint' | 'silent' | 'key'>,
+    alert: Pick<PushAlert, 'kind' | 'channel' | 'title' | 'body' | 'tab' | 'skipPersonId' | 'skipEndpoint' | 'silent' | 'key' | 'actions'>,
     only?: string
   ): Promise<number> {
-    const keys = vapid()
     const payload = JSON.stringify({ title: alert.title, body: alert.body, tag: alert.key, url: `/?tab=${alert.tab}`, silent: alert.silent === true })
+    let fcmSend: FcmSender | null | undefined
     let delivered = 0
     for (const row of db.select().from(pushSubscriptions).all()) {
       if (only ? row.endpoint !== only : !readPrefs(row.prefs)[alert.kind]) continue
       if (!only && alert.skipPersonId && row.personId === alert.skipPersonId) continue
       if (!only && alert.skipEndpoint && row.endpoint === alert.skipEndpoint) continue
       try {
-        await send({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, keys)
+        if (row.kind === 'fcm') {
+          // no key yet (the Firebase project isn't set up): the Android phones just miss out
+          if (fcmSend === undefined) fcmSend = fcm()
+          if (!fcmSend) continue
+          await fcmSend({ token: row.endpoint.slice(FCM_PREFIX.length), data: fcmData(alert) })
+        } else {
+          await send({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, vapid())
+        }
         delivered++
       } catch (e) {
-        const status = (e as { statusCode?: number }).statusCode
-        // 404 / 410: the phone unsubscribed or the browser data was cleared
-        if (status === 404 || status === 410) unsubscribe(row.endpoint)
-        else console.warn('[notify] push failed', status ?? (e as Error).message)
+        const err = e as { statusCode?: number; gone?: boolean }
+        // Web Push 404 / 410: the phone unsubscribed or the browser data was cleared;
+        // FCM `gone`: the app was uninstalled or its token replaced
+        if (row.kind === 'fcm' ? err.gone : err.statusCode === 404 || err.statusCode === 410) unsubscribe(row.endpoint)
+        else console.warn('[notify] push failed', err.statusCode ?? (e as Error).message)
       }
     }
     return delivered
@@ -133,7 +170,7 @@ export function createNotifyService(deps: {
   /** A "this works" notification to one phone. */
   async function test(endpoint: string): Promise<{ delivered: boolean }> {
     if (!get(endpoint)) throw invalid('Turn notifications on first')
-    const n = await deliver({ key: `test:${now()}`, kind: 'chat', title: '🔔 OpenSkyLight', body: 'Notifications are working on this phone.', tab: 'notes' }, endpoint)
+    const n = await deliver({ key: `test:${now()}`, kind: 'chat', channel: 'chat_ring', title: '🔔 OpenSkyLight', body: 'Notifications are working on this phone.', tab: 'notes' }, endpoint)
     return { delivered: n > 0 }
   }
 
@@ -194,6 +231,7 @@ export function createNotifyService(deps: {
     publicKey: () => ({ publicKey: vapid().publicKey }),
     get,
     subscribe,
+    subscribeFcm,
     unsubscribe,
     test,
     check,

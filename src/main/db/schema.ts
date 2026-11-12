@@ -292,13 +292,18 @@ export const noteReplies = sqliteTable(
   (t) => [index('idx_note_replies_note').on(t.noteId, t.createdAt)]
 )
 
-/** A phone that gets notifications (Web Push): its push endpoint and keys, and which alerts it wants. */
+/**
+ * A phone that gets notifications: its push endpoint and keys, and which alerts it wants. Web Push
+ * (the PWA), or FCM (the Android app: endpoint "fcm:<token>", keys empty).
+ */
 export const pushSubscriptions = sqliteTable('push_subscriptions', {
   id: text('id').primaryKey(),
   endpoint: text('endpoint').notNull().unique(),
+  kind: text('kind', { enum: ['webpush', 'fcm'] }).notNull().default('webpush'),
   p256dh: text('p256dh').notNull(),
   auth: text('auth').notNull(),
   personId: text('person_id'),
+  deviceName: text('device_name'),
   /** JSON PushPrefs */
   prefs: text('prefs').notNull(),
   createdAt: text('created_at').notNull()

@@ -66,6 +66,8 @@ export const COMPANION_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'notify:publicKey',
   'notify:get',
   'notify:subscribe',
+  // the Android app's notifications (Firebase Cloud Messaging)
+  'notify:subscribeFcm',
   'notify:unsubscribe',
   'notify:test'
 ])

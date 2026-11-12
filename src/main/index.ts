@@ -26,6 +26,7 @@ import { createNotesService } from './services/notesService'
 import { createCountdownsService } from './services/countdownsService'
 import { createTravelService } from './services/travelService'
 import { createNotifyService } from './services/notifyService'
+import { createFcm } from './services/fcmSender'
 import { createPhonePhotos } from './companion/phonePhotos'
 import { applyPendingRestore } from './backup/backupFiles'
 import { createWeatherService } from './services/weatherService'
@@ -152,10 +153,13 @@ if (!gotLock) {
       onChange: () => broadcast('push:dataChanged', { domain: 'travel' })
     })
     // phone notifications; the sources read the services below, which exist before the first check
+    // the Android app's notifications: a Firebase service-account key the user drops into userData
+    const fcm = createFcm(join(app.getPath('userData'), 'fcm-service-account.json'))
     const notify = createNotifyService({
       db,
       settings,
       deviceTz,
+      fcm: fcm.sender,
       sources: {
         names: () => new Map(services.people.list().map((p) => [p.id, p.name])),
         chat: () => services.notes.pushFeed(20),

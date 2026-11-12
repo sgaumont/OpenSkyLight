@@ -366,6 +366,13 @@ const MIGRATIONS: string[] = [
   ALTER TABLE chores ADD COLUMN coins_value INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE rewards ADD COLUMN currency TEXT NOT NULL DEFAULT 'stars';
   ALTER TABLE reward_redemptions ADD COLUMN currency TEXT NOT NULL DEFAULT 'stars';
+  `,
+  // v16: the Android companion app gets its notifications over Firebase Cloud Messaging. Its
+  // phones sit in the same table, endpoint "fcm:<token>" (no Web Push keys); every phone so far
+  // is Web Push.
+  `
+  ALTER TABLE push_subscriptions ADD COLUMN kind TEXT NOT NULL DEFAULT 'webpush';
+  ALTER TABLE push_subscriptions ADD COLUMN device_name TEXT;
   `
 ]
 

@@ -653,6 +653,18 @@ Add unit tests where sensible.
   and shows coins in a small pill at its foot (`data-coin-pill`); Shop badges show the reward's currency. Phone:
   "Stars & Coins" card (− / + per currency, `AmountStepper`), set-balance sheet with a Stars/Coins toggle,
   history marks ⭐/🪙. Earned only from chores (plus parent corrections); no exchange between the two.
+- v0.8.168: kiosk side of the **Android companion app's notifications** (Firebase Cloud Messaging HTTP v1; the
+  phone side is another session's Capacitor work). DB v16: `push_subscriptions.kind` ('webpush'|'fcm') +
+  `device_name`; an Android phone is a row with endpoint `fcm:<token>` and empty keys, so notify:get/unsubscribe/
+  test and chat:send's `endpoint` work unchanged. New `notify:subscribeFcm` {token, personId, prefs, deviceName?}
+  → {endpoint} (companion-allowed). Every `PushAlert` now has an Android `channel` (approvals|shop|timers|
+  chat_ring|chat_quiet|weather|leave) and optional `actions` [{id,label,rpc,req,input?}] the app POSTs to
+  /api/rpc/<rpc>: chat → Reply (chat:send, input text), chore set → Approve (chores:approveUnlock), Shop request
+  → OK/No (rewards:grant/deny); timers have none (the alert fires after the timer ends, adjustTimer refuses then).
+  `fcmData()` turns an alert into the data-only message (all strings; actions JSON; ring '0'/'1').
+  `services/fcmSender.ts` reads `userData\fcm-service-account.json` on each send (gitignored; never commit) via
+  google-auth-library JWT; no/broken key → Android phones skipped, Web Push unaffected. Dead token (404 or
+  UNREGISTERED) deletes the row. Next migration v17.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
