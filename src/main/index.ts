@@ -20,6 +20,7 @@ import {
 } from './ipc/router'
 import { createCompanionTokens } from './companion/companionTokens'
 import { createCompanionServer } from './companion/companionServer'
+import { findAndroidApp } from './companion/androidApp'
 import { createMainWindow } from './window'
 import { createBackupService } from './backup/backupService'
 import { createNotesService } from './services/notesService'
@@ -138,7 +139,14 @@ if (!gotLock) {
       dispatch: (channel, payload) => dispatch(services, channelTable, channel, payload, { gate: 'none' }),
       version: app.getVersion(),
       staticRoot: join(__dirname, '../companion'),
-      photos: createPhonePhotos({ settings, onChange: (domain) => broadcast('push:dataChanged', { domain }) })
+      photos: createPhonePhotos({ settings, onChange: (domain) => broadcast('push:dataChanged', { domain }) }),
+      // packed by `npm run dist` into resources/family-skyview; a dev run uses build/family-skyview
+      androidApp: () =>
+        findAndroidApp(
+          app.isPackaged
+            ? [join(process.resourcesPath, 'family-skyview')]
+            : [join(__dirname, '../../build/family-skyview'), join(app.getAppPath(), 'build', 'family-skyview')]
+        )
     })
     app.on('will-quit', () => companion.shutdown())
     onBroadcast((channel, payload) => {

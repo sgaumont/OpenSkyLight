@@ -1,9 +1,10 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
-import { promises as fs } from 'node:fs'
+import { createReadStream, promises as fs } from 'node:fs'
 import { extname, join, normalize, sep } from 'node:path'
 import type { IpcChannel, IpcResult } from '@shared/ipc/contract'
 import { COMPANION_CHANNELS } from '@shared/ipc/companionChannels'
 import type { SettingsService } from '../services/settingsService'
+import type { AndroidAppInfo } from './androidApp'
 import type { CompanionTokens } from './companionTokens'
 import { pickLanAddresses } from './lanAddress'
 import { MAX_PHOTO_BYTES } from './photoUpload'
@@ -40,7 +41,12 @@ export interface CompanionServerDeps {
     thumb(name: string): Buffer | null
     remove(name: string): Promise<boolean>
   }
+  /** The Android app bundled with this build, offered for download and updates (absent = none). */
+  androidApp?: () => AndroidAppInfo | null
 }
+
+/** Where phones download the Android app from this tablet (no token: it's needed before pairing). */
+export const ANDROID_APP_PATH = '/app/family-skyview.apk'
 
 /**
  * LAN-facing HTTP server for the companion web app: serves the static mobile
@@ -274,6 +280,26 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     sendJson(res, 200, { lan: getStatus().urls, secure: ts.host && ts.serving ? `https://${ts.host}/` : null })
   }
 
+  /** GET /app/family-skyview.apk: the Android app, for a phone's browser (first install) or the app (update). */
+  function serveAndroidApp(res: ServerResponse): void {
+    const a = deps.androidApp?.() ?? null
+    if (!a) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('This tablet build has no Android app')
+      return
+    }
+    res.writeHead(200, {
+      'Content-Type': 'application/vnd.android.package-archive',
+      'Content-Length': String(a.sizeBytes),
+      'Content-Disposition': `attachment; filename="Family-Skyview-${a.version}.apk"`,
+      'Cache-Control': 'no-cache'
+    })
+    const stream = createReadStream(a.path)
+    stream.on('error', () => res.destroy())
+    // a phone that walks out of Wi-Fi range mid-download mustn't leave the file open
+    res.on('close', () => stream.destroy())
+    stream.pipe(res)
+  }
+
   /** Tell every listening phone that a data domain changed (they refetch). */
   function push(domain: string): void {
     const line = `data: ${JSON.stringify({ domain })}\n\n`
@@ -307,6 +333,16 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     }
     if (url === '/api/health' && req.method === 'GET') {
       sendJson(res, 200, { app: 'openskylight', version: deps.version })
+      return
+    }
+    // which Android app this tablet hands out: the app compares it with its own version to offer updates
+    if (url === '/api/app-info' && req.method === 'GET') {
+      const a = deps.androidApp?.() ?? null
+      sendJson(res, 200, { android: a ? { version: a.version, sizeBytes: a.sizeBytes, path: ANDROID_APP_PATH } : null })
+      return
+    }
+    if (url.split('?')[0] === ANDROID_APP_PATH && req.method === 'GET') {
+      serveAndroidApp(res)
       return
     }
     const rpcMatch = url.match(/^\/api\/rpc\/([^/?]+)$/)
@@ -378,15 +414,24 @@ export function createCompanionServer(deps: CompanionServerDeps) {
     start(port)
   }
 
-  function getStatus(): { running: boolean; port: number; urls: string[]; pairedCount: number; lastError: string | null } {
+  function getStatus(): {
+    running: boolean
+    port: number
+    urls: string[]
+    pairedCount: number
+    lastError: string | null
+    androidApp: { version: string; sizeBytes: number; path: string } | null
+  } {
     const { port } = deps.settings.getAll().companion
     const running = server !== null && boundPort !== null
+    const a = deps.androidApp?.() ?? null
     return {
       running,
       port,
       urls: running ? pickLanAddresses().map((ip) => `http://${ip}:${boundPort}/`) : [],
       pairedCount: deps.tokens.count(),
-      lastError
+      lastError,
+      androidApp: a ? { version: a.version, sizeBytes: a.sizeBytes, path: ANDROID_APP_PATH } : null
     }
   }
 

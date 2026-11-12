@@ -15,3 +15,7 @@ coverage/
 android/app/google-services.json
 *.keystore
 *.jks
+# its release signing settings (kept in %USERPROFILE%\.familyskyview, never in the repo)
+signing.properties
+# the APK `npm run dist` packs into the tablet build (scripts/build-android.mjs --bundle)
+build/family-skyview/

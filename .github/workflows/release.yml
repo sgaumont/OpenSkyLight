@@ -29,6 +29,34 @@ jobs:
           npm run typecheck
           npm test
 
+      # The Android app (Family Skyview) is built into the tablet app, which hands it out to phones.
+      # It must be signed with the same release key every time, or phones refuse the update.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: '21'
+
+      - name: Android signing key and Firebase config (from secrets)
+        shell: pwsh
+        env:
+          KEYSTORE_B64: ${{ secrets.FAMILY_SKYVIEW_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.FAMILY_SKYVIEW_KEYSTORE_PASSWORD }}
+          GOOGLE_SERVICES_B64: ${{ secrets.FAMILY_SKYVIEW_GOOGLE_SERVICES_B64 }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'family-skyview'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $jks = Join-Path $dir 'release.jks'
+          [IO.File]::WriteAllBytes($jks, [Convert]::FromBase64String($env:KEYSTORE_B64))
+          $props = Join-Path $dir 'signing.properties'
+          @(
+            "storeFile=$($jks.Replace('\', '/'))",
+            "storePassword=$env:KEYSTORE_PASSWORD",
+            'keyAlias=familyskyview',
+            "keyPassword=$env:KEYSTORE_PASSWORD"
+          ) | Set-Content $props -Encoding ascii
+          "FAMILY_SKYVIEW_SIGNING=$props" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          [IO.File]::WriteAllBytes('android/app/google-services.json', [Convert]::FromBase64String($env:GOOGLE_SERVICES_B64))
+
       - name: Build and publish release
         run: npm run release
         env:

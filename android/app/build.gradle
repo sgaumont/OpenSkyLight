@@ -5,6 +5,14 @@ apply plugin: 'com.android.application'
 def appVersion = new groovy.json.JsonSlurper().parse(rootProject.file('../package.json')).version
 def appVersionCode = appVersion.tokenize('.').collect { it as int }.with { it[0] * 1000000 + it[1] * 1000 + it[2] }
 
+// Release signing: every Family Skyview the tablet hands out must carry the SAME key, or phones
+// refuse the update. The key and its passwords live outside the repo, in a properties file:
+// FAMILY_SKYVIEW_SIGNING (CI writes one from secrets) or %USERPROFILE%\.familyskyview\signing.properties.
+// Keys: storeFile, storePassword, keyAlias, keyPassword. Without it only debug builds work.
+def signingFile = System.getenv('FAMILY_SKYVIEW_SIGNING') ?: "${System.getProperty('user.home')}/.familyskyview/signing.properties"
+def signing = new Properties()
+if (file(signingFile).exists()) file(signingFile).withInputStream { signing.load(it) }
+
 android {
     namespace = "io.github.sgaumont.familyskyview"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -21,8 +29,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (signing.getProperty('storeFile')) {
+                storeFile file(signing.getProperty('storeFile'))
+                storePassword signing.getProperty('storePassword')
+                keyAlias signing.getProperty('keyAlias')
+                keyPassword signing.getProperty('keyPassword')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (signing.getProperty('storeFile')) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

@@ -4,6 +4,7 @@ import { rpc } from '../api/client'
 import { currentSubscription, disablePush, enablePush, pushSupported, savePush, type PushHandle } from '../api/push'
 import { isNativeApp } from '../api/base'
 import { NativePush } from '../api/nativePush'
+import { appVersion, tabletApp } from '../api/update'
 import { GhostButton, PrimaryButton } from '../components/ui'
 import { getPhoneName, PHONE_NAME_MAX, setPhoneName } from '../lib/phoneName'
 
@@ -146,11 +147,41 @@ export function NotificationsSheet({ onClose }: { onClose: () => void }) {
             </div>
           </>
         )}
+        <AppLine />
         <div className="mt-3 flex [&>*]:flex-1">
           <GhostButton onClick={onClose}>Close</GhostButton>
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * The Android app: which version this is. The phone web app on an Android phone: a link to install
+ * the app from the tablet (when the tablet has it).
+ */
+function AppLine() {
+  const [line, setLine] = useState<{ version: string } | { download: string } | null>(null)
+  useEffect(() => {
+    if (isNativeApp()) {
+      void appVersion().then((v) => v && setLine({ version: v }))
+    } else if (/Android/i.test(navigator.userAgent)) {
+      void tabletApp().then((a) => a && setLine({ download: a.path }))
+    }
+  }, [])
+  if (!line) return null
+  return 'version' in line ? (
+    <p className="mt-3 text-center text-xs font-bold text-ink-faint" data-app-version>
+      Family Skyview {line.version}
+    </p>
+  ) : (
+    <a
+      href={line.download}
+      className="pressable mt-3 flex min-h-12 items-center justify-center rounded-2xl bg-paper-deep px-4 text-base font-extrabold text-ink"
+      data-get-android-app
+    >
+      📲 Get the Android app (Family Skyview)
+    </a>
   )
 }
 

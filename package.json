@@ -1,6 +1,6 @@
 {
   "name": "openskylight",
-  "version": "0.8.172",
+  "version": "0.8.173",
   "description": "OpenSkyLight — an open-source standalone family calendar display (Skylight Calendar clone)",
   "main": "./out/main/index.js",
   "author": "Tyler",
@@ -18,9 +18,9 @@
     "test": "node scripts/run-vitest.mjs run",
     "test:watch": "node scripts/run-vitest.mjs",
     "postinstall": "electron-builder install-app-deps",
-    "dist": "npm run build && electron-builder",
+    "dist": "npm run build && node scripts/build-android.mjs --bundle && electron-builder",
     "postdist": "node scripts/copy-kiosk-exe.mjs",
-    "release": "npm run build && electron-builder --publish always"
+    "release": "npm run build && node scripts/build-android.mjs --bundle --require && electron-builder --publish always"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.2",

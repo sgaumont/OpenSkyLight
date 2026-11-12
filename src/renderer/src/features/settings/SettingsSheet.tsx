@@ -1219,6 +1219,10 @@ function CompanionSection() {
             <p className="text-sm font-semibold text-ink-faint">
               If phones can't connect, allow OpenSkyLight through Windows Firewall (Private networks).
             </p>
+            <AndroidAppCard
+              app={status?.androidApp ?? null}
+              urls={[...(status?.urls ?? []), ...(secureUrl ? [secureUrl] : [])]}
+            />
             <PhoneNotifications />
           </>
         )}
@@ -1259,6 +1263,66 @@ function CompanionSection() {
               Then use the phone browser's “Add to Home Screen” to keep it like an app. Each scan pairs one
               device — close this and pair again for the next phone.
             </p>
+            <BigButton onClick={() => setQr(null)}>Done</BigButton>
+          </div>
+        )}
+      </Dialog>
+    </div>
+  )
+}
+
+/**
+ * The Android app (Family Skyview) this tablet hands out: a QR code that downloads it to a phone.
+ * Phones that have it update themselves from here when this tablet is newer.
+ */
+function AndroidAppCard({ app, urls }: { app: { version: string; sizeBytes: number; path: string } | null; urls: string[] }) {
+  const [qr, setQr] = useState<{ url: string; dataUrl: string } | null>(null)
+  const show = async (base: string): Promise<void> => {
+    if (!app) return
+    const url = new URL(app.path, base).toString()
+    setQr({ url, dataUrl: await QRCode.toDataURL(url, { width: 480, margin: 1 }) })
+  }
+  const others = qr ? urls.filter((u) => new URL(u).host !== new URL(qr.url).host) : []
+  return (
+    <div className="flex flex-col gap-2 border-t border-line pt-3" data-android-app={app?.version ?? 'none'}>
+      <span className="text-base font-bold text-ink">📲 Android app (Family Skyview)</span>
+      {app ? (
+        <>
+          <span className="text-sm font-semibold text-ink-faint">
+            Version {app.version} · {Math.round(app.sizeBytes / 1_000_000)} MB. Phones that have it are offered each
+            new version when this tablet updates.
+          </span>
+          <div className="flex">
+            <BigButton onClick={() => void show(urls[0])} disabled={urls.length === 0}>
+              Get it on a phone
+            </BigButton>
+          </div>
+        </>
+      ) : (
+        <span className="text-sm font-semibold text-ink-faint">
+          This tablet build doesn't include the Android app. Phones can still use the web app (Pair a phone).
+        </span>
+      )}
+      <Dialog open={qr !== null} onClose={() => setQr(null)} title="Scan with the phone's camera">
+        {qr && (
+          <div className="flex flex-col items-center gap-3" data-android-app-qr>
+            <img src={qr.dataUrl} alt="Download QR code" className="h-64 w-64 rounded-xl bg-white p-2" />
+            <p className="max-w-sm text-center text-sm font-semibold break-all text-ink-faint">{qr.url}</p>
+            {others.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="text-sm font-semibold text-ink-faint">Wrong network?</span>
+                {others.map((u) => (
+                  <BigButton key={u} variant="ghost" onClick={() => void show(u)}>
+                    Use {networkLabel(new URL(u).hostname)}
+                  </BigButton>
+                ))}
+              </div>
+            )}
+            <ol className="max-w-sm list-decimal pl-5 text-sm font-semibold text-ink-soft">
+              <li>Open the link and download Family Skyview.</li>
+              <li>Open the download. Android asks once to allow installing apps from the browser: allow it.</li>
+              <li>Install, open Family Skyview, then tap <b>Pair a phone</b> here and scan that code from the app.</li>
+            </ol>
             <BigButton onClick={() => setQr(null)}>Done</BigButton>
           </div>
         )}

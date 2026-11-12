@@ -14,6 +14,7 @@ import { NotesPage } from './pages/NotesPage'
 import { PairScreen } from './pages/PairScreen'
 import { NotificationsSheet } from './pages/NotificationsSheet'
 import { forgetNativePush, startNativePush } from './api/push'
+import { UpdateBanner } from './components/UpdateBanner'
 
 // no Agenda tab (pages/AgendaPage.tsx is kept, unused, in case it comes back)
 type TabId = 'lists' | 'meals' | 'chores' | 'photos' | 'notes'
@@ -105,6 +106,8 @@ export default function App() {
         </button>
       </header>
       {notifications && <NotificationsSheet onClose={() => setNotifications(false)} />}
+      {/* Android app: a newer version is on the tablet */}
+      <UpdateBanner />
 
       <main ref={mainRef} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4" data-tab-main>
         {/* sign-offs (checklists, Video Games) prompt on every tab, not just Chores (which has its own) */}

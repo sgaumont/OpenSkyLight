@@ -286,6 +286,8 @@ export type IpcContract = {
       lastError: string | null
       /** the secure Tailscale address (https://<host>/ via `tailscale serve`) that phone notifications need */
       secure: { host: string | null; certs: boolean; serving: boolean }
+      /** the Android app (Family Skyview) bundled with this build: phones download it from `path` */
+      androidApp: { version: string; sizeBytes: number; path: string } | null
     }
   }
   /** Mints a fresh pairing token (parent-gated); the token only ever lives in the URL fragment. */

@@ -713,6 +713,24 @@ Add unit tests where sensible.
   as mine when its deviceName = this phone's name (notification replies). firebase-messaging 24.1.2. Tested on the
   emulator with a local-only broadcast → `PushNotifier.show` and a stand-in kiosk (real FCM needs the user's
   google-services.json).
+- v0.8.173: **the tablet hands out Family Skyview** (download + in-app updates) and the app is **release-signed**.
+  Key: `%USERPROFILE%\.familyskyview\family-skyview-release.jks` + `signing.properties` (storeFile/storePassword/
+  keyAlias=familyskyview/keyPassword), outside the repo; SHA-1 65:FC:5B:3A:11:86:FF:06:37:FD:43:7A:5A:6E:F1:03:B0:3F:3E:28.
+  LOSING IT = every phone must uninstall/reinstall. build.gradle reads `FAMILY_SKYVIEW_SIGNING` or that default path;
+  `scripts/build-android.mjs` builds release when it exists (debug otherwise); `--bundle` copies the APK +
+  `family-skyview.json` {version,file} to `build/family-skyview/` (gitignored, emptied every run), which
+  electron-builder packs as `resources/family-skyview` (extraResources). `npm run dist` = build → android --bundle →
+  electron-builder (no key or no google-services.json → warns and the exe has no app); `release` adds `--require`.
+  CI (release.yml): setup-java 21 + secrets FAMILY_SKYVIEW_KEYSTORE_B64 / _KEYSTORE_PASSWORD / _GOOGLE_SERVICES_B64.
+  Kiosk: `main/companion/androidApp.ts` findAndroidApp; companionServer `GET /api/app-info` {android:{version,
+  sizeBytes,path}|null} and `GET /app/family-skyview.apk` (both no token: needed before pairing), and
+  `companion:getStatus().androidApp`. Settings → Companion app → **📲 Android app** card: version + "Get it on a phone"
+  QR to the APK (switch to other addresses). Phone: `update/FamilySkyviewUpdatePlugin.java` (getVersion, install →
+  downloads from the saved bases into cache, FileProvider + ACTION_VIEW; first time opens "Install unknown apps",
+  REQUEST_INSTALL_PACKAGES), `api/update.ts`, `components/UpdateBanner.tsx` (checks at start + on resume, every
+  30 min), 📱 sheet shows "Family Skyview <ver>" (app) or "📲 Get the Android app" (web app on Android).
+  `isNewer` in `src/shared/appVersion.ts`. Tested on the emulator: 0.8.173 → tablet's 0.8.999 through Android's
+  installer, still paired. Debug-signed installs (≤0.8.172) must be uninstalled once.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
