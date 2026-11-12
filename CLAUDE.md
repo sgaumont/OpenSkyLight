@@ -665,6 +665,12 @@ Add unit tests where sensible.
   `services/fcmSender.ts` reads `userData\fcm-service-account.json` on each send (gitignored; never commit) via
   google-auth-library JWT; no/broken key → Android phones skipped, Web Push unaffected. Dead token (404 or
   UNREGISTERED) deletes the row. Next migration v17.
+- v0.8.169: **swipe between screens on the tablet** (OPE-23) — a sideways flick on the screen body steps through the
+  header's selector (Home → Week → Month → Chat → Lists; no wrap; screens outside it — Shop, Chores — ignore it).
+  `src/renderer/src/lib/useTabSwipe.ts` (touch events on `<main data-tab-main>` in App.tsx) + `SWIPE_TABS`/`swipeTab` in
+  `src/shared/swipe.ts`. Week and Month keep their own swipe (pages the dates, `[data-swipe]`); pop-ups (`Dialog` is
+  `data-no-swipe`), Home while customizing, inputs and sideways scrollers are left alone. SegmentedControl buttons
+  now carry `aria-pressed`.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

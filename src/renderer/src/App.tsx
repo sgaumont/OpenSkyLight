@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { DateTime } from 'luxon'
 import { usePushInvalidation, useSettings } from './api/hooks'
 import { useTheme } from './lib/useTheme'
+import { useTabSwipe } from './lib/useTabSwipe'
+import { swipeTab } from '@shared/swipe'
 import { useUi, ZONE } from './stores/uiStore'
 import { DEFAULT_SETTINGS } from '@shared/types'
 import { tabZoom } from '@shared/textSize'
@@ -60,10 +62,19 @@ export default function App() {
     return () => clearInterval(t)
   }, [])
 
+  // swipe left / right to step through the header's screens (OPE-23)
+  const mainRef = useRef<HTMLElement>(null)
+  const swipe = useCallback((step: 1 | -1) => {
+    const state = useUi.getState()
+    const next = swipeTab(state.view, step)
+    if (next) state.setView(next)
+  }, [])
+  useTabSwipe(mainRef, swipe)
+
   return (
     <div className="flex h-full flex-col">
       <Header />
-      <main className="min-h-0 flex-1">
+      <main ref={mainRef} className="min-h-0 flex-1" data-tab-main>
         {/* per-tab text size; Home applies its size per tile instead, since
             zooming the grid would break its drag/resize pixel math */}
         <div className="h-full" style={tabZoomValue !== 1 ? { zoom: tabZoomValue } : undefined}>

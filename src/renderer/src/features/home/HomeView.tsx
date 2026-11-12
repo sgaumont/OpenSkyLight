@@ -113,7 +113,7 @@ export function HomeView() {
   return (
     <div className="relative flex h-full flex-col px-6 pb-6">
       {/* in edit mode the grid shrinks to keep the bottom row clear of the floating chrome bar */}
-      <div ref={containerRef} className={`relative min-h-0 flex-1 ${editing ? 'mb-24' : ''}`} data-home-grid>
+      <div ref={containerRef} className={`relative min-h-0 flex-1 ${editing ? 'mb-24' : ''}`} data-home-grid {...(editing ? { 'data-no-swipe': '' } : {})}>
         {/* nothing renders until settings load (the fallback default layout must
             never be mistaken for the user's) and the grid is measured */}
         {settings != null &&

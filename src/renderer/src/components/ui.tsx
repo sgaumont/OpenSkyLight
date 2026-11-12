@@ -71,6 +71,7 @@ export function SegmentedControl<T extends string>({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
+          aria-pressed={value === opt.value}
           className={`pressable min-h-11 rounded-xl px-2 text-base font-bold transition-colors max-[1300px]:px-1.5 max-[1150px]:px-1 min-[1500px]:px-3 ${
             value === opt.value ? 'bg-card text-ink shadow-card' : 'text-ink-soft'
           }`}
@@ -162,7 +163,7 @@ export function Dialog({
   }, [open])
   if (!open) return null
   return (
-    <div className={`fixed inset-0 z-50 flex justify-center p-6 ${oskOpen ? 'items-start pt-4' : 'items-center'}`}>
+    <div className={`fixed inset-0 z-50 flex justify-center p-6 ${oskOpen ? 'items-start pt-4' : 'items-center'}`} data-no-swipe>
       <div className="animate-fade-in absolute inset-0 bg-ink/35 backdrop-blur-[3px]" onClick={onClose} />
       <div
         className={`animate-pop relative w-full max-w-md overflow-y-auto rounded-3xl bg-card p-6 shadow-float ${
