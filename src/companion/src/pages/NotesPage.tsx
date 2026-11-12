@@ -111,7 +111,13 @@ export function NotesPage() {
               <Message
                 m={m}
                 byId={byId}
-                mine={!m.fromKiosk && (sent.has(m.id) || (!!legacyAuthor && m.authorId === legacyAuthor && !m.deviceName))}
+                mine={
+                  !m.fromKiosk &&
+                  (sent.has(m.id) ||
+                    // sent under this phone's name from somewhere this page didn't see: a notification's Reply
+                    (!!phoneName && m.deviceName === phoneName) ||
+                    (!!legacyAuthor && m.authorId === legacyAuthor && !m.deviceName))
+                }
               />
             </div>
           ))}

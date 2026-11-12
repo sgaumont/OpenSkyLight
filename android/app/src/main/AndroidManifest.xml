@@ -24,6 +24,20 @@
 
         </activity>
 
+        <!-- the kiosk's alerts (Firebase Cloud Messaging data messages) → Android notifications -->
+        <service
+            android:name=".push.FamilySkyviewMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- the notification buttons: Approve / OK / No / Reply -->
+        <receiver
+            android:name=".push.PushActionReceiver"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -40,4 +54,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- scanning the family display's pairing QR code -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Android 13+: asked from the app's 🔔 screen -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

@@ -697,6 +697,22 @@ Add unit tests where sensible.
   `companion:testPhone` {id}, `companion:removePhone` {id} (PIN-gated). `createFcm().status()`; DTOs FcmStatus /
   NotifyPhoneDto / NotifyStatusDto in shared/types. **docs/ANDROID-FIREBASE.md** = the user's Firebase setup
   checklist (project, Android app `io.github.sgaumont.familyskyview`, FCM-only service account, key on tablet).
+- v0.8.172: Family Skyview **phase 2, native notifications** (Java, no Kotlin plugin): `android/app/src/main/java/
+  io/github/sgaumont/familyskyview/push/` — `FamilySkyviewMessagingService` (FCM data messages = `fcmData()` →
+  `PushNotifier`: one notification per alert, tag = key; channels from `PushChannels` = the PushChannel ids + `other`;
+  `ring=0` → silent), `PushActionReceiver` (Approve / OK / No / inline Reply → `KioskClient` POSTs `/api/rpc/<rpc>`
+  with the CapacitorStorage token, trying `osl.kioskBases` in order, 2.5 s connect; success → silent "✓" that times
+  out, failure → re-posted with "⚠️ <kiosk's error message>" and the buttons kept). Reply sends chat:send {text,
+  ring:false, deviceName = `osl.phoneName`, endpoint `fcm:<token>`}. Small icon = drawable `ic_stat_family_skyview`
+  if it exists, else the launcher icon. Capacitor plugin **`FamilySkyviewPush`** (registered in MainActivity):
+  check/requestPermissions (POST_NOTIFICATIONS, 13+), getToken → {token, endpoint} (rejects `NO_FIREBASE` without
+  google-services.json), deleteToken, events `tokenRefresh` and `openTab` {tab,key} (retained → cold start works).
+  Web side: `api/nativePush.ts`; `api/push.ts` now works on a `PushHandle` {endpoint, web} for both Web Push and FCM
+  (`notify:subscribeFcm`), remembers `osl.fcmEndpoint` so a new token takes over the old one's prefs
+  (`startNativePush` in App.tsx, also opens the tapped tab); a 401 deletes the FCM token. NotesPage counts a message
+  as mine when its deviceName = this phone's name (notification replies). firebase-messaging 24.1.2. Tested on the
+  emulator with a local-only broadcast → `PushNotifier.show` and a stand-in kiosk (real FCM needs the user's
+  google-services.json).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

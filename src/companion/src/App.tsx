@@ -13,6 +13,7 @@ import { PhotosPage } from './pages/PhotosPage'
 import { NotesPage } from './pages/NotesPage'
 import { PairScreen } from './pages/PairScreen'
 import { NotificationsSheet } from './pages/NotificationsSheet'
+import { forgetNativePush, startNativePush } from './api/push'
 
 // no Agenda tab (pages/AgendaPage.tsx is kept, unused, in case it comes back)
 type TabId = 'lists' | 'meals' | 'chores' | 'photos' | 'notes'
@@ -59,8 +60,22 @@ export default function App() {
 
   useEffect(() => {
     // any 401 (unpaired on the kiosk, evicted storage) drops back to pairing
-    setUnauthorizedHandler(() => setPaired(false))
+    setUnauthorizedHandler(() => {
+      // the Android app also stops getting the kiosk's notifications
+      forgetNativePush()
+      setPaired(false)
+    })
   }, [])
+
+  // Android app: a tapped notification opens its tab (even when the tap started the app), and a
+  // new push token takes over this phone's notification settings on the kiosk
+  useEffect(
+    () =>
+      startNativePush((t) => {
+        if (TABS.some((x) => x.id === t)) pick(t as TabId)
+      }),
+    []
+  )
 
   // a notification tapped while the app is already open: its service worker says which tab
   useEffect(() => {
