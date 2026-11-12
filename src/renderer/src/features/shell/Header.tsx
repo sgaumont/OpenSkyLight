@@ -3,11 +3,11 @@ import { DateTime } from 'luxon'
 import { useBalances, useChat, usePeople, useSettings } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { SegmentedControl, IconButton } from '../../components/ui'
-import { ChevronLeftIcon, ChevronRightIcon, StarIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
+import { ChevronLeftIcon, ChevronRightIcon, CoinIcon, CurrencyIcon, GearIcon, PencilIcon, PlusIcon } from '../../components/icons'
 import { WeatherButton } from '../weather/WeatherHeader'
 import { IssueLine } from './IssueLine'
 import { initials, textOn } from '../../lib/format'
-import type { CalendarViewKind, PersonDto } from '@shared/types'
+import type { CalendarViewKind, Currency, PersonDto } from '@shared/types'
 import { eachDay, weekViewRange } from '@shared/dates'
 
 function useNow(): DateTime {
@@ -158,7 +158,8 @@ export function Header() {
         <div className={`flex shrink-0 items-center ${NO_PAGING.includes(view) ? 'gap-4.5' : 'gap-3'}`}>
           {kids.map((p) => {
             const stars = balances.find((b) => b.personId === p.id)?.balance ?? 0
-            return <GameTimeBadge key={p.id} person={p} stars={stars} onClick={() => setView('shop')} />
+            const coins = balances.find((b) => b.personId === p.id)?.coins ?? 0
+            return <GameTimeBadge key={p.id} person={p} stars={stars} coins={coins} onClick={() => setView('shop')} />
           })}
         </div>
       )}
@@ -203,25 +204,49 @@ export function Header() {
 }
 
 /**
- * A kid's game time: a circle in their colour with the star icon and their balance. In the
- * header (as tall as the banner), where a tap opens the Shop, and on the Shop screen, where a
- * tap opens UseTimeDialog for them.
+ * A kid's balance: a circle in their colour with the currency's icon and the amount (stars, or coins
+ * on a coins reward in the Shop). In the header (as tall as the banner) it also carries their coins
+ * in a small pill at its foot, and a tap opens the Shop; on the Shop screen a tap buys for them.
  */
-export function GameTimeBadge({ person, stars, onClick }: { person: PersonDto; stars: number; onClick: () => void }) {
+export function GameTimeBadge({
+  person,
+  stars,
+  currency = 'stars',
+  coins,
+  onClick
+}: {
+  person: PersonDto
+  /** the amount in the circle */
+  stars: number
+  currency?: Currency
+  /** shown in a pill under the circle (the header) */
+  coins?: number
+  onClick: () => void
+}) {
+  const label = `${person.name}: ${stars} ${currency}${coins !== undefined ? `, ${coins} coins` : ''}`
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${person.name}: ${stars} game time`}
+      aria-label={label}
       title={person.name}
-      className="pressable flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
+      className="pressable relative flex h-15 w-15 shrink-0 flex-col items-center justify-center rounded-full font-extrabold tabular-nums shadow-card ring-2 ring-paper max-[1300px]:h-12 max-[1300px]:w-12 min-[1500px]:h-16 min-[1500px]:w-16"
       style={{ backgroundColor: person.color, color: textOn(person.color) }}
       data-game-badge
     >
       <span aria-hidden className="text-sm leading-none max-[1300px]:text-xs">
-        <StarIcon className="align-top" />
+        <CurrencyIcon currency={currency} className="align-top" />
       </span>
       <span className="text-xl leading-none max-[1300px]:text-base">{stars}</span>
+      {coins !== undefined && (
+        <span
+          className="absolute -bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-card px-2 py-px text-sm leading-tight font-extrabold whitespace-nowrap text-ink shadow-card ring-1 ring-line max-[1300px]:text-xs"
+          data-coin-pill
+        >
+          <CoinIcon className="h-[1.05em] w-[1.05em] align-[-0.15em]" />
+          {coins}
+        </span>
+      )}
     </button>
   )
 }

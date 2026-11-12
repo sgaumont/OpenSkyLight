@@ -4,7 +4,7 @@ import type { AppDb } from '../db/client'
 import { choreCompletions, chores, people, rewardRedemptions, rewards, settings, starLedger, videoGameRounds } from '../db/schema'
 import { uuidv7 } from '@shared/uuid'
 import { isoUtc } from '@shared/dates'
-import { VIDEO_GAME_REWARD_ID, type GameTimeLogEntry, type GameTimerDto, type RedemptionDto, type RewardDto, type RewardKind } from '@shared/types'
+import { VIDEO_GAME_REWARD_ID, type Currency, type GameTimeLogEntry, type GameTimerDto, type RedemptionDto, type RewardDto, type RewardKind } from '@shared/types'
 import { SETUP_MINUTES, gameMinutes, minutesLabel, refundPoints } from '@shared/gameTime'
 import type { ChoresService } from './choresService'
 import { invalid, notFound } from './errors'
@@ -83,7 +83,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
   }
 
   function toDto(row: typeof rewards.$inferSelect): RewardDto {
-    return { id: row.id, title: row.title, icon: row.icon, costStars: row.costStars, active: row.active, kind: row.kind, bonusMinutes: row.bonusMinutes }
+    return { id: row.id, title: row.title, icon: row.icon, costStars: row.costStars, active: row.active, kind: row.kind, bonusMinutes: row.bonusMinutes, currency: row.currency }
   }
 
   function list(): RewardDto[] {
@@ -97,7 +97,7 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
       .map(toDto)
   }
 
-  type RewardInput = { title: string; costStars: number; kind?: RewardKind; bonusMinutes?: number; icon?: string | null }
+  type RewardInput = { title: string; costStars: number; kind?: RewardKind; bonusMinutes?: number; icon?: string | null; currency?: Currency }
 
   function create(input: RewardInput): RewardDto {
     const id = uuidv7()
@@ -110,7 +110,9 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
         costStars: kind === 'dynamic' ? 1 : input.costStars,
         active: true,
         kind,
-        bonusMinutes: kind === 'dynamic' ? (input.bonusMinutes ?? 0) : 0
+        bonusMinutes: kind === 'dynamic' ? (input.bonusMinutes ?? 0) : 0,
+        // timers run on stars (1 a minute): only a fixed-price reward can cost coins
+        currency: kind === 'dynamic' ? 'stars' : (input.currency ?? 'stars')
       })
       .run()
     const [row] = db.select().from(rewards).where(eq(rewards.id, id)).all()
@@ -125,9 +127,17 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     if (input.kind !== undefined) patch.kind = input.kind
     if (input.bonusMinutes !== undefined) patch.bonusMinutes = input.bonusMinutes
     if (input.icon !== undefined) patch.icon = input.icon
-    // a static reward has no bonus time; a dynamic one's cost is picked by the kid
+    if (input.currency !== undefined) patch.currency = input.currency
+    // a static reward has no bonus time; a dynamic one's cost is picked by the kid, in stars
     if (input.kind === 'static') patch.bonusMinutes = 0
-    if (input.kind === 'dynamic') patch.costStars = 1
+    if (input.kind === 'dynamic') {
+      patch.costStars = 1
+      patch.currency = 'stars'
+    }
+    if (input.kind === undefined && input.currency === 'coins') {
+      const [current] = db.select().from(rewards).where(eq(rewards.id, input.id)).all()
+      if (current?.kind === 'dynamic') patch.currency = 'stars'
+    }
     const result = db
       .update(rewards)
       .set(patch)
@@ -159,16 +169,24 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
       minutes: dynamic ? gameMinutes(row.starsSpent, reward.bonusMinutes).total : null,
       redeemedAt: row.redeemedAt,
       status: row.status,
-      charged: row.charged
+      charged: row.charged,
+      currency: row.currency
     }
   }
 
-  /** Stars a kid has asked for and a parent hasn't decided on yet — set aside, not spent. */
-  function held(personId: string, exceptId?: string): number {
+  /** Stars (or coins) a kid has asked for and a parent hasn't decided on yet — set aside, not spent. */
+  function held(personId: string, exceptId?: string, currency: Currency = 'stars'): number {
     return db
       .select()
       .from(rewardRedemptions)
-      .where(and(eq(rewardRedemptions.personId, personId), eq(rewardRedemptions.status, 'pending'), eq(rewardRedemptions.charged, false)))
+      .where(
+        and(
+          eq(rewardRedemptions.personId, personId),
+          eq(rewardRedemptions.status, 'pending'),
+          eq(rewardRedemptions.charged, false),
+          eq(rewardRedemptions.currency, currency)
+        )
+      )
       .all()
       .filter((r) => r.id !== exceptId)
       .reduce((n, r) => n + r.starsSpent, 0)
@@ -199,14 +217,15 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
         )
       )
       .all()
-    const available = choresService.balanceOf(personId) - held(personId, earlier?.id)
-    if (available < want) throw invalid(`Not enough stars yet — ${want - available} more to go!`)
+    const currency = reward.currency
+    const available = choresService.balanceOf(personId, currency) - held(personId, earlier?.id, currency)
+    if (available < want) throw invalid(`Not enough ${currency} yet — ${want - available} more to go!`)
     const now = isoUtc(DateTime.utc())
     const id = earlier?.id ?? uuidv7()
     if (earlier) {
-      db.update(rewardRedemptions).set({ starsSpent: want, redeemedAt: now }).where(eq(rewardRedemptions.id, id)).run()
+      db.update(rewardRedemptions).set({ starsSpent: want, redeemedAt: now, currency }).where(eq(rewardRedemptions.id, id)).run()
     } else {
-      db.insert(rewardRedemptions).values({ id, rewardId, personId, starsSpent: want, redeemedAt: now, status: 'pending', charged: false }).run()
+      db.insert(rewardRedemptions).values({ id, rewardId, personId, starsSpent: want, redeemedAt: now, status: 'pending', charged: false, currency }).run()
     }
     const [row] = db.select().from(rewardRedemptions).where(eq(rewardRedemptions.id, id)).all()
     return redemptionDto(row, reward)
@@ -243,8 +262,9 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     const { row, reward } = pending(redemptionId)
     const now = isoUtc(DateTime.utc())
     if (!row.charged) {
-      const balance = choresService.balanceOf(row.personId)
-      if (balance < row.starsSpent) throw invalid(`Only ${balance} ${balance === 1 ? 'star' : 'stars'} left now — not enough for this`)
+      const balance = choresService.balanceOf(row.personId, row.currency)
+      const unit = row.currency === 'coins' ? (balance === 1 ? 'coin' : 'coins') : balance === 1 ? 'star' : 'stars'
+      if (balance < row.starsSpent) throw invalid(`Only ${balance} ${unit} left now — not enough for this`)
     }
     db.transaction(() => {
       if (!row.charged) {
@@ -260,7 +280,8 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
               reason: 'redemption',
               refId: row.id,
               createdAt: now,
-              note: `Reward: ${reward.title}`
+              note: `Reward: ${reward.title}`,
+              currency: row.currency
             })
             .run()
         }
@@ -283,7 +304,8 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
             reason: 'redemption',
             refId: row.id,
             createdAt: now,
-            note: `Reward not given: ${reward.title}`
+            note: `Reward not given: ${reward.title}`,
+            currency: row.currency
           })
           .run()
       }
@@ -291,11 +313,11 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
     })
   }
 
-  /** A parent's manual correction, kept in the ledger like every other change; may go below zero. */
-  function adjust(personId: string, delta: number): { balance: number } {
+  /** A parent's manual correction (stars or coins), kept in the ledger like every other change; may go below zero. */
+  function adjust(personId: string, delta: number, currency: Currency = 'stars'): { balance: number } {
     const [person] = db.select().from(people).where(and(eq(people.id, personId), isNull(people.deletedAt))).all()
     if (!person) throw notFound('Person')
-    const balance = choresService.balanceOf(personId)
+    const balance = choresService.balanceOf(personId, currency)
     if (delta === 0) return { balance }
     db.insert(starLedger)
       .values({
@@ -305,7 +327,8 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
         reason: 'manual_adjust',
         refId: null,
         createdAt: isoUtc(DateTime.utc()),
-        note: 'Changed by a parent'
+        note: 'Changed by a parent',
+        currency
       })
       .run()
     return { balance: balance + delta }
@@ -387,12 +410,15 @@ export function createRewardsService(db: AppDb, choresService: ChoresService) {
       .where(personId ? eq(starLedger.personId, personId) : undefined)
       .orderBy(asc(starLedger.createdAt), asc(sql`rowid`))
       .all()
+    // a running balance per person and currency
     const running = new Map<string, number>()
     const entries = rows.map((r) => {
-      const after = (running.get(r.personId) ?? 0) + r.delta
-      running.set(r.personId, after)
+      const key = `${r.personId}|${r.currency}`
+      const after = (running.get(key) ?? 0) + r.delta
+      running.set(key, after)
       // notes saved before v0.8.153 have 🎮 where stars are shown as ⭐ now
-      return { id: r.id, personId: r.personId, delta: r.delta, at: r.createdAt, note: (r.note ?? describe(r)).replace(/🎮/gu, '⭐'), balanceAfter: after }
+      const note = (r.note ?? describe(r)).replace(/🎮/gu, '⭐')
+      return { id: r.id, personId: r.personId, delta: r.delta, at: r.createdAt, note, balanceAfter: after, currency: r.currency }
     })
     return entries.reverse().slice(0, limit)
   }

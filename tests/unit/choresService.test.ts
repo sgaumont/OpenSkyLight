@@ -318,7 +318,7 @@ describe('chores + rewards', () => {
       const [day] = chores.getDay(SAT)
       expect(day.claims).toEqual(['kid1'])
       expect(day.completed).toBe(true)
-      expect(chores.balances()).toEqual([{ personId: 'kid1', balance: 2 }])
+      expect(chores.balances()).toEqual([{ personId: 'kid1', balance: 2, coins: 0 }])
     })
 
     it("'anyone' with times 3: any mix of people, stars to each, then full", () => {

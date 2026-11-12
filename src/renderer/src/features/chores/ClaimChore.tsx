@@ -4,7 +4,7 @@ import { canAddMore, claimSummary, countLabel, countOf, isCounted } from '@share
 import { useChecklistsDay, useChoreMutations, useChoresDay, usePeople } from '../../api/hooks'
 import { useToasts } from '../../stores/toastStore'
 import { initials, textOn } from '../../lib/format'
-import { CheckIcon, StarIcon } from '../../components/icons'
+import { CheckIcon, CoinIcon, StarIcon } from '../../components/icons'
 import { BigButton, Dialog } from '../../components/ui'
 
 export function Avatar({ person, size = 'h-12 w-12 text-base' }: { person: PersonDto; size?: string }) {
@@ -49,6 +49,7 @@ function ClaimDialog({
         <div className="truncate text-lg font-bold text-ink-soft">
           {chore?.title}
           {chore && chore.starsValue > 0 && <span className="ml-2 text-ember-deep"><StarIcon /> {chore.starsValue}</span>}
+          {chore && chore.coinsValue > 0 && <span className="ml-2 text-ink-soft"><CoinIcon /> {chore.coinsValue}</span>}
         </div>
         {chore && counted && !each && (
           <div className="text-base font-bold text-ink-faint" data-count>
@@ -156,7 +157,10 @@ export function useChoreClaim(date: string): {
       {
         onSuccess: (res) => {
           if (res.unlocked) pushToast(`⭐ ${person.name} finished ${res.unlocked}! Ask a parent to sign off.`)
-          else if (chore.starsValue > 0) pushToast(`⭐ ${chore.starsValue} for ${person.name}!`)
+          else if (chore.starsValue > 0 || chore.coinsValue > 0)
+            pushToast(
+              `${[chore.starsValue > 0 ? `⭐ ${chore.starsValue}` : '', chore.coinsValue > 0 ? `🪙 ${chore.coinsValue}` : ''].filter(Boolean).join(' + ')} for ${person.name}!`
+            )
           else if (chore.mode === 'anyone') pushToast(`Thanks, ${person.name}!`)
         }
       }

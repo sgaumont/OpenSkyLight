@@ -145,7 +145,7 @@ export function useMealMutations() {
 
 export function useAdjustStars() {
   return useInvalidatingMutation(
-    (input: { personId: string; delta: number }) => rpc('stars:adjust', input),
+    (input: { personId: string; delta: number; currency?: 'stars' | 'coins' }) => rpc('stars:adjust', input),
     [['balances']]
   )
 }
@@ -229,6 +229,7 @@ export interface RewardInput {
   costStars: number
   bonusMinutes: number
   icon: string | null
+  currency: 'stars' | 'coins'
 }
 
 export function useRewardMutations() {

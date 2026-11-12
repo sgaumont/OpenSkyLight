@@ -642,6 +642,17 @@ Add unit tests where sensible.
   with a live countdown, −5/−1/+1/+5 and Stop (Put away when up). `stars:adjustTimer` {id, minutes} moves endsAt
   (stars untouched); taking off more than is left ends it now (tablet's '… is up'). stars:timers/adjustTimer/stopTimer
   are companion channels; adjustTimer broadcasts 'chores' so the tablet pill updates at once.
+- v0.8.167: **coins**, a second currency beside stars (DB v15: `star_ledger.currency`, `chores.coins_value`,
+  `rewards.currency`, `reward_redemptions.currency`; all old rows are stars; next migration v16). Chores pay stars
+  and/or coins (Coins stepper in both chore editors, 🪙 chips on chore rows); un-tick reverses each currency
+  (`reverse` per currency). Only a *static* reward can cost coins ("Paid with" in both reward editors) — dynamic
+  (timer) rewards are always stars, enforced in rewardsService create/update. `StarBalanceDto` = { balance (stars),
+  coins }; `balanceOf(personId, currency)`; `stars:adjust` takes `currency`; held/redeem/grant/deny per currency;
+  log entries carry `currency` with a per-currency running balance. UI: `CoinIcon`/`CurrencyIcon` (renderer
+  icons.tsx + companion ui.tsx), `amountLabel` in shared/currency.ts. Header star badge keeps stars in the circle
+  and shows coins in a small pill at its foot (`data-coin-pill`); Shop badges show the reward's currency. Phone:
+  "Stars & Coins" card (− / + per currency, `AmountStepper`), set-balance sheet with a Stars/Coins toggle,
+  history marks ⭐/🪙. Earned only from chores (plus parent corrections); no exchange between the two.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

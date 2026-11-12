@@ -3,16 +3,19 @@ import type { DayChecklistDto, DayChoreDto, PersonDto, UnlockState } from '@shar
 import { useBalances, useChecklistsDay, useChoresDay, usePeople } from '../../api/hooks'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { initials, isToday, textOn } from '../../lib/format'
-import { CheckIcon, StarIcon, MoonIcon, SunIcon } from '../../components/icons'
+import { CheckIcon, CoinIcon, StarIcon, MoonIcon, SunIcon } from '../../components/icons'
 import { BigButton } from '../../components/ui'
 import { Avatar, useChoreClaim } from './ClaimChore'
 import { setProgressLabel } from '@shared/setProgress'
 import { claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
 
-function StarBadge({ count }: { count: number }) {
+function StarBadge({ count, coins = false }: { count: number; coins?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-sun-soft px-2.5 py-1 text-sm font-extrabold text-ember-deep">
-      <StarIcon />
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-extrabold ${coins ? 'bg-paper-deep text-ink-soft' : 'bg-sun-soft text-ember-deep'}`}
+      {...(coins ? { 'data-coin-badge': true } : {})}
+    >
+      {coins ? <CoinIcon /> : <StarIcon />}
       {count}
     </span>
   )
@@ -92,6 +95,7 @@ function ChoreRow({
         </span>
       )}
       {chore.starsValue > 0 && <StarBadge count={chore.starsValue} />}
+      {chore.coinsValue > 0 && <StarBadge count={chore.coinsValue} coins />}
     </button>
   )
 }
@@ -117,6 +121,7 @@ function EachChoreRow({
           {chore.title}
         </span>
         {chore.starsValue > 0 && <StarBadge count={chore.starsValue} />}
+        {chore.coinsValue > 0 && <StarBadge count={chore.coinsValue} coins />}
       </div>
       <div className="flex flex-wrap gap-2">
         {chore.assignees.map((id) => {
@@ -229,6 +234,7 @@ function FamilyPanel({ people, chores }: { people: PersonDto[]; chores: DayChore
               <div className="text-sm font-bold text-ink-faint">{done === 0 ? 'Nothing yet' : `${done} done`}</div>
             </div>
             <StarBadge count={balances.find((b) => b.personId === p.id)?.balance ?? 0} />
+            <StarBadge count={balances.find((b) => b.personId === p.id)?.coins ?? 0} coins />
           </div>
         )
       })}

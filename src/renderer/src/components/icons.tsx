@@ -184,6 +184,19 @@ export const StarIcon = ({ className = '', ...p }: SVGProps<SVGSVGElement>) => (
   </svg>
 )
 
+/** A gold coin, sized to the text around it — the coins currency's mark (its own colours, whatever the text's). */
+export const CoinIcon = ({ className = '', ...p }: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" width="1.2em" height="1.2em" aria-hidden className={`inline-block shrink-0 align-[-0.25em] ${className}`} {...p}>
+    <circle cx="12" cy="12" r="10" fill="#F2B705" stroke="#B57F00" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="6.3" fill="none" stroke="#B57F00" strokeWidth="1.5" />
+    <path d="M8.6 8.4a5 5 0 0 1 3.4-1.4" fill="none" stroke="#FFF3C4" strokeWidth="1.3" strokeLinecap="round" />
+  </svg>
+)
+
+/** The mark for a currency: ⭐ for stars, the gold coin for coins. */
+export const CurrencyIcon = ({ currency, ...p }: SVGProps<SVGSVGElement> & { currency: 'stars' | 'coins' }) =>
+  currency === 'coins' ? <CoinIcon {...p} /> : <StarIcon {...p} />
+
 /** Solid game controller, sized to the text around it — the Shop's Video Game Time item (stars use StarIcon). */
 export const ControllerIcon = ({ className = '', ...p }: SVGProps<SVGSVGElement>) => (
   <svg

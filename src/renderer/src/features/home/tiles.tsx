@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import { StarIcon } from '../../components/icons'
+import { CoinIcon, StarIcon } from '../../components/icons'
 import { setProgressLabel } from '@shared/setProgress'
 import { useApprovals } from '../../stores/approvalStore'
 import { createPortal } from 'react-dom'
@@ -589,6 +589,9 @@ export function StarBalancesTile({ compact }: TileProps) {
               {!compact && <span className="min-w-0 flex-1 truncate text-sm font-bold">{p.name}</span>}
               <span className={`font-extrabold text-ember-deep ${compact ? 'ml-auto text-sm' : 'text-base'}`}>
                 <StarIcon /> {balances.find((b) => b.personId === p.id)?.balance ?? 0}
+              </span>
+              <span className={`font-extrabold text-ink-soft ${compact ? 'text-sm' : 'text-base'}`} data-tile-coins>
+                <CoinIcon /> {balances.find((b) => b.personId === p.id)?.coins ?? 0}
               </span>
             </div>
           ))}

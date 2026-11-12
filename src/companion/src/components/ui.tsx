@@ -144,6 +144,22 @@ export function EmptyNote({ children }: { children: ReactNode }) {
   return <p className="py-6 text-center text-base font-semibold text-ink-faint">{children}</p>
 }
 
+/** A gold coin, sized to the text around it — the coins currency's mark (same as the kiosk's). */
+export function CoinIcon({ className = '', ...p }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="1.2em" height="1.2em" aria-hidden className={`inline-block shrink-0 align-[-0.25em] ${className}`} {...p}>
+      <circle cx="12" cy="12" r="10" fill="#F2B705" stroke="#B57F00" strokeWidth="1.5" />
+      <circle cx="12" cy="12" r="6.3" fill="none" stroke="#B57F00" strokeWidth="1.5" />
+      <path d="M8.6 8.4a5 5 0 0 1 3.4-1.4" fill="none" stroke="#FFF3C4" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/** ⭐ for stars, the gold coin for coins. */
+export function CurrencyIcon({ currency, ...p }: SVGProps<SVGSVGElement> & { currency: 'stars' | 'coins' }) {
+  return currency === 'coins' ? <CoinIcon {...p} /> : <StarIcon {...p} />
+}
+
 /** Solid star, sized to the text around it — the stars currency's mark (same as the kiosk's). */
 export function StarIcon({ className = '', ...p }: SVGProps<SVGSVGElement>) {
   return (

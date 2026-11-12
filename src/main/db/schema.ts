@@ -115,6 +115,8 @@ export const chores = sqliteTable('chores', {
   icon: text('icon'),
   personId: text('person_id').references(() => people.id),
   starsValue: integer('stars_value').notNull().default(1),
+  /** coins paid alongside the stars (v15) */
+  coinsValue: integer('coins_value').notNull().default(0),
   scheduleRrule: text('schedule_rrule'),
   dueDate: text('due_date'),
   routine: text('routine', { enum: ['morning', 'evening'] }),
@@ -175,7 +177,9 @@ export const starLedger = sqliteTable('star_ledger', {
   refId: text('ref_id'),
   createdAt: text('created_at').notNull(),
   /** what it was for, as shown in the game time log ("Make bed", "Un-ticked: Make bed", "Used game time") */
-  note: text('note')
+  note: text('note'),
+  /** which currency this line moves (v15; everything before is stars) */
+  currency: text('currency', { enum: ['stars', 'coins'] }).notNull().default('stars')
 })
 
 export const rewards = sqliteTable('rewards', {
@@ -189,7 +193,9 @@ export const rewards = sqliteTable('rewards', {
   /** dynamic rewards: minutes added to every timer (getting the console going) */
   bonusMinutes: integer('bonus_minutes').notNull().default(0),
   sortOrder: integer('sort_order').notNull().default(0),
-  deletedAt: text('deleted_at')
+  deletedAt: text('deleted_at'),
+  /** what it's bought with (v15); dynamic rewards are always stars (1 a minute) */
+  currency: text('currency', { enum: ['stars', 'coins'] }).notNull().default('stars')
 })
 
 export const rewardRedemptions = sqliteTable('reward_redemptions', {
@@ -202,7 +208,9 @@ export const rewardRedemptions = sqliteTable('reward_redemptions', {
   status: text('status', { enum: ['pending', 'granted', 'denied'] }).notNull().default('pending'),
   /** the stars have come off (on grant now; up front for ones made before parents approved first) */
   charged: integer('charged', { mode: 'boolean' }).notNull().default(true),
-  decidedAt: text('decided_at')
+  decidedAt: text('decided_at'),
+  /** what `starsSpent` is counted in (the reward's currency when it was asked for; v15) */
+  currency: text('currency', { enum: ['stars', 'coins'] }).notNull().default('stars')
 })
 
 export const lists = sqliteTable('lists', {

@@ -54,7 +54,7 @@ export interface PushState {
   }[]
   approvals: { checklistId: string; title: string; personId: string; date: string; kind: string; round?: number }[]
   /** Shop purchases waiting for a parent (sent with the approvals) */
-  requests?: { id: string; personId: string; rewardTitle: string; starsSpent: number; minutes: number | null }[]
+  requests?: { id: string; personId: string; rewardTitle: string; starsSpent: number; minutes: number | null; currency?: 'stars' | 'coins' }[]
   leaves: { key: string; title: string; location: string; leaveAt: string; driveMinutes: number }[]
   timers: { id: string; personId: string; endsAt: string; title?: string }[]
   /** weather warnings and watches (statements and advisories don't buzz a phone) */
@@ -101,7 +101,7 @@ export function dueAlerts(s: PushState): PushAlert[] {
       key: `request:${q.id}`,
       kind: 'approvals',
       title: `🛒 ${name(q.personId)} wants ${q.rewardTitle}`,
-      body: `⭐ ${q.starsSpent}${q.minutes ? ` · ${q.minutes} min` : ''} — waiting for a parent to OK it`,
+      body: `${q.currency === 'coins' ? '🪙' : '⭐'} ${q.starsSpent}${q.minutes ? ` · ${q.minutes} min` : ''} — waiting for a parent to OK it`,
       tab: 'chores'
     })
   }

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import type { PersonDto, RedemptionDto, RewardDto } from '@shared/types'
+import type { Currency, PersonDto, RedemptionDto, RewardDto } from '@shared/types'
+import { amountLabel } from '@shared/currency'
 import { useBalances, usePeople, useRedemptions, useRewardMutations, useRewards } from '../../api/hooks'
-import { ControllerIcon, StarIcon } from '../../components/icons'
+import { ControllerIcon, CurrencyIcon, StarIcon } from '../../components/icons'
 import { BigButton, Dialog } from '../../components/ui'
 import { useToasts } from '../../stores/toastStore'
 import { GameTimeBadge } from '../shell/Header'
@@ -21,13 +22,19 @@ export function ShopView() {
   const kids = people.filter((p) => p.role === 'child')
   const [picked, setPicked] = useState<{ personId: string; reward: RewardDto } | null>(null)
   const { data: redemptions = [] } = useRedemptions()
-  const balance = (id: string | null | undefined): number => balances.find((b) => b.personId === id)?.balance ?? 0
+  const balance = (id: string | null | undefined, currency: Currency = 'stars'): number => {
+    const b = balances.find((x) => x.personId === id)
+    return (currency === 'coins' ? b?.coins : b?.balance) ?? 0
+  }
   const waiting = redemptions.filter((r) => r.status === 'pending' && !r.charged)
   const requestFor = (personId: string | undefined, rewardId: string | undefined): RedemptionDto | null =>
     waiting.find((r) => r.personId === personId && r.rewardId === rewardId) ?? null
-  /** what they can still ask for: their balance less their other requests (this one can be changed) */
-  const available = (personId: string | undefined, rewardId: string | undefined): number =>
-    balance(personId) - waiting.filter((r) => r.personId === personId && r.rewardId !== rewardId).reduce((n, r) => n + r.starsSpent, 0)
+  /** what they can still ask for: their balance less their other requests in that currency (this one can be changed) */
+  const available = (personId: string | undefined, rewardId: string | undefined, currency: Currency = 'stars'): number =>
+    balance(personId, currency) -
+    waiting
+      .filter((r) => r.personId === personId && r.rewardId !== rewardId && r.currency === currency)
+      .reduce((n, r) => n + r.starsSpent, 0)
   const person = kids.find((k) => k.id === picked?.personId) ?? null
   return (
     <div className="h-full overflow-y-auto px-5 pb-4" data-shop-view>
@@ -47,8 +54,8 @@ export function ShopView() {
               <span className="block truncate font-display text-3xl">{r.title}</span>
               <span className="block text-base font-bold text-ink-faint" data-shop-price>
                 {r.kind === 'static' ? (
-                  <span className="text-ember-deep">
-                    <StarIcon /> {r.costStars}
+                  <span className="text-ember-deep" data-shop-currency={r.currency}>
+                    <CurrencyIcon currency={r.currency} /> {r.costStars}
                   </span>
                 ) : (
                   <>
@@ -63,7 +70,12 @@ export function ShopView() {
               <div className="flex shrink-0 items-start gap-5">
                 {kids.map((p) => (
                   <div key={p.id} className="flex flex-col items-center gap-1.5">
-                    <GameTimeBadge person={p} stars={balance(p.id)} onClick={() => setPicked({ personId: p.id, reward: r })} />
+                    <GameTimeBadge
+                      person={p}
+                      stars={balance(p.id, r.currency)}
+                      currency={r.currency}
+                      onClick={() => setPicked({ personId: p.id, reward: r })}
+                    />
                     <span className="max-w-24 truncate text-sm font-extrabold text-ink-soft">
                       {requestFor(p.id, r.id) ? <span data-request-badge>⏳ asked</span> : p.name}
                     </span>
@@ -85,7 +97,7 @@ export function ShopView() {
         <BuyDialog
           person={person}
           reward={picked.reward}
-          balance={available(person.id, picked.reward.id)}
+          balance={available(person.id, picked.reward.id, picked.reward.currency)}
           request={requestFor(person.id, picked.reward.id)}
           onClose={() => setPicked(null)}
         />
@@ -118,11 +130,12 @@ function BuyDialog({
   const { redeem } = useRewardMutations()
   const pushToast = useToasts((s) => s.push)
   const short = reward.costStars - balance
+  const c = reward.currency
   return (
     <Dialog open onClose={onClose} title={`${person.name} · ${reward.title}`}>
       <div className="flex flex-col items-center gap-5 text-center" data-buy-dialog>
         <span className="text-5xl font-extrabold text-ember-deep tabular-nums">
-          <StarIcon /> {reward.costStars}
+          <CurrencyIcon currency={c} /> {reward.costStars}
         </span>
         {request ? (
           <>
@@ -134,13 +147,13 @@ function BuyDialog({
         ) : short > 0 ? (
           <>
             <p className="font-display text-2xl">
-              {short} more {short === 1 ? 'star' : 'stars'} to go — you have {balance}.
+              {amountLabel(short, c)} more to go — you have {balance}.
             </p>
             <BigButton onClick={onClose}>OK</BigButton>
           </>
         ) : (
           <>
-            <p className="font-display text-3xl">Spend {reward.costStars} {reward.costStars === 1 ? 'star' : 'stars'} on {reward.title}?</p>
+            <p className="font-display text-3xl">Spend {amountLabel(reward.costStars, c)} on {reward.title}?</p>
             <p className="-mt-2 text-base font-bold text-ink-faint">{balance - reward.costStars} left over · a parent has to OK it first</p>
             <div className="flex w-full gap-3 [&>*]:flex-1">
               <BigButton variant="ghost" onClick={onClose}>

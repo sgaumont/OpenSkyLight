@@ -6,6 +6,7 @@ import type {
   CalendarViewKind,
   ChoreDto,
   ChoreMode,
+  Currency,
   PersonDto,
   PersonRole,
   RewardDto,
@@ -59,7 +60,7 @@ import { ipcInvoke } from '../../api/client'
 import { useUi, ZONE } from '../../stores/uiStore'
 import { BigButton, Dialog, FieldLabel, SegmentedControl, Sheet, Toggle } from '../../components/ui'
 import { OskInput } from '../../components/Osk'
-import { StarIcon, PlusIcon } from '../../components/icons'
+import { CoinIcon, CurrencyIcon, StarIcon, PlusIcon } from '../../components/icons'
 import {
   ChecklistsSection,
   PeoplePicker,
@@ -601,6 +602,7 @@ function ChoresTab() {
   const [editingChore, setEditingChore] = useState<ChoreDto | 'new' | null>(null)
   const [choreTitle, setChoreTitle] = useState('')
   const [choreStars, setChoreStars] = useState(1)
+  const [choreCoins, setChoreCoins] = useState(0)
   const [schedule, setSchedule] = useState<ScheduleKind>('daily')
   const [weekdays, setWeekdays] = useState<number[]>([])
   const [routine, setRoutine] = useState<'any' | 'morning' | 'evening'>('any')
@@ -615,6 +617,7 @@ function ChoresTab() {
   const [rewardKind, setRewardKind] = useState<RewardKind>('static')
   const [rewardBonus, setRewardBonus] = useState(0)
   const [rewardIcon, setRewardIcon] = useState<string | null>(null)
+  const [rewardCurrency, setRewardCurrency] = useState<Currency>('stars')
   const openRewardEditor = (r: RewardDto | 'new'): void => {
     setEditingReward(r)
     setRewardTitle(r === 'new' ? '' : r.title)
@@ -622,6 +625,7 @@ function ChoresTab() {
     setRewardKind(r === 'new' ? 'static' : r.kind)
     setRewardBonus(r === 'new' ? 0 : r.bonusMinutes)
     setRewardIcon(r === 'new' ? null : r.icon)
+    setRewardCurrency(r === 'new' ? 'stars' : r.currency)
   }
 
   const openChoreEditor = (c: ChoreDto | 'new'): void => {
@@ -629,6 +633,7 @@ function ChoresTab() {
     if (c === 'new') {
       setChoreTitle('')
       setChoreStars(1)
+      setChoreCoins(0)
       setSchedule('daily')
       setWeekdays([])
       setRoutine('any')
@@ -639,6 +644,7 @@ function ChoresTab() {
     } else {
       setChoreTitle(c.title)
       setChoreStars(c.starsValue)
+      setChoreCoins(c.coinsValue)
       setSchedule(scheduleOf(c.recurrence))
       setWeekdays(c.recurrence?.byWeekdays ?? [])
       setRoutine(c.routine ?? 'any')
@@ -656,6 +662,7 @@ function ChoresTab() {
     const common = {
       title: choreTitle.trim(),
       starsValue: choreStars,
+      coinsValue: choreCoins,
       recurrence: toRecurrence(schedule, weekdays),
       routine: routine === 'any' ? null : routine,
       mode,
@@ -678,7 +685,9 @@ function ChoresTab() {
       kind: rewardKind,
       costStars: rewardKind === 'static' ? rewardCost : 1,
       bonusMinutes: rewardKind === 'dynamic' ? rewardBonus : 0,
-      icon: rewardIcon
+      icon: rewardIcon,
+      // timers run on stars; only a set price can be in coins
+      currency: rewardKind === 'static' ? rewardCurrency : ('stars' as const)
     }
     if (editingReward === 'new') rewardMutations.create.mutate(input)
     else if (editingReward) rewardMutations.update.mutate({ id: editingReward.id, ...input })
@@ -699,7 +708,7 @@ function ChoresTab() {
                   🛒 {peopleById.get(r.personId)?.name ?? 'Someone'} → {r.rewardTitle}
                   {r.minutes !== null && <span className="text-ink-faint"> · {r.minutes} min</span>}
                 </span>
-                <span className="text-base font-extrabold text-ember-deep"><StarIcon /> {r.starsSpent}</span>
+                <span className="text-base font-extrabold text-ember-deep"><CurrencyIcon currency={r.currency} /> {r.starsSpent}</span>
                 <BigButton variant="ghost" onClick={() => rewardMutations.deny.mutate({ redemptionId: r.id })}>
                   No
                 </BigButton>
@@ -738,6 +747,7 @@ function ChoresTab() {
                 </span>
               </span>
               {c.starsValue > 0 && <span className="text-base font-extrabold text-ember-deep"><StarIcon /> {c.starsValue}</span>}
+              {c.coinsValue > 0 && <span className="text-base font-extrabold text-ink-soft"><CoinIcon /> {c.coinsValue}</span>}
             </button>
           ))}
           <BigButton variant="ghost" onClick={() => openChoreEditor('new')}>
@@ -779,7 +789,7 @@ function ChoresTab() {
               </span>
               {r.kind === 'static' && (
                 <span className="text-base font-extrabold text-ember-deep">
-                  <StarIcon /> {r.costStars}
+                  <CurrencyIcon currency={r.currency} /> {r.costStars}
                 </span>
               )}
             </button>
@@ -827,10 +837,16 @@ function ChoresTab() {
             {mode === 'videogames' ? (
               <VideoGamesStarsNote />
             ) : (
-              <div>
-                <FieldLabel>Game time</FieldLabel>
-                <Stepper value={choreStars} onChange={setChoreStars} max={20} />
-              </div>
+              <>
+                <div>
+                  <FieldLabel>Stars</FieldLabel>
+                  <Stepper value={choreStars} onChange={setChoreStars} max={20} />
+                </div>
+                <div data-chore-coins>
+                  <FieldLabel>Coins</FieldLabel>
+                  <Stepper value={choreCoins} onChange={setChoreCoins} max={20} />
+                </div>
+              </>
             )}
             <div className="flex-1">
               <FieldLabel>Routine</FieldLabel>
@@ -914,10 +930,23 @@ function ChoresTab() {
             </p>
           </div>
           {rewardKind === 'static' ? (
-            <div>
-              <FieldLabel>Cost in stars</FieldLabel>
-              <Stepper value={rewardCost} onChange={setRewardCost} min={1} max={999} />
-            </div>
+            <>
+              <div>
+                <FieldLabel>Paid with</FieldLabel>
+                <SegmentedControl
+                  value={rewardCurrency}
+                  onChange={setRewardCurrency}
+                  options={[
+                    { value: 'stars', label: '⭐ Stars' },
+                    { value: 'coins', label: '🪙 Coins' }
+                  ]}
+                />
+              </div>
+              <div>
+                <FieldLabel>{rewardCurrency === 'coins' ? 'Cost in coins' : 'Cost in stars'}</FieldLabel>
+                <Stepper value={rewardCost} onChange={setRewardCost} min={1} max={999} />
+              </div>
+            </>
           ) : (
             <div>
               <FieldLabel>Bonus time (minutes)</FieldLabel>

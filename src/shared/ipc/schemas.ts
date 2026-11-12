@@ -209,6 +209,7 @@ const choreTimes = z.number().int().min(1).max(10).nullable()
 export const choreCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),
   starsValue: z.number().int().min(0).max(99),
+  coinsValue: z.number().int().min(0).max(99).optional(),
   recurrence: recurrenceSchema.nullish(),
   anchorDate: isoDate.optional(),
   routine: routine.optional(),
@@ -221,6 +222,7 @@ export const choreUpdateSchema = z.object({
   id,
   title: z.string().trim().min(1).max(120).optional(),
   starsValue: z.number().int().min(0).max(99).optional(),
+  coinsValue: z.number().int().min(0).max(99).optional(),
   recurrence: recurrenceSchema.nullable().optional(),
   anchorDate: isoDate.optional(),
   routine: routine.optional(),
@@ -249,6 +251,7 @@ export const unlockApproveSchema = z.object({ checklistId: id, personId: id, dat
 export const videoGamesStarsSchema = z.object({ stars: z.number().int().min(0).max(999) })
 
 const rewardKind = z.enum(['static', 'dynamic'])
+const currency = z.enum(['stars', 'coins'])
 const bonusMinutes = z.number().int().min(0).max(240)
 const rewardIcon = z.string().trim().max(16).nullable()
 
@@ -257,7 +260,8 @@ export const rewardCreateSchema = z.object({
   costStars: z.number().int().min(1).max(9999),
   kind: rewardKind.optional(),
   bonusMinutes: bonusMinutes.optional(),
-  icon: rewardIcon.optional()
+  icon: rewardIcon.optional(),
+  currency: currency.optional()
 })
 
 export const rewardUpdateSchema = z.object({
@@ -267,11 +271,12 @@ export const rewardUpdateSchema = z.object({
   active: z.boolean().optional(),
   kind: rewardKind.optional(),
   bonusMinutes: bonusMinutes.optional(),
-  icon: rewardIcon.optional()
+  icon: rewardIcon.optional(),
+  currency: currency.optional()
 })
 
 export const redeemSchema = z.object({ rewardId: id, personId: id, stars: z.number().int().min(1).max(100_000).optional() })
-export const starsAdjustSchema = z.object({ personId: id, delta: z.number().int().min(-10_000).max(10_000) })
+export const starsAdjustSchema = z.object({ personId: id, delta: z.number().int().min(-10_000).max(10_000), currency: currency.optional() })
 export const useTimeSchema = z.object({ personId: id, stars: z.number().int().min(1).max(100_000).optional(), rewardId: id.optional() })
 export const stopTimerSchema = z.object({ id })
 export const adjustTimerSchema = z.object({ id, minutes: z.number().int().min(-600).max(600).refine((n) => n !== 0) })

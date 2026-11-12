@@ -237,6 +237,8 @@ export interface ChoreDto {
   title: string
   icon: string | null
   starsValue: number
+  /** coins paid alongside the stars */
+  coinsValue: number
   /** null = one-time chore on anchorDate */
   recurrence: RecurrenceInput | null
   /** YYYY-MM-DD; first day the chore applies (and the only day for one-offs) */
@@ -254,6 +256,8 @@ export interface ChoreDto {
 export interface ChoreCreateInput {
   title: string
   starsValue: number
+  /** 0 when left out */
+  coinsValue?: number
   recurrence?: RecurrenceInput | null
   anchorDate?: string
   routine?: ChoreRoutine
@@ -266,6 +270,7 @@ export interface ChoreUpdateInput {
   id: string
   title?: string
   starsValue?: number
+  coinsValue?: number
   recurrence?: RecurrenceInput | null
   anchorDate?: string
   routine?: ChoreRoutine
@@ -280,6 +285,7 @@ export interface DayChoreDto {
   title: string
   icon: string | null
   starsValue: number
+  coinsValue: number
   routine: ChoreRoutine
   /** 'anyone': claimed; 'each': every assignee has done it */
   completed: boolean
@@ -375,6 +381,9 @@ export interface GameTimerDto {
 }
 
 /** One line of the game time log: a gain (+), loss or use (−), with the kid's balance right after. */
+/** The two things kids earn: stars (also game-time minutes) and coins (fixed-price rewards only). */
+export type Currency = 'stars' | 'coins'
+
 export interface GameTimeLogEntry {
   id: string
   personId: string
@@ -382,12 +391,16 @@ export interface GameTimeLogEntry {
   /** UTC ISO */
   at: string
   note: string
+  /** that currency's balance right after this line */
   balanceAfter: number
+  currency: Currency
 }
 
 export interface StarBalanceDto {
   personId: string
+  /** stars */
   balance: number
+  coins: number
 }
 
 export type RewardKind = 'static' | 'dynamic'
@@ -406,6 +419,8 @@ export interface RewardDto {
   kind: RewardKind
   /** dynamic: minutes added to the timer on top of the stars spent */
   bonusMinutes: number
+  /** what `costStars` is counted in; dynamic rewards are always stars */
+  currency: Currency
 }
 
 /** A kid asking to buy something in the Shop; nothing is spent until a parent grants it. */
@@ -424,6 +439,8 @@ export interface RedemptionDto {
   status: 'pending' | 'granted' | 'denied'
   /** already taken off their balance (requests from before parents approved first) */
   charged: boolean
+  /** what `starsSpent` is counted in */
+  currency: Currency
 }
 
 /** Text sizes as whole percentages (see shared/textSize.ts). */

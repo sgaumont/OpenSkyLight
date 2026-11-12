@@ -357,6 +357,15 @@ const MIGRATIONS: string[] = [
   `
   ALTER TABLE reward_redemptions ADD COLUMN charged INTEGER NOT NULL DEFAULT 1;
   ALTER TABLE reward_redemptions ADD COLUMN decided_at TEXT;
+  `,
+  // v15: coins, a second currency beside stars. Chores can pay coins too (0 until a parent sets
+  // some); a fixed-price reward is bought with stars or coins; every ledger line says which. All
+  // that was there before is stars, so no balance moves.
+  `
+  ALTER TABLE star_ledger ADD COLUMN currency TEXT NOT NULL DEFAULT 'stars';
+  ALTER TABLE chores ADD COLUMN coins_value INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE rewards ADD COLUMN currency TEXT NOT NULL DEFAULT 'stars';
+  ALTER TABLE reward_redemptions ADD COLUMN currency TEXT NOT NULL DEFAULT 'stars';
   `
 ]
 

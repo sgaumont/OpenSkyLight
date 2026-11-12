@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { DateTime } from 'luxon'
-import type { ChecklistDto, ChoreDto, ChoreMode, DayChoreDto, PersonDto, RewardDto, RewardKind } from '@shared/types'
+import type { ChecklistDto, ChoreDto, ChoreMode, Currency, DayChoreDto, PersonDto, RewardDto, RewardKind } from '@shared/types'
 import { REWARD_ICONS } from '@shared/rewardIcons'
 import {
   useAdjustStars,
@@ -21,7 +21,7 @@ import {
   useRewards,
   useToday
 } from '../api/hooks'
-import { Card, CheckCircle, EmptyNote, StarIcon, GhostButton, PersonAvatar, PrimaryButton, TextInput, textOn } from '../components/ui'
+import { Card, CheckCircle, CoinIcon, CurrencyIcon, EmptyNote, StarIcon, GhostButton, PersonAvatar, PrimaryButton, TextInput, textOn } from '../components/ui'
 import { sortDayChores } from '@shared/choreOrder'
 import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type ScheduleKind } from '@shared/choreSchedule'
 import { describeRecurrence } from '@shared/recurrence/build'
@@ -35,11 +35,54 @@ const SHOW_FAMILY_SUMMARY = false
 const STEP_BUTTON =
   'pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-deep text-2xl font-extrabold text-ink-soft disabled:opacity-30'
 
+/** A − amount + row: one star (or coin) a tap. */
+function AmountStepper({
+  currency,
+  value,
+  who,
+  onStep
+}: {
+  currency: Currency
+  /** null: the "All" row, which shows "each" */
+  value: number | null
+  who: string
+  onStep: (delta: 1 | -1) => void
+}) {
+  const word = currency === 'coins' ? 'coins' : 'stars'
+  return (
+    <div className="flex shrink-0 items-center gap-2" data-stepper={currency}>
+      <button type="button" aria-label={`Fewer ${word} for ${who}`} onClick={() => onStep(-1)} className={STEP_BUTTON}>
+        −
+      </button>
+      {value === null ? (
+        <span className="min-w-14 text-center text-sm font-extrabold text-ink-faint">
+          <CurrencyIcon currency={currency} /> each
+        </span>
+      ) : (
+        <span className={`min-w-14 text-center text-lg font-extrabold tabular-nums ${currency === 'coins' ? 'text-ink' : 'text-ember-deep'}`}>
+          <CurrencyIcon currency={currency} /> {value}
+        </span>
+      )}
+      <button type="button" aria-label={`More ${word} for ${who}`} onClick={() => onStep(1)} className={STEP_BUTTON}>
+        +
+      </button>
+    </div>
+  )
+}
+
 /**
- * Each child's star balance with − / + (one star a tap); tap the name to type a new total.
+ * Each child's stars and coins, each with − / + (one a tap); tap the name to type new totals.
  * With two or more, an "All" row steps everyone at once.
  */
-function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id: string) => number }) {
+function StarsCard({
+  people,
+  balanceOf,
+  coinsOf
+}: {
+  people: PersonDto[]
+  balanceOf: (id: string) => number
+  coinsOf: (id: string) => number
+}) {
   const kids = people.filter((p) => p.role === 'child')
   const shown = kids.length > 0 ? kids : people
   const [editing, setEditing] = useState<PersonDto | null>(null)
@@ -50,7 +93,7 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
     <>
       <Card>
         <div className="mb-1 flex items-center gap-2">
-          <h2 className="flex-1 font-display text-xl font-semibold">Stars</h2>
+          <h2 className="flex-1 font-display text-xl font-semibold">Stars &amp; Coins</h2>
           <button
             type="button"
             onClick={() => setHistory(true)}
@@ -59,38 +102,24 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
             History
           </button>
         </div>
-        {shown.map((p) => {
-          const stars = balanceOf(p.id)
-          return (
-            <div key={p.id} className="flex items-center gap-2 border-b border-line/60 py-2 last:border-0">
-              <button
-                type="button"
-                onClick={() => setEditing(p)}
-                className="pressable flex min-w-0 flex-1 items-center gap-2.5 text-left"
-              >
-                <PersonAvatar name={p.name} color={p.color} />
-                <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
-              </button>
-              <button
-                type="button"
-                aria-label={`Fewer stars for ${p.name}`}
-                onClick={() => adjust.mutate({ personId: p.id, delta: -1 })}
-                className={STEP_BUTTON}
-              >
-                −
-              </button>
-              <span className="min-w-14 text-center text-lg font-extrabold text-ember-deep tabular-nums"><StarIcon /> {stars}</span>
-              <button
-                type="button"
-                aria-label={`More stars for ${p.name}`}
-                onClick={() => adjust.mutate({ personId: p.id, delta: 1 })}
-                className={STEP_BUTTON}
-              >
-                +
-              </button>
+        {shown.map((p) => (
+          <div key={p.id} className="flex items-center gap-2 border-b border-line/60 py-2 last:border-0" data-balance-row>
+            <button type="button" onClick={() => setEditing(p)} className="pressable flex min-w-0 flex-1 items-center gap-2.5 text-left">
+              <PersonAvatar name={p.name} color={p.color} />
+              <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
+            </button>
+            {/* stars over coins, each with its own − / + */}
+            <div className="flex flex-col items-end gap-1.5">
+              <AmountStepper currency="stars" value={balanceOf(p.id)} who={p.name} onStep={(delta) => adjust.mutate({ personId: p.id, delta })} />
+              <AmountStepper
+                currency="coins"
+                value={coinsOf(p.id)}
+                who={p.name}
+                onStep={(delta) => adjust.mutate({ personId: p.id, delta, currency: 'coins' })}
+              />
             </div>
-          )
-        })}
+          </div>
+        ))}
         {/* one tap moves everyone's game time by one */}
         {shown.length > 1 && (
           <div className="flex items-center gap-2 py-2">
@@ -100,27 +129,21 @@ function StarsCard({ people, balanceOf }: { people: PersonDto[]; balanceOf: (id:
               </span>
               <span className="min-w-0 flex-1 truncate text-base font-bold">All</span>
             </span>
-            <button
-              type="button"
-              aria-label="Fewer stars for everyone"
-              onClick={() => shown.forEach((p) => adjust.mutate({ personId: p.id, delta: -1 }))}
-              className={STEP_BUTTON}
-            >
-              −
-            </button>
-            <span className="min-w-14 text-center text-sm font-extrabold text-ink-faint">each</span>
-            <button
-              type="button"
-              aria-label="More stars for everyone"
-              onClick={() => shown.forEach((p) => adjust.mutate({ personId: p.id, delta: 1 }))}
-              className={STEP_BUTTON}
-            >
-              +
-            </button>
+            <div className="flex flex-col items-end gap-1.5">
+              <AmountStepper currency="stars" value={null} who="everyone" onStep={(delta) => shown.forEach((p) => adjust.mutate({ personId: p.id, delta }))} />
+              <AmountStepper
+                currency="coins"
+                value={null}
+                who="everyone"
+                onStep={(delta) => shown.forEach((p) => adjust.mutate({ personId: p.id, delta, currency: 'coins' }))}
+              />
+            </div>
           </div>
         )}
       </Card>
-      {editing && <EditStarsSheet person={editing} current={balanceOf(editing.id)} onClose={() => setEditing(null)} />}
+      {editing && (
+        <EditStarsSheet person={editing} stars={balanceOf(editing.id)} coins={coinsOf(editing.id)} onClose={() => setEditing(null)} />
+      )}
       {history && <GameTimeLogSheet people={people} onClose={() => setHistory(false)} />}
     </>
   )
@@ -138,7 +161,7 @@ function GameTimeLogSheet({ people, onClose }: { people: PersonDto[]; onClose: (
   return (
     <Sheet onClose={onClose}>
       <div className="mb-3 flex items-center gap-2">
-        <h2 className="flex-1 font-display text-xl font-semibold">Star history</h2>
+        <h2 className="flex-1 font-display text-xl font-semibold">Stars &amp; coins history</h2>
         <GhostButton onClick={onClose}>Close</GhostButton>
       </div>
       <div className="mb-3 flex flex-wrap gap-2">
@@ -160,7 +183,7 @@ function GameTimeLogSheet({ people, onClose }: { people: PersonDto[]; onClose: (
         ))}
       </div>
       {entries.length === 0 ? (
-        <EmptyNote>Nothing yet — stars earned, spent or changed show up here.</EmptyNote>
+        <EmptyNote>Nothing yet — stars and coins earned, spent or changed show up here.</EmptyNote>
       ) : (
         <div className="flex flex-col divide-y divide-line/60">
           {entries.map((e) => {
@@ -181,7 +204,7 @@ function GameTimeLogSheet({ people, onClose }: { people: PersonDto[]; onClose: (
                     {Math.abs(e.delta)}
                   </div>
                   <div className="text-xs font-bold text-ink-faint tabular-nums">
-                    → <StarIcon /> {e.balanceAfter}
+                    → <CurrencyIcon currency={e.currency} /> {e.balanceAfter}
                   </div>
                 </div>
               </div>
@@ -247,6 +270,12 @@ function ClaimSheet({
             <StarIcon /> {chore.starsValue}
           </>
         )}
+        {chore.coinsValue > 0 && (
+          <>
+            {' · '}
+            <CoinIcon /> {chore.coinsValue}
+          </>
+        )}
         {counted && !each && ` · today ${countLabel(chore)}`}
         {counted && !each && chore.claims.length > 0 && ` · ${claimSummary(chore.claims, nameOf)}`}
       </p>
@@ -288,8 +317,27 @@ function ClaimSheet({
   )
 }
 
-/** Set a child's balance: − / + or type the new total; saved as one manual adjustment. */
-function EditStarsSheet({ person, current, onClose }: { person: PersonDto; current: number; onClose: () => void }) {
+/** Set a child's stars or coins: − / + or type the new total; saved as one manual adjustment. */
+function EditStarsSheet({ person, stars, coins, onClose }: { person: PersonDto; stars: number; coins: number; onClose: () => void }) {
+  const [currency, setCurrency] = useState<Currency>('stars')
+  return (
+    <EditAmount key={currency} person={person} currency={currency} onCurrency={setCurrency} current={currency === 'coins' ? coins : stars} onClose={onClose} />
+  )
+}
+
+function EditAmount({
+  person,
+  currency,
+  onCurrency,
+  current,
+  onClose
+}: {
+  person: PersonDto
+  currency: Currency
+  onCurrency: (c: Currency) => void
+  current: number
+  onClose: () => void
+}) {
   const adjust = useAdjustStars()
   const [text, setText] = useState(String(current))
   // a whole number, negatives too ("−" from a phone keyboard counts as a minus)
@@ -298,14 +346,28 @@ function EditStarsSheet({ person, current, onClose }: { person: PersonDto; curre
   const set = (n: number) => setText(String(n))
   const save = () => {
     if (target === null) return
-    adjust.mutate({ personId: person.id, delta: target - current }, { onSuccess: onClose })
+    adjust.mutate({ personId: person.id, delta: target - current, currency }, { onSuccess: onClose })
   }
   return (
     <Sheet onClose={onClose}>
       <div className="mb-4 flex items-center gap-2.5">
         <PersonAvatar name={person.name} color={person.color} />
-        <h2 className="flex-1 truncate font-display text-xl font-semibold">{person.name}'s stars</h2>
-        <span className="text-sm font-extrabold text-ink-faint">now <StarIcon /> {current}</span>
+        <h2 className="flex-1 truncate font-display text-xl font-semibold">
+          {person.name}'s {currency === 'coins' ? 'coins' : 'stars'}
+        </h2>
+        <span className="text-sm font-extrabold text-ink-faint">
+          now <CurrencyIcon currency={currency} /> {current}
+        </span>
+      </div>
+      <div className="mb-4">
+        <Segmented
+          value={currency}
+          onChange={onCurrency}
+          options={[
+            { value: 'stars', label: '⭐ Stars' },
+            { value: 'coins', label: '🪙 Coins' }
+          ]}
+        />
       </div>
       <div className="mb-4 flex items-center gap-3">
         <button
@@ -361,6 +423,7 @@ function EachChoreRow({
           {chore.title}
         </span>
         {chore.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><StarIcon /> {chore.starsValue}</span>}
+        {chore.coinsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><CoinIcon /> {chore.coinsValue}</span>}
       </div>
       <div className="mt-1.5 flex flex-wrap gap-2">
         {chore.assignees.map((id) => {
@@ -417,12 +480,13 @@ export function ChoresPage() {
   const nameOf = (id: string): string | undefined => people.find((p) => p.id === id)?.name
 
   const balanceOf = (personId: string): number => balances.find((b) => b.personId === personId)?.balance ?? 0
+  const coinsOf = (personId: string): number => balances.find((b) => b.personId === personId)?.coins ?? 0
   const done = dayChores.filter((c) => c.completed).length
 
   return (
     <div className="flex flex-col gap-4">
       <PendingUnlocksCard people={people} today={today} />
-      <StarsCard people={people} balanceOf={balanceOf} />
+      <StarsCard people={people} balanceOf={balanceOf} coinsOf={coinsOf} />
 
       {isPending && <EmptyNote>Loading…</EmptyNote>}
       {!isPending && dayChores.length === 0 && checklists.length === 0 && <EmptyNote>No chores today.</EmptyNote>}
@@ -509,6 +573,9 @@ export function ChoresPage() {
                   )}
                   {chore.starsValue > 0 && (
                     <span className="shrink-0 text-sm font-extrabold text-ink-faint"><StarIcon /> {chore.starsValue}</span>
+                  )}
+                  {chore.coinsValue > 0 && (
+                    <span className="ml-1.5 shrink-0 text-sm font-extrabold text-ink-faint"><CoinIcon /> {chore.coinsValue}</span>
                   )}
                 </div>
               </div>
@@ -703,6 +770,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
   const todayWeekday = today.weekday - 1
   const [title, setTitle] = useState(isNew ? '' : chore.title)
   const [stars, setStars] = useState(isNew ? 1 : chore.starsValue)
+  const [coins, setCoins] = useState(isNew ? 0 : chore.coinsValue)
   const [mode, setMode] = useState<ChoreMode>(isNew ? 'anyone' : chore.mode)
   const [assignees, setAssignees] = useState<string[]>(
     !isNew && chore.mode !== 'anyone' ? chore.assignees : defaultAssignees(people)
@@ -721,6 +789,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
     const common = {
       title: title.trim(),
       starsValue: stars,
+      coinsValue: coins,
       recurrence: toRecurrence(schedule, weekdays),
       routine: routine === 'any' ? null : routine,
       mode,
@@ -766,8 +835,22 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
           )}
         </div>
         {mode === 'videogames' && <VideoGamesNote />}
-        <div className="flex items-end gap-4">
-          <div className={mode === 'videogames' ? 'hidden' : ''}>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className={mode === 'videogames' ? 'hidden' : ''} data-chore-coins>
+            <FieldLabel>Coins</FieldLabel>
+            <div className="flex items-center gap-1.5">
+              <button type="button" aria-label="Fewer coins" onClick={() => setCoins((n) => Math.max(0, n - 1))} className={STEP_BUTTON}>
+                −
+              </button>
+              <span className="min-w-11 text-center text-base font-extrabold tabular-nums">
+                <CoinIcon /> {coins}
+              </span>
+              <button type="button" aria-label="More coins" onClick={() => setCoins((n) => Math.min(20, n + 1))} className={STEP_BUTTON}>
+                +
+              </button>
+            </div>
+          </div>
+          <div className={`order-first ${mode === 'videogames' ? 'hidden' : ''}`}>
             <FieldLabel>Stars</FieldLabel>
             <div className="flex items-center gap-1.5">
               <button
@@ -789,7 +872,7 @@ function ChoreSheet({ chore, people, onClose }: { chore: ChoreDto | 'new'; peopl
               </button>
             </div>
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 basis-full">
             <FieldLabel>Time of day</FieldLabel>
             <Segmented
               value={routine}
@@ -979,7 +1062,7 @@ export function PendingUnlocksCard({ people, today }: { people: PersonDto[]; tod
           <span className="min-w-0 flex-1 text-base font-bold">
             🛒 {nameOf(r.personId)} wants {r.rewardTitle}
             <span className="ml-1.5 text-ember-deep">
-              · <StarIcon /> {r.starsSpent}
+              · <CurrencyIcon currency={r.currency} /> {r.starsSpent}
             </span>
             {r.minutes !== null && <span className="text-ink-faint"> · {r.minutes} min</span>}
           </span>
@@ -1065,6 +1148,7 @@ function ManageChores({ people, onEditChore }: { people: PersonDto[]; onEditChor
                 </span>
               </span>
               {c.starsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><StarIcon /> {c.starsValue}</span>}
+              {c.coinsValue > 0 && <span className="shrink-0 text-sm font-extrabold text-ink-faint"><CoinIcon /> {c.coinsValue}</span>}
             </button>
           ))}
       </Card>
@@ -1105,7 +1189,7 @@ function RewardsCard() {
       <h2 className="mb-1 font-display text-xl font-semibold" data-rewards-card>
         Rewards
       </h2>
-      <p className="mb-2 text-sm font-bold text-ink-faint">What the kids can spend their stars on in the tablet's Shop.</p>
+      <p className="mb-2 text-sm font-bold text-ink-faint">What the kids can spend their stars or coins on in the tablet's Shop.</p>
       {rewards.length === 0 && <EmptyNote>No rewards yet</EmptyNote>}
       {rewards.map((r) => (
         <button
@@ -1126,7 +1210,7 @@ function RewardsCard() {
           </span>
           {r.kind === 'static' && (
             <span className="shrink-0 text-base font-extrabold text-ember-deep">
-              <StarIcon /> {r.costStars}
+              <CurrencyIcon currency={r.currency} /> {r.costStars}
             </span>
           )}
         </button>
@@ -1185,6 +1269,7 @@ function RewardSheet({ reward, onClose }: { reward: RewardDto | 'new'; onClose: 
   const [cost, setCost] = useState(isNew || reward.kind === 'dynamic' ? 10 : reward.costStars)
   const [bonus, setBonus] = useState(isNew ? 0 : reward.bonusMinutes)
   const [icon, setIcon] = useState<string | null>(isNew ? null : reward.icon)
+  const [currency, setCurrency] = useState<Currency>(isNew ? 'stars' : reward.currency)
   const busy = mutations.create.isPending || mutations.update.isPending
   const error = mutations.create.error ?? mutations.update.error ?? mutations.remove.error
   const valid = title.trim() !== ''
@@ -1195,7 +1280,9 @@ function RewardSheet({ reward, onClose }: { reward: RewardDto | 'new'; onClose: 
       kind,
       costStars: kind === 'static' ? cost : 1,
       bonusMinutes: kind === 'dynamic' ? bonus : 0,
-      icon
+      icon,
+      // timers run on stars; only a set price can be in coins
+      currency: kind === 'static' ? currency : ('stars' as const)
     }
     if (isNew) mutations.create.mutate(input, { onSuccess: onClose })
     else mutations.update.mutate({ id: reward.id, ...input }, { onSuccess: onClose })
@@ -1232,10 +1319,23 @@ function RewardSheet({ reward, onClose }: { reward: RewardDto | 'new'; onClose: 
           </p>
         </div>
         {kind === 'static' ? (
-          <div>
-            <FieldLabel>Cost in stars</FieldLabel>
-            <NumberStepper value={cost} onChange={setCost} min={1} max={999} label="stars" />
-          </div>
+          <>
+            <div>
+              <FieldLabel>Paid with</FieldLabel>
+              <Segmented
+                value={currency}
+                onChange={setCurrency}
+                options={[
+                  { value: 'stars', label: '⭐ Stars' },
+                  { value: 'coins', label: '🪙 Coins' }
+                ]}
+              />
+            </div>
+            <div>
+              <FieldLabel>{currency === 'coins' ? 'Cost in coins' : 'Cost in stars'}</FieldLabel>
+              <NumberStepper value={cost} onChange={setCost} min={1} max={999} label={currency} />
+            </div>
+          </>
         ) : (
           <div>
             <FieldLabel>Bonus time (minutes)</FieldLabel>

@@ -41,6 +41,7 @@ import type {
   RedemptionDto,
   RewardDto,
   RewardKind,
+  Currency,
   StarBalanceDto
 } from '../types'
 
@@ -119,7 +120,7 @@ export type IpcContract = {
 
   'stars:balances': { req: void; res: StarBalanceDto[] }
   /** a parent's correction: adds `delta` (may be negative) to the person's balance */
-  'stars:adjust': { req: { personId: string; delta: number }; res: { balance: number } }
+  'stars:adjust': { req: { personId: string; delta: number; currency?: Currency }; res: { balance: number } }
   /** a kid uses all their saved-up controllers ("use your time"): balance → 0; not PIN-gated */
   'stars:useTime': { req: { personId: string; stars?: number; rewardId?: string }; res: { used: number; minutes: number; timer: GameTimerDto | null } }
   /** game timers counting down (and finished ones not yet acknowledged) */
@@ -192,9 +193,9 @@ export type IpcContract = {
   'notes:done': { req: { id: string }; res: void }
 
   'rewards:list': { req: void; res: RewardDto[] }
-  'rewards:create': { req: { title: string; costStars: number; kind?: RewardKind; bonusMinutes?: number; icon?: string | null }; res: RewardDto }
+  'rewards:create': { req: { title: string; costStars: number; kind?: RewardKind; bonusMinutes?: number; icon?: string | null; currency?: Currency }; res: RewardDto }
   'rewards:update': {
-    req: { id: string; title?: string; costStars?: number; active?: boolean; kind?: RewardKind; bonusMinutes?: number; icon?: string | null }
+    req: { id: string; title?: string; costStars?: number; active?: boolean; kind?: RewardKind; bonusMinutes?: number; icon?: string | null; currency?: Currency }
     res: RewardDto
   }
   'rewards:delete': { req: { id: string }; res: void }

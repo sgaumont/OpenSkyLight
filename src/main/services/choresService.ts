@@ -18,7 +18,7 @@ import type {
   StarBalanceDto,
   UnlockState
 } from '@shared/types'
-import { VIDEO_GAMES_SET_ID } from '@shared/types'
+import { VIDEO_GAMES_SET_ID, type Currency } from '@shared/types'
 import { invalid, notFound } from './errors'
 
 type ChoreRow = typeof chores.$inferSelect
@@ -64,6 +64,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       title: row.title,
       icon: row.icon,
       starsValue: row.starsValue,
+      coinsValue: row.coinsValue,
       recurrence: row.scheduleRrule ? parseRRuleString(row.scheduleRrule, deviceTz()) : null,
       anchorDate: anchorOf(row),
       routine: row.routine,
@@ -110,6 +111,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         title: input.title,
         // Video Games tasks pay nothing alone: the set's reward is paid per finished round
         starsValue: mode === 'videogames' ? 0 : input.starsValue,
+        coinsValue: mode === 'videogames' ? 0 : (input.coinsValue ?? 0),
         scheduleRrule: input.recurrence ? buildRRuleString(input.recurrence, zone) : null,
         dueDate: anchor,
         routine: input.routine ?? null,
@@ -129,6 +131,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     const patch: Partial<typeof chores.$inferInsert> = {}
     if (input.title !== undefined) patch.title = input.title
     if (input.starsValue !== undefined) patch.starsValue = input.starsValue
+    if (input.coinsValue !== undefined) patch.coinsValue = input.coinsValue
     if (input.recurrence !== undefined) {
       patch.scheduleRrule = input.recurrence ? buildRRuleString(input.recurrence, zone) : null
     }
@@ -136,7 +139,10 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
     if (input.routine !== undefined) patch.routine = input.routine
     if (input.active !== undefined) patch.active = input.active
     if (input.mode !== undefined) patch.mode = input.mode
-    if (input.mode === 'videogames') patch.starsValue = 0
+    if (input.mode === 'videogames') {
+      patch.starsValue = 0
+      patch.coinsValue = 0
+    }
     if (input.assignees !== undefined) patch.assignees = JSON.stringify(input.assignees)
     if (input.times !== undefined) patch.times = input.times ?? 0
     if ((input.mode === 'each' || input.mode === 'videogames') && !input.assignees?.length) {
@@ -213,6 +219,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         title: row.title,
         icon: row.icon,
         starsValue: row.starsValue,
+        coinsValue: row.coinsValue,
         routine: row.routine,
         completed: done.length >= needed,
         completedBy: done[0] ?? null,
@@ -230,6 +237,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       title: row.title,
       icon: row.icon,
       starsValue: row.starsValue,
+      coinsValue: row.coinsValue,
       routine: row.routine,
       completed: who.length > 0 && doneBy.length === who.length,
       completedBy: null,
@@ -260,17 +268,25 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       .sort((a, b) => routineOrder[String(a.routine)] - routineOrder[String(b.routine)])
   }
 
-  function balanceOf(personId: string): number {
-    const rows = db.select().from(starLedger).where(eq(starLedger.personId, personId)).all()
+  function balanceOf(personId: string, currency: Currency = 'stars'): number {
+    const rows = db
+      .select()
+      .from(starLedger)
+      .where(and(eq(starLedger.personId, personId), eq(starLedger.currency, currency)))
+      .all()
     return rows.reduce((acc, r) => acc + r.delta, 0)
   }
 
+  /** Each person's stars and coins. */
   function balances(): StarBalanceDto[] {
-    const totals = new Map<string, number>()
+    const totals = new Map<string, StarBalanceDto>()
     for (const row of db.select().from(starLedger).all()) {
-      totals.set(row.personId, (totals.get(row.personId) ?? 0) + row.delta)
+      const t = totals.get(row.personId) ?? { personId: row.personId, balance: 0, coins: 0 }
+      if (row.currency === 'coins') t.coins += row.delta
+      else t.balance += row.delta
+      totals.set(row.personId, t)
     }
-    return [...totals.entries()].map(([personId, balance]) => ({ personId, balance }))
+    return [...totals.values()]
   }
 
   function checklistRow(id: string): ChecklistRow | undefined {
@@ -335,6 +351,11 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
       if (chore.starsValue > 0) {
         tx.insert(starLedger)
           .values({ id: uuidv7(), personId, delta: chore.starsValue, reason: 'chore', refId: completionId, createdAt: now, note: chore.title })
+          .run()
+      }
+      if (chore.coinsValue > 0) {
+        tx.insert(starLedger)
+          .values({ id: uuidv7(), personId, delta: chore.coinsValue, reason: 'chore', refId: completionId, createdAt: now, note: chore.title, currency: 'coins' })
           .run()
       }
       if (chore.checklistId) {
@@ -589,20 +610,20 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
   }
 
   /**
-   * Takes back whatever was paid for `refId` with one minus line (so the log shows both the gain and
-   * the take-back); nothing if nothing was paid or it was already taken back.
+   * Takes back whatever was paid for `refId` with one minus line per currency (so the log shows both
+   * the gain and the take-back); nothing if nothing was paid or it was already taken back.
    */
   function reverse(tx: DbOrTx, refId: string, personId: string, note: string): void {
-    const paid = tx
-      .select()
-      .from(starLedger)
-      .where(eq(starLedger.refId, refId))
-      .all()
-      .reduce((acc, r) => acc + r.delta, 0)
-    if (paid === 0) return
-    tx.insert(starLedger)
-      .values({ id: uuidv7(), personId, delta: -paid, reason: 'chore', refId, createdAt: isoUtc(DateTime.utc()), note })
-      .run()
+    const paid = new Map<Currency, number>()
+    for (const r of tx.select().from(starLedger).where(eq(starLedger.refId, refId)).all()) {
+      paid.set(r.currency, (paid.get(r.currency) ?? 0) + r.delta)
+    }
+    for (const [currency, amount] of paid) {
+      if (amount === 0) continue
+      tx.insert(starLedger)
+        .values({ id: uuidv7(), personId, delta: -amount, reason: 'chore', refId, createdAt: isoUtc(DateTime.utc()), note, currency })
+        .run()
+    }
   }
 
   // ── Video Games ───────────────────────────────────────────────────────────
@@ -710,6 +731,7 @@ export function createChoresService(db: AppDb, deviceTz: () => string) {
         title: t.title,
         icon: t.icon,
         starsValue: 0,
+        coinsValue: 0,
         routine: t.routine,
         completed: who.length > 0 && doneBy.length === who.length,
         completedBy: null,
