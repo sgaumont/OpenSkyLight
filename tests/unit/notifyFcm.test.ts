@@ -153,6 +153,26 @@ describe('notify service: Android phones', () => {
     expect(await svc.test(`fcm:${TOKEN}`)).toEqual({ delivered: false })
   })
 
+  it('Settings lists the phones (newest first) and can test or remove one by id', async () => {
+    const svc = service()
+    svc.subscribe({ endpoint: 'https://push.example/pwa', p256dh: 'k', auth: 'a', personId: 'mum', prefs: { ...NO_PUSH, chat: true } })
+    svc.subscribeFcm({ token: TOKEN, personId: 'dad', prefs: { ...NO_PUSH, approvals: true }, deviceName: 'Pixel' })
+    const { phones, fcm } = svc.status()
+    expect(fcm.state).toBe('missing')
+    expect(phones.map((p) => [p.kind, p.personId, p.deviceName, p.prefs.chat, p.prefs.approvals])).toEqual(
+      expect.arrayContaining([
+        ['webpush', 'mum', null, true, false],
+        ['fcm', 'dad', 'Pixel', false, true]
+      ])
+    )
+    const android = phones.find((p) => p.kind === 'fcm')!
+    expect(await svc.testPhone(android.id)).toEqual({ delivered: true })
+    expect(fcmSent[0].data.title).toBe('🔔 OpenSkyLight')
+    svc.removePhone(android.id)
+    expect(svc.status().phones.map((p) => p.kind)).toEqual(['webpush'])
+    expect(() => svc.removePhone(android.id)).toThrow(/no longer/)
+  })
+
   it('a dead token is dropped; any other FCM failure keeps the phone', async () => {
     const svc = service()
     svc.subscribeFcm({ token: TOKEN, personId: null, prefs: { ...NO_PUSH, chat: true } })
@@ -177,8 +197,10 @@ describe('FCM sender', () => {
     }
     const fcm = createFcm(keyFile, { post, token: async () => 'access-1' })
     expect(fcm.sender()).toBeNull()
+    expect(fcm.status()).toEqual({ state: 'missing', keyPath: keyFile })
     writeFileSync(keyFile, 'not json')
     expect(fcm.sender()).toBeNull()
+    expect(fcm.status()).toMatchObject({ state: 'invalid', keyPath: keyFile })
     writeFileSync(keyFile, JSON.stringify({ project_id: 'osl-family', client_email: 'x@osl-family.iam.gserviceaccount.com', private_key: 'k' }))
     await fcm.sender()!({ token: TOKEN, data: { title: 'Hi' } })
     expect(posts).toEqual([
@@ -196,6 +218,7 @@ describe('FCM sender', () => {
       post: async () => ({ status: 400, json: { error: { details: [{ errorCode: 'UNREGISTERED' }] } } }),
       token: async () => 't'
     })
+    expect(fcm.status()).toMatchObject({ state: 'ready', projectId: 'p', keyPath: keyFile })
     await expect(fcm.sender()!({ token: TOKEN, data: {} })).rejects.toMatchObject({ statusCode: 400, gone: true })
     expect(fcmTokenGone(404, null)).toBe(true)
     expect(fcmTokenGone(400, { error: { details: [{ errorCode: 'INVALID_ARGUMENT' }] } })).toBe(false)

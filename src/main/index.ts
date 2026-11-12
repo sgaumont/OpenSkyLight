@@ -160,6 +160,7 @@ if (!gotLock) {
       settings,
       deviceTz,
       fcm: fcm.sender,
+      fcmStatus: fcm.status,
       sources: {
         names: () => new Map(services.people.list().map((p) => [p.id, p.name])),
         chat: () => services.notes.pushFeed(20),

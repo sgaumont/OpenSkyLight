@@ -41,6 +41,8 @@ import {
   useGoogleMutations,
   useGoogleStatus,
   useIcsMutations,
+  useNotifyMutations,
+  useNotifyStatus,
   usePeople,
   usePeopleMutations,
   useRemoteCalendars,
@@ -72,6 +74,7 @@ import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type Schedule
 import { initials, textOn } from '../../lib/format'
 import QRCode from 'qrcode'
 import { useToasts } from '../../stores/toastStore'
+import { PUSH_KINDS, PUSH_LABELS } from '@shared/pushAlerts'
 
 type Tab = 'family' | 'calendars' | 'chores' | 'general'
 
@@ -1216,6 +1219,7 @@ function CompanionSection() {
             <p className="text-sm font-semibold text-ink-faint">
               If phones can't connect, allow OpenSkyLight through Windows Firewall (Private networks).
             </p>
+            <PhoneNotifications />
           </>
         )}
       </div>
@@ -1259,6 +1263,107 @@ function CompanionSection() {
           </div>
         )}
       </Dialog>
+    </div>
+  )
+}
+
+/**
+ * Which phones get notifications (browser Web Push or the Android app), and whether the Android
+ * app's Firebase key is on this tablet. Test sends one phone a "this works" alert.
+ */
+function PhoneNotifications() {
+  const { data: status } = useNotifyStatus()
+  const { data: people = [] } = usePeople()
+  const { test, remove } = useNotifyMutations()
+  const pushToast = useToasts((s) => s.push)
+  const [removing, setRemoving] = useState<string | null>(null)
+  if (!status) return null
+  const { fcm, phones } = status
+  const personName = (id: string | null): string | null => people.find((p) => p.id === id)?.name ?? null
+  const android = phones.filter((p) => p.kind === 'fcm').length
+  return (
+    <div className="flex flex-col gap-3 border-t border-line pt-3" data-phone-notifications>
+      <span className="text-base font-bold text-ink">🔔 Phone notifications</span>
+
+      <div className="flex flex-col gap-1 rounded-xl bg-card px-4 py-3" data-fcm-state={fcm.state}>
+        <span className="text-base font-bold text-ink-soft">
+          🤖 Android app (Family Skyview):{' '}
+          {fcm.state === 'ready' ? (
+            <span className="text-ink">✅ ready</span>
+          ) : fcm.state === 'invalid' ? (
+            <span className="text-ember-deep">⚠️ the key file can't be used</span>
+          ) : (
+            <span className="text-ink-faint">not set up yet</span>
+          )}
+        </span>
+        {fcm.state === 'ready' && (
+          <span className="text-sm font-semibold text-ink-faint">
+            Firebase project {fcm.projectId}
+            {android === 0 ? ' · no Android phones signed up yet' : ''}
+          </span>
+        )}
+        {fcm.state === 'invalid' && <span className="text-sm font-semibold text-ember-deep">{fcm.error}</span>}
+        {fcm.state !== 'ready' && (
+          <span className="text-sm font-semibold text-ink-faint">
+            Put the Firebase key file here: <code className="font-bold break-all">{fcm.keyPath}</code> (steps in
+            docs/ANDROID-FIREBASE.md). Phones using the browser app don't need it.
+          </span>
+        )}
+      </div>
+
+      {phones.length === 0 ? (
+        <p className="text-sm font-semibold text-ink-faint">
+          No phones get notifications yet — turn them on in the phone app's 📱 menu.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {phones.map((ph) => {
+            const owner = personName(ph.personId)
+            const on = PUSH_KINDS.filter((k) => ph.prefs[k])
+            return (
+              <li key={ph.id} className="flex items-center gap-3 rounded-xl bg-card px-4 py-2.5" data-phone-row={ph.kind}>
+                <span className="text-2xl" title={ph.kind === 'fcm' ? 'Android app' : 'Browser'}>
+                  {ph.kind === 'fcm' ? '🤖' : '🌐'}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-bold text-ink">
+                    {ph.deviceName || (owner ? `${owner}'s phone` : 'A phone')}
+                  </span>
+                  <span className="block truncate text-sm font-semibold text-ink-faint">
+                    {ph.kind === 'fcm' ? 'Android app' : 'Browser'}
+                    {owner && ph.deviceName ? ` · ${owner}` : ''} ·{' '}
+                    {on.length === 0 ? 'every alert off' : on.map((k) => PUSH_LABELS[k].split(' ')[0]).join(' ')}
+                  </span>
+                </span>
+                <BigButton
+                  variant="ghost"
+                  disabled={test.isPending || (ph.kind === 'fcm' && fcm.state !== 'ready')}
+                  onClick={() =>
+                    test.mutate(ph.id, {
+                      onSuccess: (r) => pushToast(r.delivered ? '🔔 Test sent' : "🔔 Couldn't reach that phone"),
+                      onError: (e) => pushToast(`🔔 ${(e as Error).message}`)
+                    })
+                  }
+                >
+                  Test
+                </BigButton>
+                {removing === ph.id ? (
+                  <BigButton
+                    variant="danger"
+                    onClick={() => remove.mutate(ph.id, { onSettled: () => setRemoving(null) })}
+                  >
+                    Remove?
+                  </BigButton>
+                ) : (
+                  <BigButton variant="ghost" onClick={() => setRemoving(ph.id)}>
+                    ✕
+                  </BigButton>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }

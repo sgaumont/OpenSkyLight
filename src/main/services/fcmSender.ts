@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { JWT } from 'google-auth-library'
+import type { FcmStatus } from '@shared/types'
 
 /** One data-only message for the Android app (it builds the notification itself). */
 export interface FcmMessage {
@@ -41,8 +42,10 @@ export function createFcm(keyFile: string, deps: { post?: FcmPost; token?: (key:
   const post = deps.post ?? fetchPost
   let cached: { raw: string; key: ServiceKey; client: JWT } | null = null
   let warned = ''
+  let lastError: string | null = null
 
   function load(): { key: ServiceKey; client: JWT } | null {
+    lastError = null
     if (!existsSync(keyFile)) return null
     try {
       const text = readFileSync(keyFile, 'utf8')
@@ -55,6 +58,7 @@ export function createFcm(keyFile: string, deps: { post?: FcmPost; token?: (key:
       return cached
     } catch (e) {
       const msg = (e as Error).message
+      lastError = msg
       if (warned !== msg) console.warn('[notify] FCM key unusable:', msg)
       warned = msg
       return null
@@ -82,8 +86,17 @@ export function createFcm(keyFile: string, deps: { post?: FcmPost; token?: (key:
     }
   }
 
-  return { sender }
+  /** For Settings: is there a usable key, and for which Firebase project. */
+  function status(): FcmStatus {
+    const c = load()
+    if (c) return { state: 'ready', projectId: c.key.project_id, clientEmail: c.key.client_email, keyPath: keyFile }
+    if (lastError) return { state: 'invalid', error: lastError, keyPath: keyFile }
+    return { state: 'missing', keyPath: keyFile }
+  }
+
+  return { sender, status }
 }
+
 
 export interface ServiceKey {
   project_id: string

@@ -106,7 +106,8 @@ const PARENT_GATED: Set<IpcChannel> = new Set([
   'camera:add',
   'camera:remove',
   'companion:issueToken',
-  'companion:unpairAll'
+  'companion:unpairAll',
+  'companion:removePhone'
 ])
 
 /** Channels that mutate data, mapped to the domain the renderer should refetch. */
@@ -415,6 +416,9 @@ export function buildChannelTable(services: Services): ChannelTable {
   handle('companion:getStatus', null, async () => ({ ...services.companion.getStatus(), secure: await services.companion.secure() }))
   handle('companion:issueToken', null, () => services.companion.issueToken())
   handle('companion:unpairAll', null, () => services.companion.unpairAll())
+  handle('companion:notifyStatus', null, () => services.notify.status())
+  handle('companion:testPhone', s.notifyPhoneSchema, (req) => services.notify.testPhone(req.id))
+  handle('companion:removePhone', s.notifyPhoneSchema, (req) => services.notify.removePhone(req.id))
 
   handle('auth:getStatus', null, () => ({
     pinSet: services.auth.pinSet(),

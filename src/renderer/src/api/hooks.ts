@@ -457,6 +457,23 @@ export function useCompanionMutations() {
   }
 }
 
+/** Phone notifications: the Android (Firebase) key and the phones getting alerts (Settings). */
+export function useNotifyStatus() {
+  return useQuery({
+    queryKey: ['notifyStatus'],
+    queryFn: () => ipcInvoke('companion:notifyStatus', undefined),
+    refetchInterval: 10_000 // picks up a key file dropped in, and phones signing up
+  })
+}
+
+export function useNotifyMutations() {
+  const keys = [['notifyStatus']]
+  return {
+    test: useInvalidatingMutation((id: string) => ipcInvoke('companion:testPhone', { id }), keys),
+    remove: useInvalidatingMutation((id: string) => ipcInvoke('companion:removePhone', { id }), keys)
+  }
+}
+
 /** Refetch when the main process announces data changes (sync engine, other windows). */
 export function usePushInvalidation(): void {
   const queryClient = useQueryClient()

@@ -603,3 +603,27 @@ export const PERSON_COLORS = [
 ] as const
 
 export const CALENDAR_COLORS = PERSON_COLORS
+
+/** Phone notifications, for the tablet's Settings */
+export interface FcmStatus {
+  /** ready = a key that parses (whether Google accepts it shows on the first send / Test) */
+  state: 'ready' | 'missing' | 'invalid'
+  projectId?: string
+  clientEmail?: string
+  error?: string
+  keyPath: string
+}
+
+export interface NotifyPhoneDto {
+  id: string
+  kind: 'webpush' | 'fcm'
+  personId: string | null
+  deviceName: string | null
+  prefs: Record<'chat' | 'leave' | 'approvals' | 'weather' | 'timers', boolean>
+  createdAt: string
+}
+
+export interface NotifyStatusDto {
+  fcm: FcmStatus
+  phones: NotifyPhoneDto[]
+}

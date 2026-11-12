@@ -1,6 +1,7 @@
 import type { WeatherAlert } from '../weatherAlerts'
 import type { PushPrefs } from '../pushAlerts'
 import type {
+  NotifyStatusDto,
   AppSettings,
   BackupStatus,
   CountdownDto,
@@ -290,6 +291,10 @@ export type IpcContract = {
   /** Mints a fresh pairing token (parent-gated); the token only ever lives in the URL fragment. */
   'companion:issueToken': { req: void; res: { url: string } }
   'companion:unpairAll': { req: void; res: void }
+  /** tablet Settings: is the Android (Firebase) key there, and which phones get notifications */
+  'companion:notifyStatus': { req: void; res: NotifyStatusDto }
+  'companion:testPhone': { req: { id: string }; res: { delivered: boolean } }
+  'companion:removePhone': { req: { id: string }; res: void }
 
   'auth:getStatus': { req: void; res: { pinSet: boolean; unlocked: boolean } }
   'auth:verifyPin': { req: { pin: string }; res: { valid: boolean } }

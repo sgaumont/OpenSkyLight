@@ -690,6 +690,13 @@ Add unit tests where sensible.
   says app notifications come next). Gitignored: android/app/google-services.json, *.keystore, *.jks. Testing on the
   emulator: AVD `osl_phone`, kiosk reachable at http://10.0.2.2:<port>; Playwright can't attach to the Android WebView
   — use raw CDP over `adb forward tcp:9333 localabstract:webview_devtools_remote_<pid>`.
+- v0.8.171: tablet **Settings → General → Companion app → 🔔 Phone notifications** card: Android (Firebase) key
+  state (ready + project id / not set up + where the key goes / invalid + why; re-checked every 10 s) and every
+  phone getting alerts (🤖 Android app / 🌐 browser, name, owner, alert icons, Test, ✕ → "Remove?"). Kiosk-only
+  channels under the `companion:` prefix (renderer-allowed, not in COMPANION_CHANNELS): `companion:notifyStatus`,
+  `companion:testPhone` {id}, `companion:removePhone` {id} (PIN-gated). `createFcm().status()`; DTOs FcmStatus /
+  NotifyPhoneDto / NotifyStatusDto in shared/types. **docs/ANDROID-FIREBASE.md** = the user's Firebase setup
+  checklist (project, Android app `io.github.sgaumont.familyskyview`, FCM-only service account, key on tablet).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

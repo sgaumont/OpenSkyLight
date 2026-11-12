@@ -9,6 +9,7 @@ import { isoUtc } from '@shared/dates'
 import { dueAlerts, fcmData, NO_PUSH, pruneSent, PUSH_KINDS, type PushAlert, type PushPrefs, type PushState } from '@shared/pushAlerts'
 import { invalid } from './errors'
 import type { FcmSender } from './fcmSender'
+import type { FcmStatus, NotifyPhoneDto, NotifyStatusDto } from '@shared/types'
 
 const KEY_VAPID = 'push.vapid' // { publicKey, privateKey }
 const KEY_SENT = 'push.sent' // { [alertKey]: sentAtMs }
@@ -74,6 +75,7 @@ export function createNotifyService(deps: {
   send?: PushSender
   /** the FCM sender, or null while there's no service-account key (Android phones are then skipped) */
   fcm?: () => FcmSender | null
+  fcmStatus?: () => FcmStatus
   now?: () => number
 }) {
   const { db, settings, sources } = deps
@@ -167,6 +169,34 @@ export function createNotifyService(deps: {
     return delivered
   }
 
+  /** Every phone getting notifications, for the tablet's Settings (newest first). */
+  function phones(): NotifyPhoneDto[] {
+    return db
+      .select()
+      .from(pushSubscriptions)
+      .all()
+      .map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        personId: r.personId,
+        deviceName: r.deviceName,
+        prefs: readPrefs(r.prefs),
+        createdAt: r.createdAt
+      }))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  function endpointOf(id: string): string {
+    const [row] = db.select().from(pushSubscriptions).where(eq(pushSubscriptions.id, id)).all()
+    if (!row) throw invalid('That phone is no longer getting notifications')
+    return row.endpoint
+  }
+
+  /** The Settings card: Android key status plus the phones. */
+  function status(): NotifyStatusDto {
+    return { fcm: deps.fcmStatus?.() ?? { state: 'missing', keyPath: '' }, phones: phones() }
+  }
+
   /** A "this works" notification to one phone. */
   async function test(endpoint: string): Promise<{ delivered: boolean }> {
     if (!get(endpoint)) throw invalid('Turn notifications on first')
@@ -229,6 +259,9 @@ export function createNotifyService(deps: {
 
   return {
     publicKey: () => ({ publicKey: vapid().publicKey }),
+    status,
+    testPhone: (id: string) => test(endpointOf(id)),
+    removePhone: (id: string) => unsubscribe(endpointOf(id)),
     get,
     subscribe,
     subscribeFcm,
@@ -241,3 +274,4 @@ export function createNotifyService(deps: {
 }
 
 export type NotifyService = ReturnType<typeof createNotifyService>
+

@@ -349,6 +349,7 @@ export const notifySubscribeSchema = z.object({
   personId: z.string().min(1).nullable(),
   prefs: pushPrefs
 })
+export const notifyPhoneSchema = z.object({ id: z.string().min(1).max(100) })
 export const notifySubscribeFcmSchema = z.object({
   token: z.string().regex(/^[A-Za-z0-9_:.-]{20,400}$/),
   personId: z.string().min(1).nullable(),
