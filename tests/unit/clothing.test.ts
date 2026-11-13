@@ -3,35 +3,32 @@ import { fromCelsius, pickClothing, toCelsius } from '../../src/shared/clothing'
 import { settingsPatchSchema } from '../../src/shared/ipc/schemas'
 import { DEFAULT_SETTINGS } from '../../src/shared/types'
 
-const s = { shortsMinC: 20, pantsMinC: 10 }
+const s = { shortsMinC: 20 }
 
 describe('what to wear (OPE-20)', () => {
-  it('the highest minimum that today\'s high still meets', () => {
+  it('shorts when today\'s high meets the minimum, pants below it (no jacket)', () => {
     expect(pickClothing(25, 'c', s)).toBe('shorts')
     expect(pickClothing(20, 'c', s)).toBe('shorts') // meets = at or above
     expect(pickClothing(19, 'c', s)).toBe('pants')
-    expect(pickClothing(15, 'c', s)).toBe('pants')
-    expect(pickClothing(10, 'c', s)).toBe('pants')
-    expect(pickClothing(9, 'c', s)).toBe('jacket')
-    expect(pickClothing(-25, 'c', s)).toBe('jacket')
+    expect(pickClothing(5, 'c', s)).toBe('pants')
+    expect(pickClothing(-25, 'c', s)).toBe('pants')
   })
-  it('works the same in °F (minimums stored in °C)', () => {
+  it('works the same in °F (minimum stored in °C)', () => {
     expect(fromCelsius(20, 'f')).toBe(68)
-    expect(fromCelsius(10, 'f')).toBe(50)
     expect(pickClothing(68, 'f', s)).toBe('shorts')
     expect(pickClothing(67, 'f', s)).toBe('pants')
-    expect(pickClothing(50, 'f', s)).toBe('pants')
-    expect(pickClothing(49, 'f', s)).toBe('jacket')
+    expect(pickClothing(20, 'f', s)).toBe('pants')
     // a minimum typed in °F comes back as the same °F
     expect(fromCelsius(toCelsius(70, 'f'), 'f')).toBe(70)
-    expect(pickClothing(70, 'f', { shortsMinC: toCelsius(70, 'f'), pantsMinC: toCelsius(45, 'f') })).toBe('shorts')
-    expect(pickClothing(69, 'f', { shortsMinC: toCelsius(70, 'f'), pantsMinC: toCelsius(45, 'f') })).toBe('pants')
+    expect(pickClothing(70, 'f', { shortsMinC: toCelsius(70, 'f') })).toBe('shorts')
+    expect(pickClothing(69, 'f', { shortsMinC: toCelsius(70, 'f') })).toBe('pants')
   })
-  it('off by default, 20° / 10° C', () => {
-    expect(DEFAULT_SETTINGS.clothing).toEqual({ enabled: false, shortsMinC: 20, pantsMinC: 10 })
+  it('off by default, shorts from 20° C', () => {
+    expect(DEFAULT_SETTINGS.clothing).toEqual({ enabled: false, shortsMinC: 20 })
   })
-  it('settings must keep shorts above pants', () => {
-    expect(settingsPatchSchema.safeParse({ patch: { clothing: { enabled: true, shortsMinC: 22, pantsMinC: 12 } } }).success).toBe(true)
-    expect(settingsPatchSchema.safeParse({ patch: { clothing: { enabled: true, shortsMinC: 10, pantsMinC: 12 } } }).success).toBe(false)
+  it('settings take just the shorts minimum; an old pants minimum is dropped', () => {
+    expect(settingsPatchSchema.safeParse({ patch: { clothing: { enabled: true, shortsMinC: 22 } } }).success).toBe(true)
+    const old = settingsPatchSchema.safeParse({ patch: { clothing: { enabled: true, shortsMinC: 22, pantsMinC: 12 } } })
+    expect(old.success && old.data.patch.clothing).toEqual({ enabled: true, shortsMinC: 22 })
   })
 })

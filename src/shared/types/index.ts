@@ -541,8 +541,8 @@ export interface AppSettings {
   companion: { enabled: boolean; port: number }
   /** "Leave by" drive times from home (Google Routes API; the key is stored separately, encrypted) */
   travel: { enabled: boolean; homeAddress: string; bufferMinutes: number }
-  /** shorts / pants / jacket emoji from today's forecast high, on the screensaver and the weather tile */
-  clothing: { enabled: boolean; shortsMinC: number; pantsMinC: number }
+  /** shorts or pants emoji from today's forecast high, on the screensaver and the weather tile */
+  clothing: { enabled: boolean; shortsMinC: number }
 }
 
 /** When to leave home for an event with a location. */
@@ -585,7 +585,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   homeLayout: DEFAULT_HOME_LAYOUT,
   companion: { enabled: false, port: 8420 },
   travel: { enabled: false, homeAddress: '', bufferMinutes: 5 },
-  clothing: { enabled: false, shortsMinC: 20, pantsMinC: 10 }
+  clothing: { enabled: false, shortsMinC: 20 }
 }
 
 /** Touch-friendly person color palette (Skylight-style) */

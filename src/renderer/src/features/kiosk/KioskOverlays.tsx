@@ -95,7 +95,7 @@ function ScreensaverOverlay({ onDismiss }: { onDismiss: () => void }) {
             {timeFormat === '24h' ? now.toFormat('HH:mm') : now.toFormat('h:mm')}
           </div>
           <ScreensaverWeather />
-          {/* a light disc: Windows draws the jacket dark grey, lost on a dark photo otherwise */}
+          {/* a light disc, so the emoji stays visible on a dark photo */}
           <ClothingEmoji className="flex h-[78px] w-[78px] items-center justify-center rounded-full bg-white/85 text-[48px] leading-none shadow-lg" />
         </div>
         <div className="mt-1.5 text-4xl font-bold text-white/70 drop-shadow-lg">{now.toFormat('cccc, LLLL d')}</div>

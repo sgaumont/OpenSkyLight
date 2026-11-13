@@ -166,10 +166,8 @@ export const settingsPatchSchema = z.object({
       travel: z
         .object({ enabled: z.boolean(), homeAddress: z.string().trim().max(200), bufferMinutes: z.number().int().min(0).max(60) })
         .optional(),
-      clothing: z
-        .object({ enabled: z.boolean(), shortsMinC: z.number().min(-60).max(60), pantsMinC: z.number().min(-60).max(60) })
-        .refine((c) => c.shortsMinC > c.pantsMinC, 'Shorts need a higher minimum than pants')
-        .optional()
+      // (a pantsMinC from before v0.8.176, when there was a jacket below pants, is dropped)
+      clothing: z.object({ enabled: z.boolean(), shortsMinC: z.number().min(-60).max(60) }).optional()
     })
     .strict()
 })

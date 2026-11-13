@@ -1,27 +1,23 @@
-/** "What to wear today" from today's forecast high: shorts, pants or a jacket. */
+/** "What to wear today" from today's forecast high: shorts, or pants below the shorts minimum. */
 
-export type Clothing = 'shorts' | 'pants' | 'jacket'
+export type Clothing = 'shorts' | 'pants'
 
-export const CLOTHING_EMOJI: Record<Clothing, string> = { shorts: '🩳', pants: '👖', jacket: '🧥' }
-export const CLOTHING_LABEL: Record<Clothing, string> = { shorts: 'Shorts', pants: 'Pants', jacket: 'Jacket' }
+export const CLOTHING_EMOJI: Record<Clothing, string> = { shorts: '🩳', pants: '👖' }
+export const CLOTHING_LABEL: Record<Clothing, string> = { shorts: 'Shorts', pants: 'Pants' }
 
-/** Minimum daily highs, stored in °C (the jacket is everything below pants). */
+/** The minimum daily high for shorts, stored in °C (pants are everything below it). */
 export interface ClothingSettings {
   enabled: boolean
   shortsMinC: number
-  pantsMinC: number
 }
 
 export const toCelsius = (t: number, unit: 'c' | 'f'): number => (unit === 'f' ? ((t - 32) * 5) / 9 : t)
 /** A stored °C minimum as shown in the kiosk's unit, rounded to a whole degree. */
 export const fromCelsius = (c: number, unit: 'c' | 'f'): number => Math.round(unit === 'f' ? (c * 9) / 5 + 32 : c)
 
-/** The icon whose minimum is the highest one today's high still meets (at or above). */
-export function pickClothing(high: number, unit: 'c' | 'f', s: Pick<ClothingSettings, 'shortsMinC' | 'pantsMinC'>): Clothing {
+/** Shorts when today's high meets the minimum (at or above), otherwise pants. */
+export function pickClothing(high: number, unit: 'c' | 'f', s: Pick<ClothingSettings, 'shortsMinC'>): Clothing {
   // compare in the forecast's own unit, so a whole-degree minimum lines up exactly with a whole-degree high
   const shorts = unit === 'f' ? fromCelsius(s.shortsMinC, 'f') : s.shortsMinC
-  const pants = unit === 'f' ? fromCelsius(s.pantsMinC, 'f') : s.pantsMinC
-  if (high >= shorts) return 'shorts'
-  if (high >= pants) return 'pants'
-  return 'jacket'
+  return high >= shorts ? 'shorts' : 'pants'
 }

@@ -86,8 +86,8 @@ export function WeatherButton() {
             })}
           </span>
         )}
-        {/* today's shorts / pants / jacket, right of the forecast (when that's on); a light disc
-            because Windows draws the jacket dark grey, lost on the dark theme otherwise */}
+        {/* today's shorts or pants, right of the forecast (when that's on), on a light disc so it
+            stays visible on the dark theme */}
         <ClothingEmoji className="ml-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-[2.1rem] leading-none shadow-card max-[1300px]:h-11 max-[1300px]:w-11 max-[1300px]:text-[1.6rem] max-[1150px]:h-9 max-[1150px]:w-9 max-[1150px]:text-[1.3rem]" />
       </button>
 
