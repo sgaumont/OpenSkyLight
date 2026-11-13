@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the app background (the companion's paper colour), behind the status and navigation bars -->
+    <color name="app_paper">#F5EFE3</color>
+</resources>

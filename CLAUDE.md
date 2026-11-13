@@ -766,6 +766,16 @@ Add unit tests where sensible.
   switches (new companion `Switch` in components/ui.tsx: `role="switch"`, whole row tappable); `PUSH_LABELS.approvals` =
   "⭐ Approvals (chores and Shop)" (Shop requests ride on it). The phone-name example is "e.g. Mom's phone" — **the
   user's first name must not appear anywhere in the repo** (comments, tests and fixtures included; it was in four places).
+- v0.8.179: phone app **header + tab bar** (cleanup item 3). Header = one slim row (`data-app-header`, ~56px):
+  tab name, the date only on Chores/Meals (`DATED_TABS`, `data-header-date`), update chip, and a ⚙ settings icon
+  instead of 📱 (aria-label still "This phone: name and notifications"). Tab icons = SVG line icons in NEW
+  companion `components/icons.tsx` that fill in on the selected tab (`data-icon-active`; inner details drawn in
+  var(--color-card)); tab buttons carry `data-tab`. Badges share `CountBadge` (9+): Chores waiting (`data-waiting-badge`)
+  and NEW Chat unread (`data-unread-badge`) = messages from the tablet / other phones newer than localStorage
+  `osl.chatSeenAt` (set to the newest message while Chat is open; first run counts all as read). Android status bar:
+  `android:windowBackground` = `@color/app_paper` (values/ and values-night/app_colors.xml) instead of grey, and the
+  bar icons follow a live light/dark switch via `SystemBars.setStyle` (the activity handles uiMode itself, so
+  Android doesn't restyle them). Emulator check script: shots-179.mjs in session da7f19d6's scratchpad.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

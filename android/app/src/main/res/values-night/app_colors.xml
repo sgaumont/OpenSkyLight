@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- dark mode (the companion follows the phone's dark theme): the dark paper colour -->
+    <color name="app_paper">#17130E</color>
+</resources>

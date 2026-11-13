@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTabSwipe } from './lib/useTabSwipe'
 import { startBackButton } from './lib/backButton'
-import { StarIcon } from './components/ui'
+import { SettingsIcon, TabChatIcon, TabListIcon, TabMealIcon, TabPhotoIcon, TabStarIcon } from './components/icons'
+import { getPhoneName } from './lib/phoneName'
 import { DateTime } from 'luxon'
+import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core'
 import { getToken, setUnauthorizedHandler } from './api/client'
 import { useLiveUpdates } from './api/live'
-import { usePendingUnlocks, useShopRequests, useToday } from './api/hooks'
+import { useChat, usePendingUnlocks, useShopRequests, useToday } from './api/hooks'
 import { ListsPage } from './pages/ListsPage'
 import { MealsPage } from './pages/MealsPage'
 import { ChoresPage } from './pages/ChoresPage'
@@ -20,13 +22,17 @@ import { UpdateBanner } from './components/UpdateBanner'
 // no Agenda tab (pages/AgendaPage.tsx is kept, unused, in case it comes back)
 type TabId = 'lists' | 'meals' | 'chores' | 'photos' | 'notes'
 
-const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
-  { id: 'chores', label: 'Chores', icon: <StarIcon /> },
-  { id: 'lists', label: 'Lists', icon: '✓' },
-  { id: 'meals', label: 'Meals', icon: '🍽' },
-  { id: 'photos', label: 'Photos', icon: '🖼' },
-  { id: 'notes', label: 'Chat', icon: '💬' }
+// line icons that fill in on the selected tab (components/icons.tsx)
+const TABS: { id: TabId; label: string; icon: (active: boolean) => ReactNode }[] = [
+  { id: 'chores', label: 'Chores', icon: (a) => <TabStarIcon active={a} /> },
+  { id: 'lists', label: 'Lists', icon: (a) => <TabListIcon active={a} /> },
+  { id: 'meals', label: 'Meals', icon: (a) => <TabMealIcon active={a} /> },
+  { id: 'photos', label: 'Photos', icon: (a) => <TabPhotoIcon active={a} /> },
+  { id: 'notes', label: 'Chat', icon: (a) => <TabChatIcon active={a} /> }
 ]
+
+/** The header shows the date only on the tabs where the day matters. */
+const DATED_TABS: TabId[] = ['chores', 'meals']
 
 /** A tab named in the address (?tab=notes) — where a tapped notification opens the app. */
 function tabFromUrl(): TabId | null {
@@ -79,6 +85,15 @@ export default function App() {
     []
   )
   const today = useToday()
+  // Android app: the status bar's icons follow the phone's light / dark switch while the app is open
+  // (at launch Android picks them itself; the app keeps running through a theme change)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    const dark = window.matchMedia('(prefers-color-scheme: dark)')
+    const apply = (): void => void SystemBars.setStyle({ style: dark.matches ? SystemBarsStyle.Dark : SystemBarsStyle.Light }).catch(() => {})
+    dark.addEventListener('change', apply)
+    return () => dark.removeEventListener('change', apply)
+  }, [])
   // kiosk changes (a new note, a reply, a ticked chore) arrive instantly
   useLiveUpdates(paired)
   // swipe left / right anywhere on the page to change tabs (OPE-18)
@@ -118,21 +133,25 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
+      {/* one slim row: the tab's name (+ the date on Chores and Meals), update chip, settings */}
       <header
-        className="flex items-baseline gap-2 px-5 pt-5 pb-3"
-        style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
+        className="flex items-center gap-2 pr-2 pl-5 pt-2 pb-1"
+        style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
+        data-app-header
       >
-        <h1 className="font-display text-2xl font-semibold">{TABS.find((t) => t.id === tab)?.label}</h1>
-        <span className="flex-1 text-sm font-bold text-ink-faint">{DateTime.fromISO(today).toFormat('ccc, LLL d')}</span>
+        <h1 className="font-display text-xl font-semibold">{TABS.find((t) => t.id === tab)?.label}</h1>
+        <span className="flex-1 truncate text-sm font-bold text-ink-faint" data-header-date>
+          {DATED_TABS.includes(tab) ? DateTime.fromISO(today).toFormat('ccc, LLL d') : ''}
+        </span>
         {/* Android app: a newer version is on the tablet (a small chip, not a card) */}
         <UpdateBanner />
         <button
           type="button"
           onClick={() => setNotifications(true)}
           aria-label="This phone: name and notifications"
-          className="pressable self-center rounded-full bg-paper-deep px-2.5 py-1.5 text-lg leading-none"
+          className="pressable flex h-11 w-11 items-center justify-center rounded-full text-ink-soft"
         >
-          📱
+          <SettingsIcon />
         </button>
       </header>
       {notifications && <NotificationsSheet onClose={() => setNotifications(false)} />}
@@ -167,13 +186,16 @@ export default function App() {
             onClick={() => pick(t.id)}
             aria-current={tab === t.id ? 'page' : undefined}
             className={`pressable flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs font-extrabold ${
-              tab === t.id ? 'text-ember' : 'text-ink-faint'
+              tab === t.id ? 'text-ember' : 'text-ink-soft'
             }`}
+            data-tab={t.id}
           >
-            <span className="relative text-lg leading-none">
-              {t.icon}
+            <span className="relative leading-none">
+              {t.icon(tab === t.id)}
               {/* sign-offs and Shop requests wait on the Chores tab; the count shows from every tab */}
               {t.id === 'chores' && <WaitingBadge today={today} />}
+              {/* chat messages from the tablet and other phones since this phone last looked */}
+              {t.id === 'notes' && <UnreadBadge open={tab === 'notes'} />}
             </span>
             {t.label}
           </button>
@@ -189,13 +211,60 @@ function WaitingBadge({ today }: { today: string }) {
   const { data: requests = [] } = useShopRequests()
   const waiting = pending.length + requests.length
   if (waiting === 0) return null
+  return <CountBadge n={waiting} label={`${waiting} waiting for a parent`} data="waiting" />
+}
+
+const SEEN_KEY = 'osl.chatSeenAt'
+const readSeen = (): string | null => {
+  try {
+    return localStorage.getItem(SEEN_KEY)
+  } catch {
+    return null
+  }
+}
+const writeSeen = (iso: string): void => {
+  try {
+    localStorage.setItem(SEEN_KEY, iso)
+  } catch {
+    /* private mode: the badge just won't remember */
+  }
+}
+
+/**
+ * Chat messages from the tablet and the other phones that arrived since this phone last had the
+ * Chat tab open. The first time (nothing remembered yet) everything already there counts as read.
+ */
+function UnreadBadge({ open }: { open: boolean }) {
+  const { data: messages } = useChat()
+  const [seen, setSeen] = useState<string | null>(readSeen)
+  const newest = messages?.length ? messages[messages.length - 1].createdAt : null
+  useEffect(() => {
+    if (!newest) return
+    // looking at Chat now, or first run: up to the newest message is read
+    if (open || seen === null) {
+      if (seen === null || newest > seen) {
+        writeSeen(newest)
+        setSeen(newest)
+      }
+    }
+  }, [open, newest, seen])
+  if (open || !messages || seen === null) return null
+  const me = getPhoneName()
+  const unread = messages.filter((m) => m.createdAt > seen && (m.fromKiosk || !me || m.deviceName !== me)).length
+  if (unread === 0) return null
+  return <CountBadge n={unread} label={`${unread} new in Chat`} data="unread" />
+}
+
+/** The small ember count on a tab icon (9+ past nine). */
+function CountBadge({ n, label, data }: { n: number; label: string; data: 'waiting' | 'unread' }) {
   return (
     <span
       className="absolute -top-1.5 -right-3 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-ember px-1 text-[11px] leading-none font-extrabold text-white"
-      aria-label={`${waiting} waiting for a parent`}
-      data-waiting-badge
+      aria-label={label}
+      data-waiting-badge={data === 'waiting' ? '' : undefined}
+      data-unread-badge={data === 'unread' ? '' : undefined}
     >
-      {waiting}
+      {n > 9 ? '9+' : n}
     </span>
   )
 }
