@@ -544,11 +544,37 @@ export function ChoresPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <StarsCard people={people} balanceOf={balanceOf} coinsOf={coinsOf} />
+
       <PendingUnlocksCard people={people} today={today} />
 
-      {/* the daily stuff first: today's chores, then the checklists; setup lives in ⚙ Manage at the bottom */}
+      {/* the kids' balances first, then the checklists, then today's other chores; setup lives in ⚙ Manage at the bottom */}
       {isPending && <EmptyNote>Loading…</EmptyNote>}
       {!isPending && dayChores.length === 0 && checklists.length === 0 && <EmptyNote>No chores today.</EmptyNote>}
+
+      {checklists.map((cl) => (
+        <Card key={cl.checklistId}>
+          <h2 className="font-display text-xl font-semibold">
+            ⭐ {cl.title}
+            {cl.kind === 'videogames' && (
+              <span className="ml-2 text-lg text-ember-deep">
+                <StarIcon /> {cl.stars}
+              </span>
+            )}
+          </h2>
+          <div className="mb-1 text-sm font-extrabold text-ink-faint">
+            {cl.people
+              .map((s) => {
+                const name = people.find((p) => p.id === s.personId)?.name ?? '?'
+                return `${name} ${setProgressLabel(cl, s, UNLOCK_TEXT)}`
+              })
+              .join(' · ')}
+          </div>
+          {cl.items.map((item) => (
+            <EachChoreRow key={item.choreId} chore={item} people={people} date={today} />
+          ))}
+        </Card>
+      ))}
 
       {dayChores.length > 0 && (
         <Card>
@@ -618,32 +644,6 @@ export function ChoresPage() {
           })}
         </Card>
       )}
-
-      {checklists.map((cl) => (
-        <Card key={cl.checklistId}>
-          <h2 className="font-display text-xl font-semibold">
-            ⭐ {cl.title}
-            {cl.kind === 'videogames' && (
-              <span className="ml-2 text-lg text-ember-deep">
-                <StarIcon /> {cl.stars}
-              </span>
-            )}
-          </h2>
-          <div className="mb-1 text-sm font-extrabold text-ink-faint">
-            {cl.people
-              .map((s) => {
-                const name = people.find((p) => p.id === s.personId)?.name ?? '?'
-                return `${name} ${setProgressLabel(cl, s, UNLOCK_TEXT)}`
-              })
-              .join(' · ')}
-          </div>
-          {cl.items.map((item) => (
-            <EachChoreRow key={item.choreId} chore={item} people={people} date={today} />
-          ))}
-        </Card>
-      ))}
-
-      <StarsCard people={people} balanceOf={balanceOf} coinsOf={coinsOf} />
 
       {claiming && (
         <ClaimSheet

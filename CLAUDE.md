@@ -784,6 +784,9 @@ Add unit tests where sensible.
   & checklists sit in a `data-manage-section` ("⚙ Manage rewards, chores & checklists"), closed on every visit.
   With 2 kids + 7 chores the tab fits one phone screen (was ~1,600px). Check script verify-chores-tidy.mjs (phone web
   app in a 412×915 window, 15 checks) in session e9e5dd9e's scratchpad.
+- v0.8.181: phone Chores tab order (user's ask; **supersedes the v0.8.180 order**): Stars & Coins at the top,
+  then "Waiting for you" (PendingUnlocksCard, only when something waits), then the checklists, then the Today
+  card; ⚙ Manage stays folded at the bottom.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
