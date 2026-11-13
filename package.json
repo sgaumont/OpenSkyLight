@@ -1,6 +1,6 @@
 {
   "name": "openskylight",
-  "version": "0.8.182",
+  "version": "0.8.183",
   "description": "OpenSkyLight — an open-source standalone family calendar display (Skylight Calendar clone)",
   "main": "./out/main/index.js",
   "author": "Tyler",
@@ -12,6 +12,7 @@
     "dev:companion": "vite --config companion.vite.config.ts",
     "build": "electron-vite build && npm run build:companion",
     "build:companion": "vite build --config companion.vite.config.ts",
+    "deploy": "node scripts/deploy.mjs",
     "android": "node scripts/build-android.mjs",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",

@@ -46,6 +46,7 @@ import { createGoogleSync } from './sync/googleSync'
 import { createOutboxWorker } from './sync/outboxWorker'
 import { createIcsSync } from './sync/icsSync'
 import { createSyncManager } from './sync/scheduler'
+import { createDeployWatcher } from './deploy/deployWatcher'
 
 // Test harnesses point this at a temp dir so smoke runs never touch real data
 if (process.env.OSL_USER_DATA) {
@@ -215,6 +216,20 @@ if (!gotLock) {
     })
     createMainWindow()
     started = true
+    // network deploys (`npm run deploy` drops a newer exe next to the portable one): say this version
+    // started (the swap script keeps it only then), then watch for the next one
+    const deploy = createDeployWatcher({
+      version: app.getVersion(),
+      userData: app.getPath('userData'),
+      exePath: process.env.PORTABLE_EXECUTABLE_FILE ?? null,
+      quit: () => {
+        app.quit()
+        setTimeout(() => app.exit(0), 8000)
+      }
+    })
+    deploy.markStarted()
+    deploy.start()
+    app.on('will-quit', () => deploy.stop())
     syncManager.start()
     kiosk.start()
     backup.start()

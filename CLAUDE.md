@@ -790,6 +790,22 @@ Add unit tests where sensible.
 - v0.8.182: phone Chores tab — "Waiting for you" (sign-offs + Shop requests, only when there are some) back at the
   very top, above Stars & Coins (user's ask); then checklists, then Today. The running-timer strip stays above all
   tabs (App.tsx).
+- v0.8.183: **deploy to the Surface over the network** — `npm run deploy` (builds first; `-- --no-build` ships the
+  current dist; `-- --force` re-deploys the same/older version). Target in **`deploy.local`** (repo root, gitignored by
+  `*.local`, never commit): `{"target": "\\<tablet IP>\dist", "health"?: url}` — the shared folder the kiosk's
+  `OpenSkyLight 0.8.0.exe` runs from. scripts/deploy.mjs refuses a stale dist (app.asar version ≠ package.json), copies
+  the exe in as `OpenSkyLight-next.exe` via `.part`, writes `next.json` {version, file, sha256, force} LAST, then waits
+  for the tablet's `/api/health` (companion port 8420 default) to answer with the new version. Kiosk side
+  (`src/main/deploy/`, portable builds only — `PORTABLE_EXECUTABLE_FILE`): every 15 s it looks for `next.json` next to its
+  own exe; a valid, newer (or forced), checksum-matching one is installed **immediately** (user's choice): it writes a
+  PowerShell swap script (`swapScript`, deployFiles.ts) and starts it through **WMI `Win32_Process.Create`** — a plain or
+  detached child dies with the portable exe's process group (seen in testing) — then quits. The script waits for the
+  exe to be free, keeps the old one as `OpenSkyLight 0.8.0.prev.exe`, moves the new one in under the autorun name,
+  starts it, and waits up to 120 s for userData/`deploy-ok.json` {version} (written by every start, `markStarted`);
+  otherwise it stops it, keeps it as `….failed.exe` and restores the previous one. Bad/old manifests are renamed
+  `next.ignored.json`. Log: userData/`deploy.log`. Trust = write access to that Windows share (no network listener;
+  phones can't reach it). The first 0.8.183+ exe goes on the tablet by hand. Rehearsed on this PC (swap 45 s; forced
+  bad version rolled back after 120 s). This PC must be signed in to the share (`cmdkey /add:<ip> /user:<tablet user> /pass`).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
