@@ -497,7 +497,7 @@ export interface ChatMessageDto {
   unseen: boolean
   /** makes a sound where it arrives — a phone's 🔔 Ring (Quiet = shows, silently); the tablet's always ring */
   ring: boolean
-  /** the sending phone's name, if it has one ("Sean's phone") */
+  /** the sending phone's name, if it has one ("Mom's phone") */
   deviceName: string | null
 }
 

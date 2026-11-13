@@ -196,3 +196,23 @@ export function BottomSheet({ onClose, children, label }: { onClose: () => void;
     </div>
   )
 }
+
+/** An Android-style on/off switch with its label on the left (the whole row is the tap target). */
+export function Switch({ checked, onChange, label }: { checked: boolean; onChange: (on: boolean) => void; label: ReactNode }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="pressable flex min-h-12 w-full items-center gap-3 rounded-xl px-1 text-left text-base font-bold text-ink"
+    >
+      <span className="min-w-0 flex-1">{label}</span>
+      <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? 'bg-ember' : 'bg-line'}`} aria-hidden="true">
+        <span
+          className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow-card transition-transform ${checked ? 'translate-x-5' : ''}`}
+        />
+      </span>
+    </button>
+  )
+}

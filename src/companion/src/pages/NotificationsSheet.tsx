@@ -5,7 +5,7 @@ import { currentSubscription, disablePush, enablePush, pushSupported, savePush, 
 import { isNativeApp } from '../api/base'
 import { NativePush } from '../api/nativePush'
 import { appVersion, tabletApp } from '../api/update'
-import { GhostButton, PrimaryButton } from '../components/ui'
+import { GhostButton, PrimaryButton, Switch } from '../components/ui'
 import { getPhoneName, PHONE_NAME_MAX, setPhoneName } from '../lib/phoneName'
 import { useBackHandler } from '../lib/backButton'
 
@@ -86,7 +86,7 @@ export function NotificationsSheet({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
         data-notifications-sheet
       >
-        <h2 className="font-display text-xl font-semibold">🔔 Notifications</h2>
+        <h2 className="font-display text-xl font-semibold">📱 This phone</h2>
         <PhoneNameField />
         {!pushSupported() ? (
           <p className="mt-2 mb-4 text-base font-semibold text-ink-soft">
@@ -102,15 +102,7 @@ export function NotificationsSheet({ onClose }: { onClose: () => void }) {
             </p>
             <div className="mb-4 flex flex-col gap-1">
               {PUSH_KINDS.map((k) => (
-                <label key={k} className="flex min-h-12 items-center gap-3 rounded-xl px-1 text-base font-bold text-ink">
-                  <input
-                    type="checkbox"
-                    checked={prefs[k]}
-                    onChange={(e) => update({ ...prefs, [k]: e.target.checked }, personId)}
-                    className="h-6 w-6 shrink-0 accent-ember"
-                  />
-                  {PUSH_LABELS[k]}
-                </label>
+                <Switch key={k} checked={prefs[k]} onChange={(on) => update({ ...prefs, [k]: on }, personId)} label={PUSH_LABELS[k]} />
               ))}
             </div>
             {message && <p className="mb-3 text-sm font-bold text-ember-deep">{message}</p>}
@@ -201,7 +193,7 @@ function PhoneNameField() {
           value={draft}
           maxLength={PHONE_NAME_MAX}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="e.g. Sean's phone"
+          placeholder="e.g. Mom's phone"
           className="min-h-11 min-w-0 flex-1 rounded-xl border-2 border-line bg-paper px-3 text-base font-semibold outline-none placeholder:text-ink-faint focus:border-ember"
         />
         {changed && (

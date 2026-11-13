@@ -762,6 +762,10 @@ Add unit tests where sensible.
   it) and a pinned one-row composer (🔕/🔔 icon toggle · message · Send). Countdowns moved to the top of the
   conversation. New shared `BottomSheet` in companion components/ui.tsx (closes on Android back). The repo has no
   Prettier config — `npx prettier` defaults (double quotes, semicolons) reformat whole files; don't run it bare.
+- v0.8.178: phone **📱 sheet tidy-up** — titled "📱 This phone" (it holds the name too); alert choices are Android-style
+  switches (new companion `Switch` in components/ui.tsx: `role="switch"`, whole row tappable); `PUSH_LABELS.approvals` =
+  "⭐ Approvals (chores and Shop)" (Shop requests ride on it). The phone-name example is "e.g. Mom's phone" — **the
+  user's first name must not appear anywhere in the repo** (comments, tests and fixtures included; it was in four places).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

@@ -24,21 +24,21 @@ describe('chat Ring / Quiet and phone names', () => {
 
   it('a phone message is Quiet unless sent with Ring; the tablet always rings', () => {
     const chat = notes()
-    chat.send({ text: 'quiet one', deviceName: "Sean's phone" }, false)
-    chat.send({ text: 'loud one', ring: true, deviceName: "Sean's phone" }, false)
+    chat.send({ text: 'quiet one', deviceName: "Mom's phone" }, false)
+    chat.send({ text: 'loud one', ring: true, deviceName: "Mom's phone" }, false)
     chat.send({ text: 'from the tablet', ring: false }, true)
     const t = chat.timeline()
     expect(t.map((m) => [m.text, m.ring, m.deviceName])).toEqual([
-      ['quiet one', false, "Sean's phone"],
-      ['loud one', true, "Sean's phone"],
+      ['quiet one', false, "Mom's phone"],
+      ['loud one', true, "Mom's phone"],
       ['from the tablet', true, null]
     ])
   })
 
   it("the sender's push endpoint is kept for notifications but never sent to a page", () => {
     const chat = notes()
-    chat.send({ text: 'hi', endpoint: 'https://push.example/sean' }, false)
-    expect(chat.pushFeed()[0].senderEndpoint).toBe('https://push.example/sean')
+    chat.send({ text: 'hi', endpoint: 'https://push.example/mom' }, false)
+    expect(chat.pushFeed()[0].senderEndpoint).toBe('https://push.example/mom')
     expect('senderEndpoint' in chat.timeline()[0]).toBe(false)
   })
 
@@ -51,14 +51,14 @@ describe('chat Ring / Quiet and phone names', () => {
       timers: [],
       weather: [],
       chat: [
-        { id: 'q', text: 'quiet', authorId: null, fromKiosk: false, createdAt: iso, ring: false, deviceName: "Sean's phone", senderEndpoint: 'E1' },
+        { id: 'q', text: 'quiet', authorId: null, fromKiosk: false, createdAt: iso, ring: false, deviceName: "Mom's phone", senderEndpoint: 'E1' },
         { id: 'r', text: 'loud', authorId: null, fromKiosk: false, createdAt: iso, ring: true, deviceName: null, senderEndpoint: 'E2' },
         { id: 't', text: 'tablet', authorId: null, fromKiosk: true, createdAt: iso, ring: true }
       ]
     }
     const a = dueAlerts(s)
     expect(a.map((x) => [x.title, x.silent, x.skipEndpoint])).toEqual([
-      ["💬 Sean's phone", true, 'E1'],
+      ["💬 Mom's phone", true, 'E1'],
       ['💬 Phone', false, 'E2'],
       ['💬 Tablet', false, null]
     ])
@@ -85,19 +85,19 @@ describe('chat Ring / Quiet and phone names', () => {
         sent.push({ endpoint: sub.endpoint, payload: JSON.parse(payload) })
       }
     })
-    for (const n of ['sean', 'wife']) svc.subscribe({ endpoint: `https://push.example/${n}`, p256dh: 'k', auth: 'a', personId: null, prefs: { ...NO_PUSH, chat: true } })
+    for (const n of ['mom', 'dad']) svc.subscribe({ endpoint: `https://push.example/${n}`, p256dh: 'k', auth: 'a', personId: null, prefs: { ...NO_PUSH, chat: true } })
     await svc.check(true)
     chat = [
-      { id: 'q', text: 'quiet', authorId: null, fromKiosk: false, createdAt: iso, ring: false, deviceName: "Sean's phone", senderEndpoint: 'https://push.example/sean' },
-      { id: 'r', text: 'loud', authorId: null, fromKiosk: false, createdAt: iso, ring: true, deviceName: "Sean's phone", senderEndpoint: 'https://push.example/sean' },
+      { id: 'q', text: 'quiet', authorId: null, fromKiosk: false, createdAt: iso, ring: false, deviceName: "Mom's phone", senderEndpoint: 'https://push.example/mom' },
+      { id: 'r', text: 'loud', authorId: null, fromKiosk: false, createdAt: iso, ring: true, deviceName: "Mom's phone", senderEndpoint: 'https://push.example/mom' },
       { id: 't', text: 'tablet', authorId: null, fromKiosk: true, createdAt: iso, ring: true }
     ]
     await svc.check()
     expect(sent.map((s) => [s.endpoint.split('/').pop(), s.payload.title, s.payload.silent])).toEqual([
-      ['wife', "💬 Sean's phone", true],
-      ['wife', "💬 Sean's phone", false],
-      ['sean', '💬 Tablet', false],
-      ['wife', '💬 Tablet', false]
+      ['dad', "💬 Mom's phone", true],
+      ['dad', "💬 Mom's phone", false],
+      ['mom', '💬 Tablet', false],
+      ['dad', '💬 Tablet', false]
     ])
   })
 

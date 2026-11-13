@@ -1,6 +1,6 @@
 import { mirrorToNative } from '../api/base'
 
-/** This phone's name ("Sean's phone"), set in its 🔔 screen and shown on the messages it sends. */
+/** This phone's name ("Mom's phone"), set in its 📱 screen and shown on the messages it sends. */
 const KEY = 'osl.phoneName'
 export const PHONE_NAME_MAX = 40
 

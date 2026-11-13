@@ -15,7 +15,7 @@ export const NO_PUSH: PushPrefs = { chat: false, leave: false, approvals: false,
 export const PUSH_LABELS: Record<PushKind, string> = {
   chat: '💬 New chat messages',
   leave: '🚗 Time to leave for an event',
-  approvals: '⭐ Chores waiting for a parent to approve',
+  approvals: '⭐ Approvals (chores and Shop)',
   weather: '⚠️ Weather warnings',
   timers: "⏳ A kid's timer is up"
 }
