@@ -748,6 +748,9 @@ Add unit tests where sensible.
   left, `App.minimizeApp()` sends the app to the background (still running and paired, never quit). Any new
   full-screen sheet/mode should call `useBackHandler`. Tested on the emulator (adb `KEYCODE_BACK`, 10 checks).
   Haptics were offered and not wanted.
+- v0.8.176: "What to wear" drops the jacket: shorts when today's high meets the shorts minimum, otherwise pants
+  (`Clothing` = 'shorts' | 'pants'). Settings keep only `clothing.shortsMinC`; an old stored `pantsMinC` is ignored and
+  stripped by the settings schema. Settings → General → What to wear has one number (shorts) + "Pants below that".
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
