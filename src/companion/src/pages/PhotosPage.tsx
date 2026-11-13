@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Card, EmptyNote } from '../components/ui'
+import { useBackHandler } from '../lib/backButton'
 import { deletePhoto, listPhotos, shrinkPhoto, thumbUrl, uploadPhoto, type PhonePhoto } from '../api/photos'
 
 /** Photos sent from phones to the kiosk's screensaver: add from the camera roll, or remove. */
@@ -40,6 +41,9 @@ export function PhotosPage() {
         .join(' ')
     )
   }
+
+  // Android back leaves select mode first
+  useBackHandler(selecting, stopSelecting)
 
   function stopSelecting(): void {
     setSelecting(false)

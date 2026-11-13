@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTabSwipe } from './lib/useTabSwipe'
+import { startBackButton } from './lib/backButton'
 import { StarIcon } from './components/ui'
 import { DateTime } from 'luxon'
 import { getToken, setUnauthorizedHandler } from './api/client'
@@ -53,6 +54,30 @@ export default function App() {
     setSlide(dir === 1 ? 'from-right' : 'from-left')
     setTab(TABS[i].id)
   }, [])
+  // Android back (the app only): open sheets close first (useBackHandler), then back through the
+  // tabs visited, then the app steps aside to the background (lib/backButton.ts)
+  const visited = useRef<TabId[]>([])
+  const shownTab = useRef(tab)
+  const goingBack = useRef(false)
+  useEffect(() => {
+    if (shownTab.current === tab) return
+    if (!goingBack.current) visited.current = [...visited.current, shownTab.current].slice(-20)
+    goingBack.current = false
+    shownTab.current = tab
+  }, [tab])
+  useEffect(
+    () =>
+      startBackButton(() => {
+        const prev = visited.current.pop()
+        if (!prev) return false
+        goingBack.current = true
+        const from = TABS.findIndex((t) => t.id === tabRef.current)
+        setSlide(TABS.findIndex((t) => t.id === prev) < from ? 'from-left' : 'from-right')
+        setTab(prev)
+        return true
+      }),
+    []
+  )
   const today = useToday()
   // kiosk changes (a new note, a reply, a ticked chore) arrive instantly
   useLiveUpdates(paired)

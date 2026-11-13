@@ -741,6 +741,13 @@ Add unit tests where sensible.
   so only mipmap-anydpi-v26 is used). Pairing screen in the app shows the same icon (`SkyWindowIcon`, PairScreen.tsx);
   the web app keeps icon-192. `android/capacitor.settings.gradle` committed with `../node_modules/…` paths (a
   `cap sync` inside a worktree writes `../../OpenSkyLight/node_modules/…` through the junction — don't commit that).
+- v0.8.175: Family Skyview **Android back button** (the app only; browsers keep their own back). Capacitor used
+  to close the app on back even with a sheet open. `src/companion/src/lib/backButton.ts` (@capacitor/app `backButton`):
+  the newest `useBackHandler(active, onBack)` runs first — ChoresPage's shared `Sheet`, NotificationsSheet (📱),
+  Photos select mode; then App.tsx steps back through the tabs visited (last 20, slides from that side); with nothing
+  left, `App.minimizeApp()` sends the app to the background (still running and paired, never quit). Any new
+  full-screen sheet/mode should call `useBackHandler`. Tested on the emulator (adb `KEYCODE_BACK`, 10 checks).
+  Haptics were offered and not wanted.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

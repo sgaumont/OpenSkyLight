@@ -27,6 +27,7 @@ import { anchorOnSave, defaultAssignees, scheduleOf, toRecurrence, type Schedule
 import { describeRecurrence } from '@shared/recurrence/build'
 import { canAddMore, claimSummary, countLabel, countOf, isCounted } from '@shared/choreCount'
 import { setProgressLabel } from '@shared/setProgress'
+import { useBackHandler } from '../lib/backButton'
 import { dayLabel } from '@shared/dayLabel'
 
 /** Per-person "N today · stars N" card below the chores: hidden for now (the Stars card covers it). */
@@ -223,6 +224,8 @@ function GameTimeLogSheet({ people, onClose }: { people: PersonDto[]; onClose: (
 
 /** A bottom sheet over a dimmed page; tapping outside it closes it. */
 function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  // Android back closes the sheet (not the app)
+  useBackHandler(true, onClose)
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
       <div

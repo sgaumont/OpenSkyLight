@@ -7,6 +7,7 @@ import { NativePush } from '../api/nativePush'
 import { appVersion, tabletApp } from '../api/update'
 import { GhostButton, PrimaryButton } from '../components/ui'
 import { getPhoneName, PHONE_NAME_MAX, setPhoneName } from '../lib/phoneName'
+import { useBackHandler } from '../lib/backButton'
 
 /** Whose phone this was (from the old Chat "From"); kept for phones that turned notifications on before names. */
 const AUTHOR_KEY = 'osl.noteAuthor'
@@ -24,6 +25,8 @@ function rememberedPerson(): string | null {
  * phone; changes after turning on save straight away.
  */
 export function NotificationsSheet({ onClose }: { onClose: () => void }) {
+  // Android back closes the sheet (not the app)
+  useBackHandler(true, onClose)
   const [sub, setSub] = useState<PushHandle | null>(null)
   const [loaded, setLoaded] = useState(!pushSupported())
   const [prefs, setPrefs] = useState<PushPrefs>(NO_PUSH)
