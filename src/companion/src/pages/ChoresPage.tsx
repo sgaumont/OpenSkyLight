@@ -544,11 +544,12 @@ export function ChoresPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <StarsCard people={people} balanceOf={balanceOf} coinsOf={coinsOf} />
-
+      {/* what's waiting for a parent first (sign-offs, Shop requests: only when there are some), then the kids'
+          balances, the checklists and today's other chores; setup lives in ⚙ Manage at the bottom */}
       <PendingUnlocksCard people={people} today={today} />
 
-      {/* the kids' balances first, then the checklists, then today's other chores; setup lives in ⚙ Manage at the bottom */}
+      <StarsCard people={people} balanceOf={balanceOf} coinsOf={coinsOf} />
+
       {isPending && <EmptyNote>Loading…</EmptyNote>}
       {!isPending && dayChores.length === 0 && checklists.length === 0 && <EmptyNote>No chores today.</EmptyNote>}
 

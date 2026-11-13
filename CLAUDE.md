@@ -787,6 +787,9 @@ Add unit tests where sensible.
 - v0.8.181: phone Chores tab order (user's ask; **supersedes the v0.8.180 order**): Stars & Coins at the top,
   then "Waiting for you" (PendingUnlocksCard, only when something waits), then the checklists, then the Today
   card; ⚙ Manage stays folded at the bottom.
+- v0.8.182: phone Chores tab — "Waiting for you" (sign-offs + Shop requests, only when there are some) back at the
+  very top, above Stars & Coins (user's ask); then checklists, then Today. The running-timer strip stays above all
+  tabs (App.tsx).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
