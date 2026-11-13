@@ -7,7 +7,7 @@ export function PairScreen({ onRetry }: { onRetry: () => void }) {
   const native = isNativeApp()
   return (
     <div className="flex h-full flex-col items-center justify-center gap-5 px-8 text-center" data-pair-screen>
-      <img src="/icon-192.png" alt="" className="h-20 w-20 rounded-3xl shadow-card" />
+      {native ? <SkyWindowIcon /> : <img src="/icon-192.png" alt="" className="h-20 w-20 rounded-3xl shadow-card" />}
       <h1 className="font-display text-3xl font-semibold">{native ? 'Family Skyview' : 'OpenSkyLight'}</h1>
       <p className="max-w-xs text-base font-semibold text-ink-soft">
         This phone isn't paired with the family display.
@@ -96,5 +96,19 @@ function AppPairing({ onPaired }: { onPaired: () => void }) {
         </p>
       )}
     </div>
+  )
+}
+
+/** Family Skyview's own icon ("Sky window", same art as android/…/ic_launcher_foreground.xml). */
+function SkyWindowIcon() {
+  return (
+    <svg viewBox="0 0 100 100" className="h-20 w-20 rounded-3xl shadow-card" aria-hidden="true" data-app-icon>
+      <rect width="100" height="100" fill="#263B5E" />
+      <rect x="27" y="27" width="46" height="46" rx="6" fill="#8FC1E3" />
+      <circle cx="38.5" cy="38.5" r="6" fill="#F5B841" />
+      <path d="M53 66 a5 5 0 0 1 4-8 a6 6 0 0 1 11 2 a4 4 0 0 1 1 6 z" fill="#FFFFFF" />
+      <path d="M50 27 V73 M27 50 H73" stroke="#F4EDE2" strokeWidth="4" />
+      <rect x="27" y="27" width="46" height="46" rx="6" fill="none" stroke="#F4EDE2" strokeWidth="5" />
+    </svg>
   )
 }

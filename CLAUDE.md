@@ -731,6 +731,16 @@ Add unit tests where sensible.
   30 min), 📱 sheet shows "Family Skyview <ver>" (app) or "📲 Get the Android app" (web app on Android).
   `isNewer` in `src/shared/appVersion.ts`. Tested on the emulator: 0.8.173 → tablet's 0.8.999 through Android's
   installer, still paired. Debug-signed installs (≤0.8.172) must be uninstalled once.
+- v0.8.174: Family Skyview **icon "B · Sky window"** (user's pick from six; design canvas
+  https://claude.ai/artifact/Cm7HYjukio4WzyAfZEV5Qv). Launcher: adaptive icon = `@color/ic_launcher_background`
+  (#263B5E navy) + vector `drawable-v24/ic_launcher_foreground.xml` (sky, sun, cloud, window bars, inside the safe
+  zone) + `monochrome` (`drawable/ic_launcher_monochrome.xml` = the notification icon inset 27%, Android 13 themed
+  icons). Notification small icon `drawable/ic_stat_family_skyview.xml` (white window + sun; PushNotifier finds it
+  by name). Launch: Capacitor's logo PNGs are gone — `drawable/splash.xml` is plain navy and the launch theme sets
+  `windowSplashScreenBackground`/`AnimatedIcon` (the window on navy). Old Capacitor mipmap PNGs removed (minSdk 26,
+  so only mipmap-anydpi-v26 is used). Pairing screen in the app shows the same icon (`SkyWindowIcon`, PairScreen.tsx);
+  the web app keeps icon-192. `android/capacitor.settings.gradle` committed with `../node_modules/…` paths (a
+  `cap sync` inside a worktree writes `../../OpenSkyLight/node_modules/…` through the junction — don't commit that).
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

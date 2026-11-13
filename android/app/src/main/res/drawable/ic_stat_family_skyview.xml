@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status bar / notification icon (white on transparent; Android tints it): the Sky window as a silhouette -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2"
+        android:pathData="M7,4 H17 A3,3 0 0 1 20,7 V17 A3,3 0 0 1 17,20 H7 A3,3 0 0 1 4,17 V7 A3,3 0 0 1 7,4 Z" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="1.6"
+        android:pathData="M12,4 V20 M4,12 H20" />
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M6,8 A2,2 0 1 0 10,8 A2,2 0 1 0 6,8 Z" />
+</vector>
