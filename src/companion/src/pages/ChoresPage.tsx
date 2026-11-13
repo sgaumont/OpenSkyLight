@@ -72,8 +72,9 @@ function AmountStepper({
 }
 
 /**
- * Each child's stars and coins, each with − / + (one a tap); tap the name to type new totals.
- * With two or more, an "All" row steps everyone at once.
+ * Each child's stars and coins, one compact row per kid ("Emma ⭐ 44 · 🪙 6 ›"). Tapping a row opens
+ * that kid's − / + steppers (one a tap) and a way to type new totals; with two or more kids, an
+ * "All" row does the same for everyone at once. History is the whole log.
  */
 function StarsCard({
   people,
@@ -86,10 +87,11 @@ function StarsCard({
 }) {
   const kids = people.filter((p) => p.role === 'child')
   const shown = kids.length > 0 ? kids : people
-  const [editing, setEditing] = useState<PersonDto | null>(null)
+  // whose steppers are open: a person, or 'all'
+  const [open, setOpen] = useState<PersonDto | 'all' | null>(null)
   const [history, setHistory] = useState(false)
-  const adjust = useAdjustStars()
   if (shown.length === 0) return null
+  const row = 'pressable flex w-full items-center gap-2.5 border-b border-line/60 py-2 text-left last:border-0'
   return (
     <>
       <Card>
@@ -104,49 +106,101 @@ function StarsCard({
           </button>
         </div>
         {shown.map((p) => (
-          <div key={p.id} className="flex items-center gap-2 border-b border-line/60 py-2 last:border-0" data-balance-row>
-            <button type="button" onClick={() => setEditing(p)} className="pressable flex min-w-0 flex-1 items-center gap-2.5 text-left">
-              <PersonAvatar name={p.name} color={p.color} />
-              <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
-            </button>
-            {/* stars over coins, each with its own − / + */}
-            <div className="flex flex-col items-end gap-1.5">
-              <AmountStepper currency="stars" value={balanceOf(p.id)} who={p.name} onStep={(delta) => adjust.mutate({ personId: p.id, delta })} />
-              <AmountStepper
-                currency="coins"
-                value={coinsOf(p.id)}
-                who={p.name}
-                onStep={(delta) => adjust.mutate({ personId: p.id, delta, currency: 'coins' })}
-              />
-            </div>
-          </div>
-        ))}
-        {/* one tap moves everyone's game time by one */}
-        {shown.length > 1 && (
-          <div className="flex items-center gap-2 py-2">
-            <span className="flex min-w-0 flex-1 items-center gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-deep text-xs font-extrabold text-ink-soft">
-                All
-              </span>
-              <span className="min-w-0 flex-1 truncate text-base font-bold">All</span>
+          <button key={p.id} type="button" onClick={() => setOpen(p)} className={row} data-balance-row aria-label={`${p.name}: change stars and coins`}>
+            <PersonAvatar name={p.name} color={p.color} />
+            <span className="min-w-0 flex-1 truncate text-base font-bold">{p.name}</span>
+            <span className="shrink-0 text-base font-extrabold tabular-nums text-ember-deep">
+              <StarIcon /> {balanceOf(p.id)}
             </span>
-            <div className="flex flex-col items-end gap-1.5">
-              <AmountStepper currency="stars" value={null} who="everyone" onStep={(delta) => shown.forEach((p) => adjust.mutate({ personId: p.id, delta }))} />
-              <AmountStepper
-                currency="coins"
-                value={null}
-                who="everyone"
-                onStep={(delta) => shown.forEach((p) => adjust.mutate({ personId: p.id, delta, currency: 'coins' }))}
-              />
-            </div>
-          </div>
+            <span className="shrink-0 text-base font-extrabold tabular-nums text-ink">
+              <CoinIcon /> {coinsOf(p.id)}
+            </span>
+            <span className="shrink-0 pl-1 text-xl font-bold text-ink-faint">›</span>
+          </button>
+        ))}
+        {shown.length > 1 && (
+          <button type="button" onClick={() => setOpen('all')} className={row} data-balance-row="all">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-deep text-xs font-extrabold text-ink-soft">
+              All
+            </span>
+            <span className="min-w-0 flex-1 truncate text-base font-bold text-ink-soft">Everyone at once</span>
+            <span className="shrink-0 pl-1 text-xl font-bold text-ink-faint">›</span>
+          </button>
         )}
       </Card>
-      {editing && (
-        <EditStarsSheet person={editing} stars={balanceOf(editing.id)} coins={coinsOf(editing.id)} onClose={() => setEditing(null)} />
+      {open && (
+        <BalanceSheet
+          who={open}
+          people={shown}
+          balanceOf={balanceOf}
+          coinsOf={coinsOf}
+          onClose={() => setOpen(null)}
+        />
       )}
       {history && <GameTimeLogSheet people={people} onClose={() => setHistory(false)} />}
     </>
+  )
+}
+
+/** One kid's (or everyone's) − / + for stars and coins; "Type a new total" for a big change. */
+function BalanceSheet({
+  who,
+  people,
+  balanceOf,
+  coinsOf,
+  onClose
+}: {
+  who: PersonDto | 'all'
+  people: PersonDto[]
+  balanceOf: (id: string) => number
+  coinsOf: (id: string) => number
+  onClose: () => void
+}) {
+  const adjust = useAdjustStars()
+  const [typing, setTyping] = useState(false)
+  if (who !== 'all' && typing) {
+    return <EditStarsSheet person={who} stars={balanceOf(who.id)} coins={coinsOf(who.id)} onClose={onClose} />
+  }
+  const step = (currency: Currency, delta: 1 | -1): void => {
+    const targets = who === 'all' ? people : [who]
+    targets.forEach((p) => adjust.mutate({ personId: p.id, delta, ...(currency === 'coins' ? { currency } : {}) }))
+  }
+  const name = who === 'all' ? 'everyone' : who.name
+  return (
+    <Sheet onClose={onClose}>
+      <div data-balance-sheet={who === 'all' ? 'all' : who.id}>
+      <div className="mb-4 flex items-center gap-2.5">
+        {who === 'all' ? (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-deep text-xs font-extrabold text-ink-soft">
+            All
+          </span>
+        ) : (
+          <PersonAvatar name={who.name} color={who.color} />
+        )}
+        <h2 className="flex-1 truncate font-display text-xl font-semibold">
+          {who === 'all' ? 'Everyone' : who.name}: stars &amp; coins
+        </h2>
+      </div>
+      <div className="mb-4 flex flex-col gap-3">
+        {(['stars', 'coins'] as const).map((currency) => (
+          <div key={currency} className="flex items-center gap-2">
+            <span className="flex-1 text-base font-bold text-ink-soft">{currency === 'coins' ? 'Coins' : 'Stars'}</span>
+            <AmountStepper
+              currency={currency}
+              value={who === 'all' ? null : currency === 'coins' ? coinsOf(who.id) : balanceOf(who.id)}
+              who={name}
+              onStep={(delta) => step(currency, delta)}
+            />
+          </div>
+        ))}
+      </div>
+      {adjust.error && <p className="mb-3 text-sm font-bold text-ember-deep">{adjust.error.message}</p>}
+      <div className="flex gap-2 [&>*]:flex-1">
+        {who !== 'all' && <GhostButton onClick={() => setTyping(true)}>Type a new total</GhostButton>}
+        <PrimaryButton onClick={onClose}>Done</PrimaryButton>
+      </div>
+      </div>
+    </Sheet>
   )
 }
 
@@ -472,6 +526,8 @@ export function ChoresPage() {
   const { data: balances = [] } = useBalances()
   const mutations = useChoreMutations()
   const [showManage, setShowManage] = useState(false)
+  // ⚙ Manage (rewards, new chore, the chore list): closed until a parent opens it
+  const [setupOpen, setSetupOpen] = useState(false)
   const [editingChore, setEditingChore] = useState<ChoreDto | 'new' | null>(null)
   // the chore whose "who did it?" picker is open — as it is now, so a counting sheet shows each tick
   const [claimingId, setClaimingId] = useState<string | null>(null)
@@ -489,34 +545,10 @@ export function ChoresPage() {
   return (
     <div className="flex flex-col gap-4">
       <PendingUnlocksCard people={people} today={today} />
-      <StarsCard people={people} balanceOf={balanceOf} coinsOf={coinsOf} />
 
+      {/* the daily stuff first: today's chores, then the checklists; setup lives in ⚙ Manage at the bottom */}
       {isPending && <EmptyNote>Loading…</EmptyNote>}
       {!isPending && dayChores.length === 0 && checklists.length === 0 && <EmptyNote>No chores today.</EmptyNote>}
-
-      {checklists.map((cl) => (
-        <Card key={cl.checklistId}>
-          <h2 className="font-display text-xl font-semibold">
-            ⭐ {cl.title}
-            {cl.kind === 'videogames' && (
-              <span className="ml-2 text-lg text-ember-deep">
-                <StarIcon /> {cl.stars}
-              </span>
-            )}
-          </h2>
-          <div className="mb-1 text-sm font-extrabold text-ink-faint">
-            {cl.people
-              .map((s) => {
-                const name = people.find((p) => p.id === s.personId)?.name ?? '?'
-                return `${name} ${setProgressLabel(cl, s, UNLOCK_TEXT)}`
-              })
-              .join(' · ')}
-          </div>
-          {cl.items.map((item) => (
-            <EachChoreRow key={item.choreId} chore={item} people={people} date={today} />
-          ))}
-        </Card>
-      ))}
 
       {dayChores.length > 0 && (
         <Card>
@@ -587,6 +619,32 @@ export function ChoresPage() {
         </Card>
       )}
 
+      {checklists.map((cl) => (
+        <Card key={cl.checklistId}>
+          <h2 className="font-display text-xl font-semibold">
+            ⭐ {cl.title}
+            {cl.kind === 'videogames' && (
+              <span className="ml-2 text-lg text-ember-deep">
+                <StarIcon /> {cl.stars}
+              </span>
+            )}
+          </h2>
+          <div className="mb-1 text-sm font-extrabold text-ink-faint">
+            {cl.people
+              .map((s) => {
+                const name = people.find((p) => p.id === s.personId)?.name ?? '?'
+                return `${name} ${setProgressLabel(cl, s, UNLOCK_TEXT)}`
+              })
+              .join(' · ')}
+          </div>
+          {cl.items.map((item) => (
+            <EachChoreRow key={item.choreId} chore={item} people={people} date={today} />
+          ))}
+        </Card>
+      ))}
+
+      <StarsCard people={people} balanceOf={balanceOf} coinsOf={coinsOf} />
+
       {claiming && (
         <ClaimSheet
           chore={claiming}
@@ -617,14 +675,28 @@ export function ChoresPage() {
         </Card>
       )}
 
-      <RewardsCard />
-
-      <GhostButton onClick={() => setEditingChore('new')}>+ New chore</GhostButton>
-
-      <GhostButton onClick={() => setShowManage((v) => !v)}>
-        {showManage ? 'Hide chores & checklists' : 'Manage chores & checklists'}
-      </GhostButton>
-      {showManage && <ManageChores people={people} onEditChore={setEditingChore} />}
+      {/* setup, used weekly by parents (never by kids): folded away at the bottom */}
+      <section className="flex flex-col gap-4" data-manage-section={setupOpen ? 'open' : 'closed'}>
+        <button
+          type="button"
+          onClick={() => setSetupOpen((v) => !v)}
+          aria-expanded={setupOpen}
+          className="pressable flex min-h-12 items-center gap-2 rounded-2xl border-2 border-line px-4 text-left text-base font-extrabold text-ink-soft"
+        >
+          <span className="flex-1">⚙ Manage rewards, chores &amp; checklists</span>
+          <span className={`text-xl transition-transform ${setupOpen ? 'rotate-90' : ''}`}>›</span>
+        </button>
+        {setupOpen && (
+          <>
+            <RewardsCard />
+            <GhostButton onClick={() => setEditingChore('new')}>+ New chore</GhostButton>
+            <GhostButton onClick={() => setShowManage((v) => !v)}>
+              {showManage ? 'Hide chores & checklists' : 'Manage chores & checklists'}
+            </GhostButton>
+            {showManage && <ManageChores people={people} onEditChore={setEditingChore} />}
+          </>
+        )}
+      </section>
 
       {editingChore && <ChoreSheet chore={editingChore} people={people} onClose={() => setEditingChore(null)} />}
     </div>

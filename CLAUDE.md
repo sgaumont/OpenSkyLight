@@ -776,6 +776,14 @@ Add unit tests where sensible.
   `android:windowBackground` = `@color/app_paper` (values/ and values-night/app_colors.xml) instead of grey, and the
   bar icons follow a live light/dark switch via `SystemBars.setStyle` (the activity handles uiMode itself, so
   Android doesn't restyle them). Emulator check script: shots-179.mjs in session da7f19d6's scratchpad.
+- v0.8.180: phone **Chores tab tidy** (cleanup item 4), all in companion `pages/ChoresPage.tsx`. Order: Waiting for
+  you (PendingUnlocksCard, unchanged) → Today → checklist cards → Stars & Coins → ⚙ Manage. `StarsCard` = one row per
+  kid (`data-balance-row`: avatar · name · ⭐ n · 🪙 n · ›) + "Everyone at once" (`data-balance-row="all"`, 2+ kids),
+  History in the header; a row opens `BalanceSheet` (`data-balance-sheet=<personId|all>`: the AmountStepper − / +
+  for stars and coins, "Type a new total" → EditStarsSheet, not for Everyone). Rewards, + New chore and Manage chores
+  & checklists sit in a `data-manage-section` ("⚙ Manage rewards, chores & checklists"), closed on every visit.
+  With 2 kids + 7 chores the tab fits one phone screen (was ~1,600px). Check script verify-chores-tidy.mjs (phone web
+  app in a 412×915 window, 15 checks) in session e9e5dd9e's scratchpad.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",
