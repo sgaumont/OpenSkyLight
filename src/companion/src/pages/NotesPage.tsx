@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { DateTime } from 'luxon'
 import type { ChatMessageDto, PersonDto } from '@shared/types'
 import { useChat, useChatSend, usePeople } from '../api/hooks'
-import { Card, EmptyNote, PrimaryButton } from '../components/ui'
+import { EmptyNote, PrimaryButton } from '../components/ui'
 import { currentSubscription } from '../api/push'
 import { getPhoneName } from '../lib/phoneName'
 import { CountdownsCard } from './CountdownsCard'
@@ -54,6 +54,8 @@ function dayLabel(iso: string): string {
 /**
  * Chat: one family conversation with the kiosk (and every other phone), newest at the bottom, like
  * a group text. Each message is 🔕 Quiet (shows everywhere, silently) unless 🔔 Ring is tapped for it.
+ * Laid out like a messaging app (v0.8.177): the messages scroll and the message box stays pinned at
+ * the bottom, above the tab bar. Countdowns sit at the top of the conversation (scroll up).
  */
 export function NotesPage() {
   const { data: messages = [] } = useChat()
@@ -63,10 +65,21 @@ export function NotesPage() {
   // this message only: back to Quiet after every send
   const [ring, setRing] = useState(false)
   const [phoneName, setPhoneNameState] = useState(getPhoneName)
-  const bottom = useRef<HTMLDivElement>(null)
+  const scroller = useRef<HTMLDivElement>(null)
+  // newest message in view: on opening Chat, on every new message, and when the keyboard shrinks the view
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: 'end' })
+    const el = scroller.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages.length])
+  useEffect(() => {
+    const el = scroller.current
+    if (!el) return
+    const ro = new ResizeObserver(() => {
+      el.scrollTop = el.scrollHeight
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   // the 📱 screen can rename this phone while Chat is open
   useEffect(() => {
     const onName = (): void => setPhoneNameState(getPhoneName())
@@ -96,66 +109,79 @@ export function NotesPage() {
   const legacyAuthor = rememberedAuthor()
   const sent = sentIds()
   return (
-    <div className="flex flex-col gap-4">
-      {messages.length === 0 ? (
-        <EmptyNote>No messages yet — say hi to the kiosk below.</EmptyNote>
-      ) : (
-        <div className="flex flex-col gap-2" data-chat-timeline>
-          {messages.map((m, i) => (
-            <div key={m.id} className="flex flex-col gap-2">
-              {(i === 0 || dayLabel(messages[i - 1].createdAt) !== dayLabel(m.createdAt)) && (
-                <div className="self-center rounded-full bg-paper-deep px-3 py-0.5 text-[11px] font-extrabold text-ink-faint uppercase">
-                  {dayLabel(m.createdAt)}
-                </div>
-              )}
-              <Message
-                m={m}
-                byId={byId}
-                mine={
-                  !m.fromKiosk &&
-                  (sent.has(m.id) ||
-                    // sent under this phone's name from somewhere this page didn't see: a notification's Reply
-                    (!!phoneName && m.deviceName === phoneName) ||
-                    (!!legacyAuthor && m.authorId === legacyAuthor && !m.deviceName))
-                }
-              />
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="flex min-h-0 flex-1 flex-col" data-chat-page>
+      <div
+        ref={scroller}
+        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain pt-1 pb-3"
+        data-chat-scroll
+      >
+        <CountdownsCard />
+        {messages.length === 0 ? (
+          <EmptyNote>No messages yet — say hi to the kiosk below.</EmptyNote>
+        ) : (
+          <div className="flex flex-col gap-2" data-chat-timeline>
+            {messages.map((m, i) => (
+              <div key={m.id} className="flex flex-col gap-2">
+                {(i === 0 || dayLabel(messages[i - 1].createdAt) !== dayLabel(m.createdAt)) && (
+                  <div className="self-center rounded-full bg-paper-deep px-3 py-0.5 text-[11px] font-extrabold text-ink-faint uppercase">
+                    {dayLabel(m.createdAt)}
+                  </div>
+                )}
+                <Message
+                  m={m}
+                  byId={byId}
+                  mine={
+                    !m.fromKiosk &&
+                    (sent.has(m.id) ||
+                      // sent under this phone's name from somewhere this page didn't see: a notification's Reply
+                      (!!phoneName && m.deviceName === phoneName) ||
+                      (!!legacyAuthor && m.authorId === legacyAuthor && !m.deviceName))
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-      <Card>
-        <textarea
-          value={text}
-          maxLength={MAX_LENGTH}
-          onChange={(e) => setText(e.target.value)}
-          rows={2}
-          placeholder="Message the family…"
-          className="w-full resize-none rounded-xl border-2 border-line bg-paper px-3 py-2 text-base font-semibold text-ink outline-none focus:border-ember"
-        />
-        <div className="mt-3 flex items-center gap-3">
+      {/* the message box, pinned under the conversation */}
+      <div className="shrink-0 rounded-2xl bg-card p-2 shadow-card" data-chat-composer>
+        {/* one row, like a messaging app: Quiet/Ring · the message · Send */}
+        <div className="flex items-end gap-2">
           {/* per message: Quiet (default) shows silently everywhere; Ring makes it sound */}
           <button
             type="button"
             aria-pressed={ring}
+            aria-label={ring ? 'Ring: this message will sound. Tap for quiet' : 'Quiet: this message shows silently. Tap to ring'}
             onClick={() => setRing((r) => !r)}
-            className={`pressable min-h-12 rounded-2xl px-4 text-base font-extrabold ${ring ? 'bg-ember text-white shadow-card' : 'bg-paper-deep text-ink-soft'}`}
+            className={`pressable flex min-h-11 min-w-11 items-center justify-center rounded-xl text-xl ${ring ? 'bg-ember shadow-card' : 'bg-paper-deep'}`}
             data-ring-toggle
           >
-            {ring ? '🔔 Ring!' : '🔕 Quiet'}
+            {ring ? '🔔' : '🔕'}
           </button>
-          <span className="flex-1 text-right text-xs font-bold text-ink-faint">
-            {text.length > MAX_LENGTH - 40 ? `${MAX_LENGTH - text.length} left` : ''}
-          </span>
+          <textarea
+            value={text}
+            maxLength={MAX_LENGTH}
+            onChange={(e) => setText(e.target.value)}
+            rows={text.includes('\n') || text.length > 26 ? 3 : 1}
+            placeholder={ring ? 'Message (will ring)…' : 'Message the family…'}
+            aria-label="Message"
+            className="min-h-11 min-w-0 flex-1 resize-none rounded-xl border-2 border-line bg-paper px-3 py-2 text-base font-semibold text-ink outline-none focus:border-ember"
+          />
           <PrimaryButton onClick={() => void post()} disabled={text.trim() === '' || send.isPending}>
-            {send.isPending ? 'Sending…' : ring ? 'Send 🔔' : 'Send'}
+            {send.isPending ? '…' : 'Send'}
           </PrimaryButton>
         </div>
-        {!phoneName && <p className="mt-2 text-xs font-bold text-ink-faint" data-name-hint>Name this phone in 📱 (top right) so others see who's writing.</p>}
+        {text.length > MAX_LENGTH - 40 && (
+          <p className="mt-1 text-right text-xs font-bold text-ink-faint">{MAX_LENGTH - text.length} left</p>
+        )}
+        {!phoneName && (
+          <p className="mt-2 text-xs font-bold text-ink-faint" data-name-hint>
+            Name this phone in 📱 (top right) so others see who's writing.
+          </p>
+        )}
         {send.error && <p className="mt-1 text-xs font-bold text-ember-deep">{send.error.message}</p>}
-      </Card>
-      <div ref={bottom} />
-      <CountdownsCard />
+      </div>
     </div>
   )
 }
@@ -168,7 +194,11 @@ function Message({ m, byId, mine }: { m: ChatMessageDto; byId: Map<string, Perso
   const author = m.authorId ? byId.get(m.authorId) : undefined
   const who = m.fromKiosk ? 'Tablet' : (m.deviceName ?? author?.name ?? 'Phone')
   return (
-    <div className={`flex max-w-[85%] flex-col ${mine ? 'items-end self-end' : 'items-start self-start'}`} data-chat-message data-side={mine ? 'out' : 'in'}>
+    <div
+      className={`flex max-w-[85%] flex-col ${mine ? 'items-end self-end' : 'items-start self-start'}`}
+      data-chat-message
+      data-side={mine ? 'out' : 'in'}
+    >
       <p
         className={`rounded-2xl px-3 py-2 text-base font-bold break-words whitespace-pre-line ${
           mine ? 'bg-ember text-right text-white' : m.fromKiosk ? 'bg-ink text-left text-paper' : 'bg-card text-left text-ink'

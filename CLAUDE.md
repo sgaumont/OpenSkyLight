@@ -751,6 +751,17 @@ Add unit tests where sensible.
 - v0.8.176: "What to wear" drops the jacket: shorts when today's high meets the shorts minimum, otherwise pants
   (`Clothing` = 'shorts' | 'pants'). Settings keep only `clothing.shortsMinC`; an old stored `pantsMinC` is ignored and
   stripped by the settings schema. Settings → General → What to wear has one number (shorts) + "Pants below that".
+- v0.8.177: **phone app layout cleanup** (web app and Family Skyview). The update banner, Timers card and Waiting for
+  you card used to stack above every tab (~60% of the screen). Now: **update** = a small "⬆ Update" chip in the header
+  (`UpdateBanner` → chip + `BottomSheet`, `data-update-chip`); **timers** = `TimersStrip` (pages/TimersCard.tsx), one
+  44px line per timer pinned under the header (avatar · name · reward · live countdown, ember when up); tapping opens
+  `TimerSheet` with −5/−1/+1/+5 and two-tap Stop / Put away; **waiting** sign-offs + Shop requests only as the card on
+  Chores (ChoresPage, unchanged) plus a count badge on the Chores tab icon (`WaitingBadge` in App.tsx — its own
+  component so the queries run only when paired). **Chat** is laid out like a messaging app: `<main>` doesn't scroll on
+  the Chat tab; NotesPage has its own `data-chat-scroll` (stays at the newest message, also when the keyboard resizes
+  it) and a pinned one-row composer (🔕/🔔 icon toggle · message · Send). Countdowns moved to the top of the
+  conversation. New shared `BottomSheet` in companion components/ui.tsx (closes on Android back). The repo has no
+  Prettier config — `npx prettier` defaults (double quotes, semicolons) reformat whole files; don't run it bare.
 - v0.8.90: header — kids' controller badges moved left (after the weather); the free space to their right is an
   issue line (`features/shell/IssueLine.tsx`, rules in `src/shared/kioskIssues.ts`): Google sign-in expired → calendar
   sync errors → calendars not updated for 30 min (Wi-Fi?) → backup failed/folder/no backup; first issue + "+N more",

@@ -1,4 +1,5 @@
 import type { ReactNode, SVGProps } from 'react'
+import { useBackHandler } from '../lib/backButton'
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-card bg-card p-4 shadow-card ${className}`}>{children}</div>
@@ -175,5 +176,23 @@ export function StarIcon({ className = '', ...p }: SVGProps<SVGSVGElement>) {
     >
       <path d="M12 2.2l2.95 6.3 6.85.8-5.07 4.7 1.36 6.8L12 17.4l-6.09 3.4 1.36-6.8L2.2 9.3l6.85-.8Z" />
     </svg>
+  )
+}
+
+/** A bottom sheet over a dimmed page; tapping outside it (or Android back) closes it. */
+export function BottomSheet({ onClose, children, label }: { onClose: () => void; children: ReactNode; label?: string }) {
+  useBackHandler(true, onClose)
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose} role="presentation">
+      <div
+        role="dialog"
+        aria-label={label}
+        className="max-h-[92dvh] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-card p-5"
+        style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
   )
 }

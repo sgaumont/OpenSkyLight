@@ -5,11 +5,11 @@ import { StarIcon } from './components/ui'
 import { DateTime } from 'luxon'
 import { getToken, setUnauthorizedHandler } from './api/client'
 import { useLiveUpdates } from './api/live'
-import { usePeople, useToday } from './api/hooks'
+import { usePendingUnlocks, useShopRequests, useToday } from './api/hooks'
 import { ListsPage } from './pages/ListsPage'
 import { MealsPage } from './pages/MealsPage'
-import { ChoresPage, PendingUnlocksCard } from './pages/ChoresPage'
-import { TimersCard } from './pages/TimersCard'
+import { ChoresPage } from './pages/ChoresPage'
+import { TimersStrip } from './pages/TimersCard'
 import { PhotosPage } from './pages/PhotosPage'
 import { NotesPage } from './pages/NotesPage'
 import { PairScreen } from './pages/PairScreen'
@@ -118,9 +118,14 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-baseline gap-2 px-5 pt-5 pb-3" style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}>
+      <header
+        className="flex items-baseline gap-2 px-5 pt-5 pb-3"
+        style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
+      >
         <h1 className="font-display text-2xl font-semibold">{TABS.find((t) => t.id === tab)?.label}</h1>
         <span className="flex-1 text-sm font-bold text-ink-faint">{DateTime.fromISO(today).toFormat('ccc, LLL d')}</span>
+        {/* Android app: a newer version is on the tablet (a small chip, not a card) */}
+        <UpdateBanner />
         <button
           type="button"
           onClick={() => setNotifications(true)}
@@ -131,15 +136,21 @@ export default function App() {
         </button>
       </header>
       {notifications && <NotificationsSheet onClose={() => setNotifications(false)} />}
-      {/* Android app: a newer version is on the tablet */}
-      <UpdateBanner />
+      {/* the kids' running timers, one slim line each on every tab; tap one to change it */}
+      <TimersStrip />
 
-      <main ref={mainRef} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4" data-tab-main>
-        {/* sign-offs (checklists, Video Games) prompt on every tab, not just Chores (which has its own) */}
-        {/* the kids' running timers, on every tab: watch them, add or take off minutes */}
-        <TimersCard />
-        {tab !== 'chores' && <ApprovalPrompt today={today} />}
-        <div key={tab} className={slide === 'from-right' ? 'animate-slide-from-right' : slide === 'from-left' ? 'animate-slide-from-left' : 'animate-rise'}>
+      {/* Chat manages its own scrolling (messages scroll, the message box stays put); other tabs scroll here */}
+      <main
+        ref={mainRef}
+        className={`min-h-0 flex-1 overflow-x-hidden px-4 ${tab === 'notes' ? 'flex flex-col overflow-y-hidden pb-2' : 'overflow-y-auto pb-4'}`}
+        data-tab-main
+      >
+        <div
+          key={tab}
+          className={`${slide === 'from-right' ? 'animate-slide-from-right' : slide === 'from-left' ? 'animate-slide-from-left' : 'animate-rise'} ${
+            tab === 'notes' ? 'flex min-h-0 flex-1 flex-col' : ''
+          }`}
+        >
           {tab === 'lists' && <ListsPage />}
           {tab === 'meals' && <MealsPage />}
           {tab === 'chores' && <ChoresPage />}
@@ -148,10 +159,7 @@ export default function App() {
         </div>
       </main>
 
-      <nav
-        className="flex border-t border-line bg-card"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
+      <nav className="flex border-t border-line bg-card" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -162,7 +170,11 @@ export default function App() {
               tab === t.id ? 'text-ember' : 'text-ink-faint'
             }`}
           >
-            <span className="text-lg leading-none">{t.icon}</span>
+            <span className="relative text-lg leading-none">
+              {t.icon}
+              {/* sign-offs and Shop requests wait on the Chores tab; the count shows from every tab */}
+              {t.id === 'chores' && <WaitingBadge today={today} />}
+            </span>
             {t.label}
           </button>
         ))}
@@ -171,12 +183,19 @@ export default function App() {
   )
 }
 
-/** Waiting sign-offs, at the top of whatever tab is open. */
-function ApprovalPrompt({ today }: { today: string }) {
-  const { data: people = [] } = usePeople()
+/** How many sign-offs and Shop requests wait for a parent (their card is on Chores). Paired only. */
+function WaitingBadge({ today }: { today: string }) {
+  const { data: pending = [] } = usePendingUnlocks(today)
+  const { data: requests = [] } = useShopRequests()
+  const waiting = pending.length + requests.length
+  if (waiting === 0) return null
   return (
-    <div className="mb-4 empty:hidden">
-      <PendingUnlocksCard people={people} today={today} />
-    </div>
+    <span
+      className="absolute -top-1.5 -right-3 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-ember px-1 text-[11px] leading-none font-extrabold text-white"
+      aria-label={`${waiting} waiting for a parent`}
+      data-waiting-badge
+    >
+      {waiting}
+    </span>
   )
 }
